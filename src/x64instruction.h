@@ -350,20 +350,17 @@ private:
 
 	/* Register <=> immediate address */
 	/* 32 bit pointers */
-	x64_mov(x64_addr_ptr<uint32_t> addr, uint8_t prefix, uint8_t oc, x64_modrm modrm)
-	 : x64_instruction(
-				std::array<uint8_t, 2> { prefix, oc },
-				modrm,
-				x64_sib(0x25),
-				addr.ptr)
+	template<std::size_t OPCODE_SIZE>
+	x64_mov(x64_addr_ptr<uint32_t> addr, std::array<uint8_t, OPCODE_SIZE>opcode , const x64_modrm& modrm)
+	 : x64_instruction(opcode, modrm, x64_sib(0x25), addr.ptr)
 	{ }
 
-	x64_mov(x64_addr_ptr<uint32_t> addr, uint8_t oc, x64_modrm modrm)
-	 : x64_instruction(
-				std::array<uint8_t, 1> { oc },
-				modrm,
-				x64_sib(0x25),
-				addr.ptr)
+	x64_mov(x64_addr_ptr<uint32_t> addr, uint8_t prefix, uint8_t oc, const x64_modrm& modrm)
+	 : x64_instruction(std::array<uint8_t, 2> { prefix, oc }, modrm, x64_sib(0x25), addr.ptr)
+	{ }
+
+	x64_mov(x64_addr_ptr<uint32_t> addr, uint8_t oc, const x64_modrm& modrm)
+	 : x64_instruction(std::array<uint8_t, 1> { oc }, modrm, x64_sib(0x25), addr.ptr)
 	{ }
 
 	/* 64 bit pointers */
