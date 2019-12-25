@@ -86,3 +86,18 @@ mov %al, (%eax)
 
 
 
+mov %al, %ah
+mov %ah, %al
+nop
+mov $123,%ah
+mov $123,%al
+
+nop
+nop
+mov 0x1234567812345678, %al
+
+
+
+mov %ah, (%r15)
+
+
