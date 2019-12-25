@@ -443,7 +443,7 @@ public:
 	x64_mov(x64_reg_ptr64a dst, x64_reg16 src) : x64_instruction(std::array<uint8_t, 2> { x64_override::oper_size, 0x89 }, x64_modrm{dst.ptr, src, 0}) { }
 
 	//:   66 41 89 07             mov    %ax,(%r15)
-	x64_mov(x64_reg_ptr64 dst, x64_reg16 src) : x64_instruction(std::array<uint8_t, 3> { x64_override::oper_size, x64_rex::b, 0x89 }, x64_modrm{dst.ptr, src, 0}) { }
+	x64_mov(x64_reg_ptr64b dst, x64_reg16 src) : x64_instruction(std::array<uint8_t, 3> { x64_override::oper_size, x64_rex::b, 0x89 }, x64_modrm{dst.ptr, src, 0}) { }
 
 //	x64_mov(x64_addr_ptr<x64_reg64> dst, x64_reg16 src) : x64_instruction(std::array<uint8_t, 2> { x64_override::oper_size, 0x89 }, x64_modrm{dst.ptr, src, 0}) { }
 //

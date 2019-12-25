@@ -97,6 +97,7 @@ int main()
 	s << x64_mov((uint32_t*)0x123456789abcdef0, x64_regs::eax);
 //	s << x64_mov((uint16_t*)0x123456789abcdef0, x64_reg16::ax);
 //	s << x64_mov(( uint8_t*)0x123456789abcdef0, x64_reg8l::al);
+
 //
 //
 //	s << x64_mov(x64_reg64::rax, (uint64_t*)0x123456789abcdef0);
@@ -129,8 +130,10 @@ int main()
 	s << x64_mov(x64_reg_addr(x64_regs::r15), x64_regs::r15);
 
 
-	s << x64_mov(x64_reg_addr(x64_regs::rax), x64_regs::dx); // ERROR!
-	s << x64_mov(x64_reg_addr(x64_regs::r15), x64_regs::dx); // ERROR!
+	s << x64_mov(x64_reg_addr(x64_regs::rax), x64_regs::dx); // ERROR! FIXED, BITCH
+	s << x64_mov(x64_reg_addr(x64_regs::r15), x64_regs::dx); // ERROR! FIXED, BITCH
+
+	s << x64_mov(x64_reg8l::al, 12);
 
 
 	//s << x64_mov(x64_addr_ptr(x64_regs::r15), x64_regs::ax);
