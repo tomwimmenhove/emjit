@@ -73,7 +73,11 @@ enum class x64_reg64
 	rbp,
 	rsi,
 	rdi,
-	r8,
+};
+
+enum class x64_reg64e
+{
+	r8 = 8,
 	r9,
 	r10,
 	r11,
@@ -214,6 +218,14 @@ public:
 
 	virtual ~x64_instruction() { }
 
+protected:
+	inline uint8_t extend_reg_prefix(x64_reg64 dst, x64_reg64 src)
+	{
+		return static_cast<uint8_t>(
+				(dst > x64_reg64::rdi ? x64_rex::w | x64_rex::b : x64_rex::w) |
+				(src > x64_reg64::rdi ? x64_rex::w | x64_rex::r : x64_rex::w));
+	}
+
 private:
 	template<std::size_t OPCODE_SIZE, typename IMM_TYPE>
 	x64_instruction(
@@ -278,15 +290,110 @@ struct x64_ret	: public x64_instruction{x64_ret()	: x64_instruction(std::array<u
 struct x64_lret	: public x64_instruction{x64_lret()	: x64_instruction(std::array<uint8_t, 1> { 0xcb }) {} };
 struct x64_ud2	: public x64_instruction{x64_ud2()	: x64_instruction(std::array<uint8_t, 2> { 0x0f, 0x0b }) {} };
 
+template<typename T, T VAL>
+class const_operator
+{
+public:
+	inline constexpr operator T() const { return VAL; }
+};
+
+template<int VAL> class const_reg64_base : public const_operator<int, VAL> { };
+template<int VAL> class const_reg64e : public const_reg64_base<VAL> { };
+template<int VAL> class const_reg64 : public const_reg64_base<VAL> { };
+
+class new_x64_regs
+{
+public:
+	static const_reg64<0> rax;
+	static const_reg64<1> rcx;
+	static const_reg64<2> rdx;
+	static const_reg64<3> rbx;
+	static const_reg64<4> rsp;
+	static const_reg64<5> rbp;
+	static const_reg64<6> rsi;
+	static const_reg64<7> rdi;
+
+	static const_reg64e<8>  r8;
+	static const_reg64e<9>  r9;
+	static const_reg64e<10> r10;
+	static const_reg64e<11> r11;
+	static const_reg64e<12> r12;
+	static const_reg64e<13> r13;
+	static const_reg64e<14> r14;
+	static const_reg64e<15> r15;
+};
+
+template<int VAL>
+void blabla(const_reg64_base<VAL> value)
+{
+
+}
+
+template<int VAL>
+void blabla(const_reg64<VAL> value)
+{
+
+}
+
+template<int VAL>
+void blabla(const_reg64e<VAL> value)
+{
+
+}
+
+
+void test()
+{
+	blabla(new_x64_regs::rax);
+	blabla(new_x64_regs::r15);
+}
+
+
+
 class x64_mov : public x64_instruction
 {
 public:
 	/* Move register into register */
 	x64_mov(x64_reg64 dst, x64_reg64 src) : x64_instruction(std::array<uint8_t, 2> { x64_rex::w, 0x89 }, x64_modrm{dst, src, 3}) {}
+	x64_mov(x64_reg64 dst, x64_reg64e src) : x64_instruction(std::array<uint8_t, 2> { x64_rex::w | x64_rex::r, 0x89 }, x64_modrm{dst, src, 3}) {}
+	x64_mov(x64_reg64e dst, x64_reg64 src) : x64_instruction(std::array<uint8_t, 2> { x64_rex::w | x64_rex::b, 0x89 }, x64_modrm{dst, src, 3}) {}
+	x64_mov(x64_reg64e dst, x64_reg64e src) : x64_instruction(std::array<uint8_t, 2> { x64_rex::w | x64_rex::r | x64_rex::b, 0x89 }, x64_modrm{dst, src, 3}) {}
+
 	x64_mov(x64_reg32 dst, x64_reg32 src) : x64_instruction(std::array<uint8_t, 1> { 0x89 }, x64_modrm{dst, src, 3}) {}
 	x64_mov(x64_reg16 dst, x64_reg16 src) : x64_instruction(std::array<uint8_t, 2> { x64_override::oper_size, 0x89 }, x64_modrm{dst, src, 3}) {}
 	x64_mov(x64_reg8l dst, x64_reg8l src) : x64_instruction(std::array<uint8_t, 1> { 0x88 }, x64_modrm{dst, src, 3}) {}
 	x64_mov(x64_reg8h dst, x64_reg8h src) : x64_instruction(std::array<uint8_t, 1> { 0x88 }, x64_modrm{static_cast<unsigned int>(dst) + 4, static_cast<unsigned int>(src) + 4, 3}) {}
+
+	/* Move register into register pointer */
+  //:   48 89 00                mov    %rax,(%rax)
+	x64_mov(x64_addr_ptr<x64_reg64> dst, x64_reg64 src) : x64_instruction(std::array<uint8_t, 2> { extend_reg_prefix(dst.ptr, src), 0x89 }, x64_modrm{dst.ptr, src, 0}) { }
+
+  //:   89 00                   mov    %eax,(%rax)
+	x64_mov(x64_addr_ptr<x64_reg64> dst, x64_reg32 src) : x64_instruction(std::array<uint8_t, 1> { 0x89 }, x64_modrm{dst.ptr, src, 0}) { }
+
+  //:   66 89 00                mov    %ax,(%rax)
+	x64_mov(x64_addr_ptr<x64_reg64> dst, x64_reg16 src) : x64_instruction(std::array<uint8_t, 2> { x64_override::oper_size, 0x89 }, x64_modrm{dst.ptr, src, 0}) { }
+
+  //:   88 00                   mov    %al,(%rax)
+	x64_mov(x64_addr_ptr<x64_reg64> dst, x64_reg8l src) : x64_instruction(std::array<uint8_t, 1> { 0x88 }, x64_modrm{dst.ptr, src, 0}) { }
+
+  //:   88 20                   mov    %ah,(%rax)
+	x64_mov(x64_addr_ptr<x64_reg64> dst, x64_reg8h src) : x64_instruction(std::array<uint8_t, 1> { 0x88 }, x64_modrm{dst.ptr, static_cast<unsigned int>(src) + 4, 0})
+	{
+		if (dst.ptr > x64_reg64::rdi)
+			throw std::out_of_range("Can't encode extended registers in this instruction");
+	}
+
+
+
+	//:   90                      nop
+  //:   67 48 89 00             mov    %rax,(%eax)
+  //:   67 89 00                mov    %eax,(%eax)
+  //:   67 66 89 00             mov    %ax,(%eax)
+  //:   67 88 20                mov    %ah,(%eax)
+  //:   67 88 00                mov    %al,(%eax)
+	x64_mov(x64_addr_ptr<x64_reg32> dst, x64_reg32 src) : x64_instruction(std::array<uint8_t, 2> { x64_override::addr_size, 0x89 }, x64_modrm{dst.ptr, src, 0}) { }
+
 
 	/* Move immediate into register */
 	x64_mov(x64_reg32 reg, uint32_t imm) : x64_mov(reg, imm, 0xb8) { };
@@ -342,7 +449,7 @@ private:
 	{ }
 
 	template<typename IMM_TYPE>
-	x64_mov(IMM_TYPE imm, uint8_t prefix, uint8_t oc, x64_modrm modrm)
+	x64_mov(IMM_TYPE imm, uint8_t prefix, uint8_t oc, const x64_modrm& modrm)
 	 : x64_instruction(
 			std::array<uint8_t, 2> { prefix, oc },
 			modrm, imm)
@@ -350,11 +457,6 @@ private:
 
 	/* Register <=> immediate address */
 	/* 32 bit pointers */
-	template<std::size_t OPCODE_SIZE>
-	x64_mov(x64_addr_ptr<uint32_t> addr, std::array<uint8_t, OPCODE_SIZE>opcode , const x64_modrm& modrm)
-	 : x64_instruction(opcode, modrm, x64_sib(0x25), addr.ptr)
-	{ }
-
 	x64_mov(x64_addr_ptr<uint32_t> addr, uint8_t prefix, uint8_t oc, const x64_modrm& modrm)
 	 : x64_instruction(std::array<uint8_t, 2> { prefix, oc }, modrm, x64_sib(0x25), addr.ptr)
 	{ }

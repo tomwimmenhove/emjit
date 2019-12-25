@@ -121,30 +121,54 @@ int main()
 
 //	s << x64_mov(x64_addr_ptr<uint32_t>(65536), x64_reg64::rdx);
 
-	s << x64_mov(x64_reg64::rdx, x64_addr_ptr<uint32_t> (65536));
-	s << x64_mov(x64_reg32::edx, x64_addr_ptr<uint32_t> (65536));
-	s << x64_mov(x64_reg16::dx, x64_addr_ptr<uint32_t> (65536));
-	s << x64_mov(x64_reg8l::dl, x64_addr_ptr<uint32_t> (65536));
-	s << x64_mov(x64_reg8h::dh, x64_addr_ptr<uint32_t> (65536));
 
-	/* 64 bit pointers */
-	s << x64_mov(x64_reg64::rax, x64_addr_ptr<uint64_t*>((uint64_t*)65536));
-	s << x64_mov(x64_reg32::eax, x64_addr_ptr<uint32_t*>((uint32_t*)65536));
-	s << x64_mov(x64_reg16::ax, x64_addr_ptr<uint16_t*> ((uint16_t*)65536));
-	s << x64_mov(x64_reg8l::al, x64_addr_ptr<uint8_t*>  ((uint8_t*)65536));
+//	s << x64_mov(x64_addr_ptr<x64_reg64>(x64_reg64::rax), x64_reg64::rax);
+//	s << x64_mov(x64_addr_ptr<x64_reg64>(x64_reg64::rax), x64_reg32::edx);
+//	s << x64_mov(x64_addr_ptr<x64_reg64>(x64_reg64::r15), x64_reg16::dx); // ERROR!
+//	s << x64_mov(x64_addr_ptr<x64_reg64>(x64_reg64::rax), x64_reg8h::ch);
+//	s << x64_mov(x64_addr_ptr<x64_reg64>(x64_reg64::r15), x64_reg8l::dl);
+
+	s << x64_mov(x64_reg64::rax, x64_reg64::rax);// : x64_instruction(std::array<uint8_t, 2> { x64_rex::w, 0x89 }, x64_modrm{dst, src, 3}) {}
+	s << x64_mov(x64_reg64::rax, x64_reg64e::r15);// : x64_instruction(std::array<uint8_t, 2> { x64_rex::w, 0x89 }, x64_modrm{dst, src, 3}) {}
+	s << x64_mov(x64_reg64e::r15, x64_reg64::rax);// : x64_instruction(std::array<uint8_t, 2> { x64_rex::w, 0x89 }, x64_modrm{dst, src, 3}) {}
+	s << x64_mov(x64_reg64e::r15, x64_reg64e::r15);// : x64_instruction(std::array<uint8_t, 2> { x64_rex::w, 0x89 }, x64_modrm{dst, src, 3}) {}
+
+//	s << x64_mov(x64_reg32::eax, x64_reg32::eax);// : x64_instruction(std::array<uint8_t, 1> { 0x89 }, x64_modrm{dst, src, 3}) {}
+//	s << x64_mov(x64_reg16::ax, x64_reg16);// : x64_instruction(std::array<uint8_t, 2> { x64_override::oper_size, 0x89 }, x64_modrm{dst, src, 3}) {}
+//	s << x64_mov(x64_reg8l::al, x64_reg8l);// : x64_instruction(std::array<uint8_t, 1> { 0x88 }, x64_modrm{dst, src, 3}) {}
+//	s << x64_mov(x64_reg8h::ah, x64_reg8h);// : x64_instruction(std::array<uint8_t, 1> { 0x88 }, x64_modrm{static_cast<unsigned int>(dst) + 4, static_cast<unsigned int>(src) + 4, 3}) {}
 
 
-	s << x64_mov(x64_addr_ptr<uint32_t> (65536), x64_reg64::rdx);
-	s << x64_mov(x64_addr_ptr<uint32_t> (65536), x64_reg32::edx);
-	s << x64_mov(x64_addr_ptr<uint32_t> (65536), x64_reg16::dx);
-	s << x64_mov(x64_addr_ptr<uint32_t> (65536), x64_reg8l::dl);
-	s << x64_mov(x64_addr_ptr<uint32_t> (65536), x64_reg8h::dh);
 
-	/* 64 bit pointers */
-	s << x64_mov(x64_addr_ptr<uint64_t*>((uint64_t*)65536), x64_reg64::rax);
-	s << x64_mov(x64_addr_ptr<uint32_t*>((uint32_t*)65536), x64_reg32::eax);
-	s << x64_mov(x64_addr_ptr<uint16_t*> ((uint16_t*)65536), x64_reg16::ax);
-	s << x64_mov(x64_addr_ptr<uint8_t*>  ((uint8_t*)65536), x64_reg8l::al);
+//	s << x64_mov(x64_addr_ptr<x64_reg32>(x64_reg32::eax), x64_reg32::eax);
+//	s << x64_mov(x64_addr_ptr<x64_reg32>(x64_reg32::eax), x64_reg32::ecx);
+//	s << x64_mov(x64_addr_ptr<x64_reg32>(x64_reg32::ecx), x64_reg32::eax);
+//	s << x64_mov(x64_addr_ptr<x64_reg32>(x64_reg32::ecx), x64_reg32::ecx);
+
+//	s << x64_mov(x64_reg64::rdx, x64_addr_ptr<uint32_t> (65536));
+//	s << x64_mov(x64_reg32::edx, x64_addr_ptr<uint32_t> (65536));
+//	s << x64_mov(x64_reg16::dx, x64_addr_ptr<uint32_t> (65536));
+//	s << x64_mov(x64_reg8l::dl, x64_addr_ptr<uint32_t> (65536));
+//	s << x64_mov(x64_reg8h::dh, x64_addr_ptr<uint32_t> (65536));
+//
+//	/* 64 bit pointers */
+//	s << x64_mov(x64_reg64::rax, x64_addr_ptr<uint64_t*>((uint64_t*)65536));
+//	s << x64_mov(x64_reg32::eax, x64_addr_ptr<uint32_t*>((uint32_t*)65536));
+//	s << x64_mov(x64_reg16::ax, x64_addr_ptr<uint16_t*> ((uint16_t*)65536));
+//	s << x64_mov(x64_reg8l::al, x64_addr_ptr<uint8_t*>  ((uint8_t*)65536));
+//
+//
+//	s << x64_mov(x64_addr_ptr<uint32_t> (65536), x64_reg64::rdx);
+//	s << x64_mov(x64_addr_ptr<uint32_t> (65536), x64_reg32::edx);
+//	s << x64_mov(x64_addr_ptr<uint32_t> (65536), x64_reg16::dx);
+//	s << x64_mov(x64_addr_ptr<uint32_t> (65536), x64_reg8l::dl);
+//	s << x64_mov(x64_addr_ptr<uint32_t> (65536), x64_reg8h::dh);
+//
+//	/* 64 bit pointers */
+//	s << x64_mov(x64_addr_ptr<uint64_t*>((uint64_t*)65536), x64_reg64::rax);
+//	s << x64_mov(x64_addr_ptr<uint32_t*>((uint32_t*)65536), x64_reg32::eax);
+//	s << x64_mov(x64_addr_ptr<uint16_t*> ((uint16_t*)65536), x64_reg16::ax);
+//	s << x64_mov(x64_addr_ptr<uint8_t*>  ((uint8_t*)65536), x64_reg8l::al);
 
 //	s << x64_ret();
 //

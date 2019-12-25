@@ -25,8 +25,8 @@ void x64_disassembler::disassemble(const uint8_t* data, std::size_t len)
 
 	close(fd);
 
-	string command = "objdump -b binary -D -m i386:x86-64 --adjust-vma=";
-	//string command = "objdump -b binary -D -m i386:x86-64 -M intel --adjust-vma=";
+	//string command = "objdump -b binary -D -m i386:x86-64 --adjust-vma=";
+	string command = "objdump -b binary -D -m i386:x86-64 -M intel --adjust-vma=";
 
 	command += to_string((intptr_t) data);
 	command += " ";
