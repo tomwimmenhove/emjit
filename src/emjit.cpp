@@ -133,7 +133,7 @@ int main()
 	s << x64_mov(x64_reg_addr(x64_regs::rax), x64_regs::dx); // ERROR! FIXED, BITCH
 	s << x64_mov(x64_reg_addr(x64_regs::r15), x64_regs::dx); // ERROR! FIXED, BITCH
 
-	s << x64_mov(x64_reg8l::al, 12);
+	s << x64_mov(x64_regs::al, 12);
 
 
 	//s << x64_mov(x64_addr_ptr(x64_regs::r15), x64_regs::ax);

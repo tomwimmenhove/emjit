@@ -27,13 +27,11 @@ class x64_reg64  : public x64_reg_base { using x64_reg_base::x64_reg_base; };
 class x64_reg64a : public x64_reg64    { using x64_reg64::x64_reg64; };
 class x64_reg64b : public x64_reg64    { using x64_reg64::x64_reg64; };
 
-class x64_reg32 : public x64_reg_base { using x64_reg_base::x64_reg_base; };
-class x64_reg16 : public x64_reg_base { using x64_reg_base::x64_reg_base; };
+class x64_reg32 : public x64_reg_base  { using x64_reg_base::x64_reg_base; };
+class x64_reg16 : public x64_reg_base  { using x64_reg_base::x64_reg_base; };
 
-//class x64_reg8_base : public x64_reg_base  { using x64_reg_base::x64_reg_base; };
-//class x64_reg8h     : public x64_reg8_base { using x64_reg8_base::x64_reg8_base; };
-//class x64_reg8l     : public x64_reg8_base { using x64_reg8_base::x64_reg8_base; };
-
+class x64_reg8h : public x64_reg_base  { using x64_reg_base::x64_reg_base; };
+class x64_reg8l : public x64_reg_base  { using x64_reg_base::x64_reg_base; };
 
 class x64_regs
 {
@@ -73,6 +71,16 @@ public:
 	constexpr static x64_reg16 bp = 5;
 	constexpr static x64_reg16 si = 6;
 	constexpr static x64_reg16 di = 7;
+
+	constexpr static x64_reg8h ah = 0;
+	constexpr static x64_reg8h ch = 1;
+	constexpr static x64_reg8h dh = 2;
+	constexpr static x64_reg8h bh = 3;
+
+	constexpr static x64_reg8l al = 0;
+	constexpr static x64_reg8l cl = 1;
+	constexpr static x64_reg8l dl = 2;
+	constexpr static x64_reg8l bl = 3;
 };
 
 struct x64_modrm
@@ -130,104 +138,27 @@ enum x64_override : uint8_t
 	addr_size = 0x67,
 };
 
-//enum class x64_reg64
-//{
-//	rax,
-//	rcx,
-//	rdx,
-//	rbx,
-//	rsp,
-//	rbp,
-//	rsi,
-//	rdi,
-//};
-//
-//enum class x64_reg64e
-//{
-//	r8 = 8,
-//	r9,
-//	r10,
-//	r11,
-//	r12,
-//	r13,
-//	r14,
-//	r15,
-//};
-
-//enum class x64_reg32
-//{
-//	eax,
-//	ecx,
-//	edx,
-//	ebx,
-//	esp,
-//	ebp,
-//	esi,
-//	edi,
-//};
-
-//enum class x64_reg16
-//{
-//	ax,
-//	cx,
-//	dx,
-//	bx,
-//	sp,
-//	bp,
-//	si,
-//	di,
-//};
-
-enum class x64_reg8h
-{
-	ah,
-	ch,
-	dh,
-	bh,
-};
-
-enum class x64_reg8l
-{
-	al,
-	cl,
-	dl,
-	bl,
-};
-
 template<typename T>
 struct x64_addr_ptr
 {
 	constexpr x64_addr_ptr(T ptr) : ptr(ptr) { }
-
-	//template<typename U>
-	//inline operator x64_addr_ptr<U>() const { return x64_addr_ptr<U>(ptr); }
-
 	T ptr;
 };
 
 struct x64_reg_ptr32
 {
 	constexpr x64_reg_ptr32(x64_reg32 ptr) : ptr(ptr) { }
-
 	x64_reg32 ptr;
 };
 
 struct x64_reg_ptr64
 {
 	constexpr x64_reg_ptr64(x64_reg64 ptr) : ptr(ptr) { }
-
 	x64_reg64 ptr;
 };
 
-struct x64_reg_ptr64a : public x64_reg_ptr64
-{
-	using x64_reg_ptr64::x64_reg_ptr64;
-};
-
-struct x64_reg_ptr64b : public x64_reg_ptr64
-{
-	using x64_reg_ptr64::x64_reg_ptr64;
-};
+struct x64_reg_ptr64a : public x64_reg_ptr64 { using x64_reg_ptr64::x64_reg_ptr64; };
+struct x64_reg_ptr64b : public x64_reg_ptr64 { using x64_reg_ptr64::x64_reg_ptr64; };
 
 static constexpr x64_reg_ptr32 x64_reg_addr(x64_reg32 reg) { return x64_reg_ptr32(reg); }
 static constexpr x64_reg_ptr64a x64_reg_addr(x64_reg64a reg) { return x64_reg_ptr64a(reg); }
@@ -317,13 +248,6 @@ public:
 	virtual ~x64_instruction() { }
 
 protected:
-//	inline uint8_t extend_reg_prefix(x64_reg64 dst, x64_reg64 src)
-//	{
-//		return static_cast<uint8_t>(
-//				(dst > x64_reg64::rdi ? x64_rex::w | x64_rex::b : x64_rex::w) |
-//				(src > x64_reg64::rdi ? x64_rex::w | x64_rex::r : x64_rex::w));
-//	}
-
 	inline uint8_t extend_reg_prefix(x64_reg64 dst, x64_reg64 src)
 	{
 		return static_cast<uint8_t>(
@@ -394,32 +318,6 @@ struct x64_nop1	: public x64_instruction{x64_nop1()	: x64_instruction(std::array
 struct x64_ret	: public x64_instruction{x64_ret()	: x64_instruction(std::array<uint8_t, 1> { 0xc3 }) {} };
 struct x64_lret	: public x64_instruction{x64_lret()	: x64_instruction(std::array<uint8_t, 1> { 0xcb }) {} };
 struct x64_ud2	: public x64_instruction{x64_ud2()	: x64_instruction(std::array<uint8_t, 2> { 0x0f, 0x0b }) {} };
-
-class blablablabla
-{
-	void blabla(x64_reg64 value)
-	{
-
-	}
-
-	void blabla(x64_reg64a value)
-	{
-
-	}
-
-	void blabla(x64_reg64b value)
-	{
-
-	}
-
-
-	void testaaa()
-	{
-		blabla(x64_regs::rax);
-		blabla(x64_regs::r15);
-	}
-};
-
 
 class x64_mov : public x64_instruction
 {
