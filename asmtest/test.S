@@ -20,6 +20,7 @@ mov (%edi),%ch
 nop
 nop
 
-
 mov 0x7f(%rax),%eax
-mov 8(%eax, %eax, 8),%eax
+mov 0x7f(%rax, %rbx, 8),%eax
+mov 0x7f(%eax, 8),%eax
+
