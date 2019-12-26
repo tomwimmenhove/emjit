@@ -32,11 +32,11 @@ int main()
 
 	instruction_stream s(allocator);
 
-	auto entry_fn = s.entry_point<uint64_t()>();
+	//auto entry_fn = s.entry_point<uint64_t()>();
 
 
-	/* TESTS */
-	/* Move register into register */
+//	/* TESTS */
+//	/* Move register into register */
 //	s << x64_mov(x64_regs::rax, x64_regs::rbx);
 //	s << x64_mov(x64_regs::rax, x64_regs::r10);
 //	s << x64_mov(x64_regs::r15, x64_regs::rbx);
@@ -45,9 +45,9 @@ int main()
 //	s << x64_mov(x64_regs::bx, x64_regs::dx);
 //	s << x64_mov(x64_regs::bl, x64_regs::dl);
 //	s << x64_mov(x64_regs::bl, x64_regs::dh);
-	// PASSED
-
-	/* Move immediate into register */
+//	// PASSED
+//
+//	/* Move immediate into register */
 //	s << x64_mov(x64_regs::eax, (uint32_t) 0x123);
 //	s << x64_mov(x64_regs::rax, (uint64_t) 0x123);
 //	s << x64_mov(x64_regs::rax, (uint32_t) 0x123);
@@ -56,10 +56,10 @@ int main()
 //	s << x64_mov(x64_regs::ax, (uint16_t) 0x123);
 //	s << x64_mov(x64_regs::ah, (uint8_t)  0x123);
 //	s << x64_mov(x64_regs::al, (uint8_t)  0x123);
-	// PASSED
-
-	/* Move immediate address into register */
-	/* 32 bit pointers */
+//	// PASSED
+//
+//	/* Move immediate address into register */
+//	/* 32 bit pointers */
 //	s << x64_mov(x64_regs::rax, x64_addr_ptr<uint32_t>(0x42));
 //	s << x64_mov(x64_regs::r15, x64_addr_ptr<uint32_t>(0x42));
 //	s << x64_mov(x64_regs::esp, x64_addr_ptr<uint32_t>(0x42));
@@ -67,17 +67,17 @@ int main()
 //	s << x64_mov(x64_regs::bx, x64_addr_ptr<uint32_t>(0x42));
 //	s << x64_mov(x64_regs::dl, x64_addr_ptr<uint32_t>(0x42));
 //	s << x64_mov(x64_regs::ch, x64_addr_ptr<uint32_t>(0x42));
-	// PASSED
-
-	/* 64 bit pointers */
+//	// PASSED
+//
+//	/* 64 bit pointers */
 //	s << x64_mov(x64_regs::rax, x64_addr_ptr<uint64_t*>((uint64_t*)0x42));
 //	s << x64_mov(x64_regs::eax, x64_addr_ptr<uint32_t*>((uint32_t*)0x42));
 //	s << x64_mov(x64_regs::ax, x64_addr_ptr<uint16_t*>((uint16_t*)0x42));
 //	s << x64_mov(x64_regs::al, x64_addr_ptr<uint8_t*> ((uint8_t*)0x42));
-	// PASSED
-
-	/* Move register into immediate address */
-	/* 32 bit pointers */
+//	// PASSED
+//
+//	/* Move register into immediate address */
+//	/* 32 bit pointers */
 //	s << x64_mov(x64_addr_ptr<uint32_t>(0x42), x64_regs::rax);
 //	s << x64_mov(x64_addr_ptr<uint32_t>(0x42), x64_regs::r15);
 //	s << x64_mov(x64_addr_ptr<uint32_t>(0x42), x64_regs::esp);
@@ -85,17 +85,16 @@ int main()
 //	s << x64_mov(x64_addr_ptr<uint32_t>(0x42), x64_regs::bx);
 //	s << x64_mov(x64_addr_ptr<uint32_t>(0x42), x64_regs::dl);
 //	s << x64_mov(x64_addr_ptr<uint32_t>(0x42), x64_regs::ch);
-	// PASSED
-
-	/* 64 bit pointers */
+//	// PASSED
+//
+//	/* 64 bit pointers */
 //	s << x64_mov(x64_addr_ptr<uint64_t*>((uint64_t*)0x42), x64_regs::rax);
 //	s << x64_mov(x64_addr_ptr<uint32_t*>((uint32_t*)0x42), x64_regs::eax);
 //	s << x64_mov(x64_addr_ptr<uint16_t*>((uint16_t*)0x42), x64_regs::ax);
 //	s << x64_mov(x64_addr_ptr<uint8_t*> ((uint8_t*)0x42), x64_regs::al);
-	// PASSED
-
-
-	/* Move register into register pointer */
+//	// PASSED
+//
+//	/* Move register into register pointer */
 //	s << x64_mov(x64_reg_addr(x64_regs::rax), x64_regs::rax);
 //	s << x64_mov(x64_reg_addr(x64_regs::rax), x64_regs::r15);
 //	s << x64_mov(x64_reg_addr(x64_regs::r15), x64_regs::rax);
@@ -115,9 +114,9 @@ int main()
 //	s << x64_mov(x64_reg_addr(x64_regs::edi), x64_regs::cl);
 //	s << x64_mov(x64_reg_addr(x64_regs::edi), x64_regs::cl);
 //	s << x64_mov(x64_reg_addr(x64_regs::edi), x64_regs::ch);
-	/* PASSED */
-
-	/* Move register pointer into register */
+//	/* PASSED */
+//
+//	/* Move register pointer into register */
 //	s << x64_mov(x64_regs::rax, x64_reg_addr(x64_regs::rax));
 //	s << x64_mov(x64_regs::r15, x64_reg_addr(x64_regs::rax));
 //	s << x64_mov(x64_regs::rax, x64_reg_addr(x64_regs::r15));
@@ -137,7 +136,53 @@ int main()
 //	s << x64_mov(x64_regs::cl, x64_reg_addr(x64_regs::edi));
 //	s << x64_mov(x64_regs::cl, x64_reg_addr(x64_regs::edi));
 //	s << x64_mov(x64_regs::ch, x64_reg_addr(x64_regs::edi));
-	/* PASSED */
+//	/* PASSED */
+//
+//	/* experiments */
+//	//s << x64_mov(x64_regs::eax, x64_reg_addr(x64_regs::rax), (int8_t) -12);
+//	/* Move register into register pointer + offset*/
+//	s << x64_mov(x64_reg_addr(x64_regs::rax), x64_regs::rax, -0x42);
+//	s << x64_mov(x64_reg_addr(x64_regs::rax), x64_regs::r15, -0x42);
+//	s << x64_mov(x64_reg_addr(x64_regs::r15), x64_regs::rax, -0x42);
+//	s << x64_mov(x64_reg_addr(x64_regs::r15), x64_regs::r15, -0x42);
+//	s << x64_mov(x64_reg_addr(x64_regs::rax), x64_regs::ebx, -0x42);
+//	s << x64_mov(x64_reg_addr(x64_regs::r15), x64_regs::ebx, -0x42);
+//	s << x64_mov(x64_reg_addr(x64_regs::rax), x64_regs::cx, -0x42);
+//	s << x64_mov(x64_reg_addr(x64_regs::r15), x64_regs::cx, -0x42);
+//	s << x64_mov(x64_reg_addr(x64_regs::rax), x64_regs::cl, -0x42);
+//	s << x64_mov(x64_reg_addr(x64_regs::r15), x64_regs::cl, -0x42);
+//	s << x64_mov(x64_reg_addr(x64_regs::rax), x64_regs::ch, -0x42);
+//	s << x64_mov(x64_reg_addr(x64_regs::eax), x64_regs::r15, -0x42);
+//	s << x64_mov(x64_reg_addr(x64_regs::ebx), x64_regs::ebx, -0x42);
+//	s << x64_mov(x64_reg_addr(x64_regs::ecx), x64_regs::ebx, -0x42);
+//	s << x64_mov(x64_reg_addr(x64_regs::edx), x64_regs::cx, -0x42);
+//	s << x64_mov(x64_reg_addr(x64_regs::edi), x64_regs::cx, -0x42);
+//	s << x64_mov(x64_reg_addr(x64_regs::edi), x64_regs::cl, -0x42);
+//	s << x64_mov(x64_reg_addr(x64_regs::edi), x64_regs::cl, -0x42);
+//	s << x64_mov(x64_reg_addr(x64_regs::edi), x64_regs::ch, -0x42);
+//	/* PASSED */
+//
+//	/* Move register pointer + offsetinto register */
+//	s << x64_mov(x64_regs::rax, x64_reg_addr(x64_regs::rax), -0x42);
+//	s << x64_mov(x64_regs::r15, x64_reg_addr(x64_regs::rax), -0x42);
+//	s << x64_mov(x64_regs::rax, x64_reg_addr(x64_regs::r15), -0x42);
+//	s << x64_mov(x64_regs::r15, x64_reg_addr(x64_regs::r15), -0x42);
+//	s << x64_mov(x64_regs::ebx, x64_reg_addr(x64_regs::rax), -0x42);
+//	s << x64_mov(x64_regs::ebx, x64_reg_addr(x64_regs::r15), -0x42);
+//	s << x64_mov(x64_regs::cx, x64_reg_addr(x64_regs::rax), -0x42);
+//	s << x64_mov(x64_regs::cx, x64_reg_addr(x64_regs::r15), -0x42);
+//	s << x64_mov(x64_regs::cl, x64_reg_addr(x64_regs::rax), -0x42);
+//	s << x64_mov(x64_regs::cl, x64_reg_addr(x64_regs::r15), -0x42);
+//	s << x64_mov(x64_regs::ch, x64_reg_addr(x64_regs::rax), -0x42);
+//	s << x64_mov(x64_regs::r15, x64_reg_addr(x64_regs::eax), -0x42);
+//	s << x64_mov(x64_regs::ebx, x64_reg_addr(x64_regs::ebx), -0x42);
+//	s << x64_mov(x64_regs::ebx, x64_reg_addr(x64_regs::ecx), -0x42);
+//	s << x64_mov(x64_regs::cx, x64_reg_addr(x64_regs::edx), -0x42);
+//	s << x64_mov(x64_regs::cx, x64_reg_addr(x64_regs::edi), -0x42);
+//	s << x64_mov(x64_regs::cl, x64_reg_addr(x64_regs::edi), -0x42);
+//	s << x64_mov(x64_regs::cl, x64_reg_addr(x64_regs::edi), -0x42);
+//	s << x64_mov(x64_regs::ch, x64_reg_addr(x64_regs::edi), -0x42);
+//	/* PASSED */
 
 	/* Assemble some shit */
 //

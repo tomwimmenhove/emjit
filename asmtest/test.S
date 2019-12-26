@@ -16,3 +16,10 @@ mov (%edi),%cx
 mov (%edi),%cl
 mov (%edi),%cl
 mov (%edi),%ch
+
+nop
+nop
+
+
+mov 0x7f(%rax),%eax
+mov 8(%eax, %eax, 8),%eax

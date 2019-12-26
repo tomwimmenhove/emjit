@@ -349,20 +349,48 @@ public:
 	x64_mov(x64_reg16 reg, x64_reg_ptr32 addr) : x64_instruction(std::array<uint8_t, 3> { x64_override::addr_size, x64_override::oper_size, 0x8b }, x64_modrm{addr.ptr, reg, 0}) { }
 	x64_mov(x64_reg8 reg, x64_reg_ptr32 addr) : x64_instruction(std::array<uint8_t, 2> { x64_override::addr_size, 0x8a }, x64_modrm{addr.ptr, reg, 0}) { }
 
+	/* Move register into register pointer + offset */
+	x64_mov(x64_reg_ptr64 addr, x64_reg64 reg, int8_t off) : x64_instruction(std::array<uint8_t, 2> { extend_reg_prefix(addr.ptr, reg), 0x89 }, x64_modrm{addr.ptr, reg, 1}, off) { }
+	x64_mov(x64_reg_ptr64a addr, x64_reg32 reg, int8_t off) : x64_instruction(std::array<uint8_t, 1> { 0x89 }, x64_modrm{addr.ptr, reg, 1}, off) { }
+	x64_mov(x64_reg_ptr64b addr, x64_reg32 reg, int8_t off) : x64_instruction(std::array<uint8_t, 2> { x64_rex::b, 0x89 }, x64_modrm{addr.ptr, reg, 1}, off) { }
+	x64_mov(x64_reg_ptr64a addr, x64_reg16 reg, int8_t off) : x64_instruction(std::array<uint8_t, 2> { x64_override::oper_size, 0x89 }, x64_modrm{addr.ptr, reg, 1}, off) { }
+	x64_mov(x64_reg_ptr64b addr, x64_reg16 reg, int8_t off) : x64_instruction(std::array<uint8_t, 3> { x64_override::oper_size, x64_rex::b, 0x89 }, x64_modrm{addr.ptr, reg, 1}, off) { }
+	x64_mov(x64_reg_ptr64a addr, x64_reg8 reg, int8_t off) : x64_instruction(std::array<uint8_t, 1> { 0x88 }, x64_modrm{addr.ptr, reg, 1}, off) { }
+	x64_mov(x64_reg_ptr64b addr, x64_reg8l reg, int8_t off) : x64_instruction(std::array<uint8_t, 2> { x64_rex::b, 0x88 }, x64_modrm{addr.ptr, reg, 1}, off) { }
+
+	x64_mov(x64_reg_ptr32 addr, x64_reg64 reg, int8_t off) : x64_instruction(std::array<uint8_t, 3> { x64_override::addr_size, extend_reg_prefix(0, reg), 0x89 }, x64_modrm{addr.ptr, reg, 1}, off) { }
+	x64_mov(x64_reg_ptr32 addr, x64_reg32 reg, int8_t off) : x64_instruction(std::array<uint8_t, 2> { x64_override::addr_size, 0x89 }, x64_modrm{addr.ptr, reg, 1}, off) { }
+	x64_mov(x64_reg_ptr32 addr, x64_reg16 reg, int8_t off) : x64_instruction(std::array<uint8_t, 3> { x64_override::addr_size, x64_override::oper_size, 0x89 }, x64_modrm{addr.ptr, reg, 1}, off) { }
+	x64_mov(x64_reg_ptr32 addr, x64_reg8 reg, int8_t off) : x64_instruction(std::array<uint8_t, 2> { x64_override::addr_size, 0x88 }, x64_modrm{addr.ptr, reg, 1}, off) { }
+
+	/* Move register pointer + offset into register */
+	x64_mov(x64_reg64 reg, x64_reg_ptr64 addr, int8_t off) : x64_instruction(std::array<uint8_t, 2> { extend_reg_prefix(addr.ptr, reg), 0x8b }, x64_modrm{addr.ptr, reg, 1}, off) { }
+	x64_mov(x64_reg32 reg, x64_reg_ptr64a addr, int8_t off) : x64_instruction(std::array<uint8_t, 1> { 0x8b }, x64_modrm{addr.ptr, reg, 1}, off) { }
+	x64_mov(x64_reg32 reg, x64_reg_ptr64b addr, int8_t off) : x64_instruction(std::array<uint8_t, 2> { x64_rex::b, 0x8b }, x64_modrm{addr.ptr, reg, 1}, off) { }
+	x64_mov(x64_reg16 reg, x64_reg_ptr64a addr, int8_t off) : x64_instruction(std::array<uint8_t, 2> { x64_override::oper_size, 0x8b }, x64_modrm{addr.ptr, reg, 1}, off) { }
+	x64_mov(x64_reg16 reg, x64_reg_ptr64b addr, int8_t off) : x64_instruction(std::array<uint8_t, 3> { x64_override::oper_size, x64_rex::b, 0x8b }, x64_modrm{addr.ptr, reg, 1}, off) { }
+	x64_mov(x64_reg8 reg, x64_reg_ptr64a addr, int8_t off) : x64_instruction(std::array<uint8_t, 1> { 0x8a }, x64_modrm{addr.ptr, reg, 1}, off) { }
+	x64_mov(x64_reg8l reg, x64_reg_ptr64b addr, int8_t off) : x64_instruction(std::array<uint8_t, 2> { x64_rex::b, 0x8a }, x64_modrm{addr.ptr, reg, 1}, off) { }
+
+	x64_mov(x64_reg64 reg, x64_reg_ptr32 addr, int8_t off) : x64_instruction(std::array<uint8_t, 3> { x64_override::addr_size, extend_reg_prefix(0, reg), 0x8b }, x64_modrm{addr.ptr, reg, 1}, off) { }
+	x64_mov(x64_reg32 reg, x64_reg_ptr32 addr, int8_t off) : x64_instruction(std::array<uint8_t, 2> { x64_override::addr_size, 0x8b }, x64_modrm{addr.ptr, reg, 1}, off) { }
+	x64_mov(x64_reg16 reg, x64_reg_ptr32 addr, int8_t off) : x64_instruction(std::array<uint8_t, 3> { x64_override::addr_size, x64_override::oper_size, 0x8b }, x64_modrm{addr.ptr, reg, 1}, off) { }
+	x64_mov(x64_reg8 reg, x64_reg_ptr32 addr, int8_t off) : x64_instruction(std::array<uint8_t, 2> { x64_override::addr_size, 0x8a }, x64_modrm{addr.ptr, reg, 1}, off) { }
 
 	/* Move immediate into register */
-	x64_mov(x64_reg32 reg, uint32_t imm) : x64_mov(reg, imm, 0xb8) { };
-	x64_mov(x64_reg64 reg, uint64_t imm) : x64_mov(reg, imm, extend_reg_prefix(reg, 0), 0xb8) { };
-	x64_mov(x64_reg64 reg, uint32_t imm) : x64_mov(imm, extend_reg_prefix(reg, 0), 0xc7, x64_modrm{reg, 0, 3}) { };
-	x64_mov(x64_reg16 reg, uint16_t imm) : x64_mov(reg, imm, x64_override::oper_size, 0xb8) { };
-	x64_mov(x64_reg8  reg, uint8_t  imm) : x64_mov(reg, imm, 0xb0) { };
+	x64_mov(x64_reg32 reg, uint32_t imm) : x64_instruction(std::array<uint8_t, 1> { static_cast<uint8_t>(0xb8 | reg.value) }, imm) { }
+	x64_mov(x64_reg64 reg, uint64_t imm) : x64_instruction(std::array<uint8_t, 2> { extend_reg_prefix(reg, 0), static_cast<uint8_t>(0xb8 | reg.value) }, imm) { }
+	x64_mov(x64_reg64 reg, uint32_t imm) : x64_instruction(std::array<uint8_t, 2> { extend_reg_prefix(reg, 0), 0xc7 }, x64_modrm{reg, 0, 3}, imm) { }
+	x64_mov(x64_reg16 reg, uint16_t imm) : x64_instruction(std::array<uint8_t, 2> { x64_override::oper_size, static_cast<uint8_t>(0xb8 | reg.value) }, imm) { }
+	x64_mov(x64_reg8  reg, uint8_t  imm) : x64_instruction(std::array<uint8_t, 1> { static_cast<uint8_t>(0xb0 | reg.value) }, imm) { }
+
 
 	/* Move immediate address into register */
 	/* 32 bit pointers */
-	x64_mov(x64_reg64 reg, x64_addr_ptr<uint32_t> addr) : x64_mov(addr, extend_reg_prefix(0, reg), 0x8b, x64_modrm(4, reg, 0)) { };
-	x64_mov(x64_reg32 reg, x64_addr_ptr<uint32_t> addr) : x64_mov(addr, 0x8b, x64_modrm(4, reg, 0)) { };
-	x64_mov(x64_reg16 reg, x64_addr_ptr<uint32_t> addr) : x64_mov(addr, x64_override::oper_size, 0x8b, x64_modrm(4, reg, 0)) { };
-	x64_mov(x64_reg8  reg, x64_addr_ptr<uint32_t> addr) : x64_mov(addr, 0x8a, x64_modrm(4, reg, 0)) { };
+	x64_mov(x64_reg64 reg, x64_addr_ptr<uint32_t> addr) : x64_instruction(std::array<uint8_t, 2> { extend_reg_prefix(0, reg), 0x8b }, x64_modrm(4, reg, 0), x64_sib(0x25), addr.ptr) { }
+	x64_mov(x64_reg32 reg, x64_addr_ptr<uint32_t> addr) : x64_instruction(std::array<uint8_t, 1> { 0x8b }, x64_modrm(4, reg, 0), x64_sib(0x25), addr.ptr) { }
+	x64_mov(x64_reg16 reg, x64_addr_ptr<uint32_t> addr) : x64_instruction(std::array<uint8_t, 2> { x64_override::oper_size, 0x8b }, x64_modrm(4, reg, 0), x64_sib(0x25), addr.ptr) { }
+	x64_mov(x64_reg8  reg, x64_addr_ptr<uint32_t> addr) : x64_instruction(std::array<uint8_t, 1> { 0x8a }, x64_modrm(4, reg, 0), x64_sib(0x25), addr.ptr) { }
 
 	/* 64 bit pointers */
 	x64_mov(x64_reg64 reg, x64_addr_ptr<uint64_t*> addr) : x64_mov(reg, addr, x64_rex::w, 0xa1) { };
@@ -373,10 +401,10 @@ public:
 
 	/* Move register into immediate address */
 	/* 32 bit pointers */
-	x64_mov(x64_addr_ptr<uint32_t> addr, x64_reg64 reg) : x64_mov(addr, extend_reg_prefix(0, reg), 0x89, x64_modrm(4, reg, 0)) { };
-	x64_mov(x64_addr_ptr<uint32_t> addr, x64_reg32 reg) : x64_mov(addr, 0x89, x64_modrm(4, reg, 0)) { };
-	x64_mov(x64_addr_ptr<uint32_t> addr, x64_reg16 reg) : x64_mov(addr, x64_override::oper_size, 0x89, x64_modrm(4, reg, 0)) { };
-	x64_mov(x64_addr_ptr<uint32_t> addr, x64_reg8  reg) : x64_mov(addr, 0x88, x64_modrm(4, reg, 0)) { };
+	x64_mov(x64_addr_ptr<uint32_t> addr, x64_reg64 reg) : x64_instruction(std::array<uint8_t, 2> { extend_reg_prefix(0, reg), 0x89 }, x64_modrm(4, reg, 0), x64_sib(0x25), addr.ptr) { }
+	x64_mov(x64_addr_ptr<uint32_t> addr, x64_reg32 reg) : x64_instruction(std::array<uint8_t, 1> { 0x89 }, x64_modrm(4, reg, 0), x64_sib(0x25), addr.ptr) { }
+	x64_mov(x64_addr_ptr<uint32_t> addr, x64_reg16 reg) : x64_instruction(std::array<uint8_t, 2> { x64_override::oper_size, 0x89 }, x64_modrm(4, reg, 0), x64_sib(0x25), addr.ptr) { }
+	x64_mov(x64_addr_ptr<uint32_t> addr, x64_reg8  reg) : x64_instruction(std::array<uint8_t, 1> { 0x88 }, x64_modrm(4, reg, 0), x64_sib(0x25), addr.ptr) { }
 
 	/* 64 bit pointers */
 	x64_mov(x64_addr_ptr<uint64_t*> addr, x64_reg64 reg) : x64_mov(reg, addr, x64_rex::w, 0xa3) { };
@@ -385,38 +413,7 @@ public:
 	x64_mov(x64_addr_ptr<uint8_t*>  addr, x64_reg8l reg) : x64_mov(reg, addr, 0xa2) { };
 
 private:
-	/* Move immediate into register */
-	template<typename REG_TYPE, typename IMM_TYPE>
-	x64_mov(REG_TYPE reg, IMM_TYPE imm, uint8_t oc)
-	 : x64_instruction(
-			 std::array<uint8_t, 1> { static_cast<uint8_t>(oc | static_cast<uint8_t>(reg.value)) },
-			 imm)
-	{ }
-
-	template<typename REG_TYPE, typename IMM_TYPE>
-	x64_mov(REG_TYPE reg, IMM_TYPE imm, uint8_t prefix, uint8_t oc)
-	 : x64_instruction(
-			std::array<uint8_t, 2> { prefix, static_cast<uint8_t>(oc | static_cast<uint8_t>(reg.value)) },
-			imm)
-	{ }
-
-	template<typename IMM_TYPE>
-	x64_mov(IMM_TYPE imm, uint8_t prefix, uint8_t oc, const x64_modrm& modrm)
-	 : x64_instruction(
-			std::array<uint8_t, 2> { prefix, oc },
-			modrm, imm)
-	{ }
-
 	/* Register <=> immediate address */
-	/* 32 bit pointers */
-	x64_mov(x64_addr_ptr<uint32_t> addr, uint8_t prefix, uint8_t oc, const x64_modrm& modrm)
-	 : x64_instruction(std::array<uint8_t, 2> { prefix, oc }, modrm, x64_sib(0x25), addr.ptr)
-	{ }
-
-	x64_mov(x64_addr_ptr<uint32_t> addr, uint8_t oc, const x64_modrm& modrm)
-	 : x64_instruction(std::array<uint8_t, 1> { oc }, modrm, x64_sib(0x25), addr.ptr)
-	{ }
-
 	/* 64 bit pointers */
 	template<typename REG_TYPE, typename IMM_TYPE>
 	x64_mov(REG_TYPE reg, x64_addr_ptr<IMM_TYPE*> addr, uint8_t prefix, uint8_t oc)
