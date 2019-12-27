@@ -7,6 +7,7 @@
 #include <exception>
 #include <cassert>
 #include <regex>
+#include <vector>
 
 #include "segvcatcher.h"
 #include "autoallocator.h"
@@ -46,16 +47,9 @@ void mov_unit_tests(const std::shared_ptr<auto_allocator>& allocator)
 {
 	instruction_stream s(allocator);
 
-//	for (auto i = 0; i < 8; i++)
-//	{
-//		for (auto j = 0; j < 8; j++)
-//		{
-//			s << x64_mov(x64_reg32gp(j), x64_reg32gp(i));
-//		}
-//	}
-
-//	regex spaces_regex("/\\s\\s+/g");
 	regex spaces_regex("  *");
+
+	vector<string> expected_lines;
 
 	for (auto i = 0; i < 16; i++)
 	{
@@ -66,63 +60,60 @@ void mov_unit_tests(const std::shared_ptr<auto_allocator>& allocator)
 			auto size = inst.size();
 
 			std::stringstream stream;
-			//stream << hex << (intptr_t(s.pos())) << ": ";
-			stream << " " << hex << (intptr_t(data)) << ":\t";
-			for (size_t x = 0; x < inst.size(); x++)
+			stream << " " << hex << (intptr_t(s.pos())) << ":\t";
+			for (size_t x = 0; x < size; x++)
 				stream << ((int) data[x]) << " ";
 
-			stream << "\tmov " << x64_reg64::names[j] << "," << x64_reg64::names[i] << '\n';
+			stream << "\tmov " << x64_reg64::names[j] << "," << x64_reg64::names[i];
 
 			auto expected = stream.str();
 
-			auto disassembly = x64_disassembler::disassemble(data, size, "intel", true);
+			cout << "Testing: " << expected << '\n';
 
-			/* Remove multiple spaces */
-			disassembly = std::regex_replace(disassembly, spaces_regex, " ");
-
-			if (disassembly.length() <= 2)
-				throw unit_test_exception("wattafak");
-
-			auto last_newline = disassembly.find_last_of('\n', disassembly.length() - 2);
-			if (last_newline == string::npos)
-				throw unit_test_exception("wattafak");
-
-			auto last_line = disassembly.substr(last_newline + 1);
-
-			if (last_line != expected)
-			{
-				std::stringstream stream;
-
-				stream << "Expected: " << expected;
-				stream << "Result  : " << last_line;
-
-				throw unit_test_exception(stream.str());
-			}
-
-			assert (last_line == expected);
-			cout << expected;
-			cout << last_line;
-
-
-//			cout << disassembly;
+			expected_lines.push_back(expected);
 
 			s << inst;
 		}
 	}
 
-//	s << x64_mov(x64_regs::rax, x64_regs::rbx);
-//	s << x64_mov(x64_regs::rax, x64_regs::r10);
-//	s << x64_mov(x64_regs::r15, x64_regs::rbx);
-//	s << x64_mov(x64_regs::r15, x64_regs::r10);
-//	s << x64_mov(x64_regs::eax, x64_regs::ebx);
-//	s << x64_mov(x64_regs::bx, x64_regs::dx);
-//	s << x64_mov(x64_regs::bl, x64_regs::dl);
-//	s << x64_mov(x64_regs::bl, x64_regs::dh);
+	auto disassembly = x64_disassembler::disassemble(s, "intel", true);
 
-//	auto disassembly = x64_disassembler::disassemble(s, "intel", true);
+	/* Remove multiple spaces */
+	disassembly = std::regex_replace(disassembly, spaces_regex, " ");
 
-	//cout << disassembly;
+	/* Split into lines */
+	vector<string> split_disassembly;
+	regex pattern("(\\n)");
+	copy( sregex_token_iterator(disassembly.begin(), disassembly.end(), pattern, -1),
+			sregex_token_iterator(), back_inserter(split_disassembly));
 
+	/* remove the 'header' */
+	split_disassembly.erase(split_disassembly.begin(), split_disassembly.begin() + 7);
+
+	if (expected_lines.size() != split_disassembly.size())
+	{
+		std::stringstream stream;
+
+		stream << "Expected number of instructions does not match:\n";
+		stream << "Expected: " << expected_lines.size();
+		stream << "Result  : " << split_disassembly.size();
+
+		throw unit_test_exception(stream.str());
+	}
+
+	for (size_t i = 0; i < expected_lines.size(); i++)
+	{
+		if (expected_lines[i] != split_disassembly[i])
+		{
+			std::stringstream stream;
+
+			stream << "Instruction mismatch:\n";
+			stream << "Expected: " << expected_lines[i] << '\n';
+			stream << "Result  : " << split_disassembly[i] << '\n';
+
+			throw unit_test_exception(stream.str());
+		}
+	}
 }
 
 int main()
