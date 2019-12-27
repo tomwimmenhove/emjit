@@ -29,6 +29,7 @@ struct x64_reg64    : public x64_reg_base
 struct x64_reg64a   : public x64_reg64    { using x64_reg64::x64_reg64; };
 struct x64_reg64agp : public x64_reg64a   { using x64_reg64a::x64_reg64a; };
 struct x64_reg64asp : public x64_reg64a   { using x64_reg64a::x64_reg64a; };
+struct x64_reg64abp : public x64_reg64a   { using x64_reg64a::x64_reg64a; };
 struct x64_reg64b   : public x64_reg64    { using x64_reg64::x64_reg64; };
 
 struct x64_reg32   : public x64_reg_base
@@ -37,6 +38,7 @@ struct x64_reg32   : public x64_reg_base
 	static const std::string names[8];
 };
 struct x64_reg32gp : public x64_reg32     { using x64_reg32::x64_reg32; };
+struct x64_reg32bp : public x64_reg32     { using x64_reg32::x64_reg32; };
 struct x64_reg32sp : public x64_reg32     { using x64_reg32::x64_reg32; };
 
 struct x64_reg16   : public x64_reg_base
@@ -45,6 +47,7 @@ struct x64_reg16   : public x64_reg_base
 	static const std::string names[8];
 };
 struct x64_reg16gp : public x64_reg16     { using x64_reg16::x64_reg16; };
+struct x64_reg16bp : public x64_reg16     { using x64_reg16::x64_reg16; };
 struct x64_reg16sp : public x64_reg16     { using x64_reg16::x64_reg16; };
 
 struct x64_reg8  : public x64_reg_base
@@ -63,7 +66,7 @@ struct x64_regs
 	constexpr static x64_reg64agp rdx = 2;
 	constexpr static x64_reg64agp rbx = 3;
 	constexpr static x64_reg64asp rsp = 4;
-	constexpr static x64_reg64agp rbp = 5;
+	constexpr static x64_reg64abp rbp = 5;
 	constexpr static x64_reg64agp rsi = 6;
 	constexpr static x64_reg64agp rdi = 7;
 
@@ -83,7 +86,7 @@ struct x64_regs
 	constexpr static x64_reg32gp edx = 2;
 	constexpr static x64_reg32gp ebx = 3;
 	constexpr static x64_reg32sp esp = 4;
-	constexpr static x64_reg32gp ebp = 5;
+	constexpr static x64_reg32bp ebp = 5;
 	constexpr static x64_reg32gp esi = 6;
 	constexpr static x64_reg32gp edi = 7;
 
@@ -93,7 +96,7 @@ struct x64_regs
 	constexpr static x64_reg16gp dx = 2;
 	constexpr static x64_reg16gp bx = 3;
 	constexpr static x64_reg16sp sp = 4;
-	constexpr static x64_reg16gp bp = 5;
+	constexpr static x64_reg16bp bp = 5;
 	constexpr static x64_reg16gp si = 6;
 	constexpr static x64_reg16gp di = 7;
 
