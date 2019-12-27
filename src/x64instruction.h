@@ -21,24 +21,37 @@ struct x64_reg_base
 	const bool is_sp() { return value == 4; }
 };
 
-struct x64_reg64    : public x64_reg_base {
+struct x64_reg64    : public x64_reg_base
+{
 	using x64_reg_base::x64_reg_base;
-	static const std::string names[16];// = {};
+	static const std::string names[16];
 };
 struct x64_reg64a   : public x64_reg64    { using x64_reg64::x64_reg64; };
 struct x64_reg64agp : public x64_reg64a   { using x64_reg64a::x64_reg64a; };
 struct x64_reg64asp : public x64_reg64a   { using x64_reg64a::x64_reg64a; };
 struct x64_reg64b   : public x64_reg64    { using x64_reg64::x64_reg64; };
 
-struct x64_reg32   : public x64_reg_base  { using x64_reg_base::x64_reg_base; };
+struct x64_reg32   : public x64_reg_base
+{
+	using x64_reg_base::x64_reg_base;
+	static const std::string names[8];
+};
 struct x64_reg32gp : public x64_reg32     { using x64_reg32::x64_reg32; };
 struct x64_reg32sp : public x64_reg32     { using x64_reg32::x64_reg32; };
 
-struct x64_reg16   : public x64_reg_base  { using x64_reg_base::x64_reg_base; };
+struct x64_reg16   : public x64_reg_base
+{
+	using x64_reg_base::x64_reg_base;
+	static const std::string names[8];
+};
 struct x64_reg16gp : public x64_reg16     { using x64_reg16::x64_reg16; };
 struct x64_reg16sp : public x64_reg16     { using x64_reg16::x64_reg16; };
 
-struct x64_reg8  : public x64_reg_base    { using x64_reg_base::x64_reg_base; };
+struct x64_reg8  : public x64_reg_base
+{
+	using x64_reg_base::x64_reg_base;
+	static const std::string names[8];
+};
 struct x64_reg8h : public x64_reg8        { using x64_reg8::x64_reg8; };
 struct x64_reg8l : public x64_reg8        { using x64_reg8::x64_reg8; };
 
