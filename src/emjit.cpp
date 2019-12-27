@@ -14,6 +14,7 @@
 #include "x64instruction.h"
 #include "instructionstream.h"
 #include "x64disassembler.h"
+#include "x64testing.h"
 
 using namespace std;
 
@@ -27,107 +28,14 @@ void print_stream_debug(const instruction_stream& s)
 	cout << '\n';
 }
 
-class unit_test_exception : exception
-{
-public:
-	explicit unit_test_exception(const string what_arg)
-	 : what_arg(what_arg)
-	{ }
-
-	virtual const char* what() const throw () { return what_arg.c_str(); }
-
-	virtual ~unit_test_exception() throw (){}
-
-private:
-	const string what_arg;
-};
-
-bool BothAreSpaces(char lhs, char rhs) { return (lhs == rhs) && (lhs == ' '); }
-void mov_unit_tests(const std::shared_ptr<auto_allocator>& allocator)
-{
-	instruction_stream s(allocator);
-
-	regex spaces_regex("  *");
-
-	vector<string> expected_lines;
-
-	for (auto i = 0; i < 16; i++)
-	{
-		for (auto j = 0; j < 16; j++)
-		{
-			auto inst = x64_mov(x64_reg64(j), x64_reg64(i));
-			auto data = inst.data();
-			auto size = inst.size();
-
-			std::stringstream stream;
-			stream << " " << hex << (intptr_t(s.pos())) << ":\t";
-			for (size_t x = 0; x < size; x++)
-				stream << ((int) data[x]) << " ";
-
-			stream << "\tmov " << x64_reg64::names[j] << "," << x64_reg64::names[i];
-
-			auto expected = stream.str();
-
-			cout << "Testing: " << expected << '\n';
-
-			expected_lines.push_back(expected);
-
-			s << inst;
-		}
-	}
-
-	auto disassembly = x64_disassembler::disassemble(s, "intel", true);
-
-	/* Remove multiple spaces */
-	disassembly = std::regex_replace(disassembly, spaces_regex, " ");
-
-	/* Split into lines */
-	vector<string> split_disassembly;
-	regex pattern("(\\n)");
-	copy( sregex_token_iterator(disassembly.begin(), disassembly.end(), pattern, -1),
-			sregex_token_iterator(), back_inserter(split_disassembly));
-
-	/* remove the 'header' */
-	split_disassembly.erase(split_disassembly.begin(), split_disassembly.begin() + 7);
-
-	if (expected_lines.size() != split_disassembly.size())
-	{
-		std::stringstream stream;
-
-		stream << "Expected number of instructions does not match:\n";
-		stream << "Expected: " << expected_lines.size();
-		stream << "Result  : " << split_disassembly.size();
-
-		throw unit_test_exception(stream.str());
-	}
-
-	for (size_t i = 0; i < expected_lines.size(); i++)
-	{
-		if (expected_lines[i] != split_disassembly[i])
-		{
-			std::stringstream stream;
-
-			stream << "Instruction mismatch:\n";
-			stream << "Expected: " << expected_lines[i] << '\n';
-			stream << "Result  : " << split_disassembly[i] << '\n';
-
-			throw unit_test_exception(stream.str());
-		}
-	}
-}
-
 int main()
 {
-	uintptr_t start = 65536;
-	size_t len = 1024*1024*1024;
-
-	auto allocator = std::make_shared<auto_allocator> (start, len, PROT_READ | PROT_WRITE | PROT_EXEC);
-
-	instruction_stream s(allocator);
+	x64_testing testing;
 
 	try
 	{
-		mov_unit_tests(allocator);
+//		mov_unit_tests(allocator);
+		testing.run_tests();
 	}
 	catch( const unit_test_exception& ex )
 	{
@@ -139,6 +47,13 @@ int main()
 	cout << "OK\n";
 
 	return 0;
+
+	uintptr_t start = 65536;
+	size_t len = 1024*1024*1024;
+
+	auto allocator = std::make_shared<auto_allocator> (start, len, PROT_READ | PROT_WRITE | PROT_EXEC);
+
+	instruction_stream s(allocator);
 
 	//auto entry_fn = s.entry_point<uint64_t()>();
 
