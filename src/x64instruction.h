@@ -19,28 +19,35 @@ struct x64_reg_base
 	const int value;
 };
 
-struct x64_reg64  : public x64_reg_base { using x64_reg_base::x64_reg_base; };
-struct x64_reg64a : public x64_reg64    { using x64_reg64::x64_reg64; };
-struct x64_reg64b : public x64_reg64    { using x64_reg64::x64_reg64; };
+struct x64_reg64    : public x64_reg_base { using x64_reg_base::x64_reg_base; };
+struct x64_reg64a   : public x64_reg64    { using x64_reg64::x64_reg64; };
+struct x64_reg64agp : public x64_reg64a   { using x64_reg64a::x64_reg64a; };
+struct x64_reg64asp : public x64_reg64a   { using x64_reg64a::x64_reg64a; };
+struct x64_reg64b   : public x64_reg64    { using x64_reg64::x64_reg64; };
 
-struct x64_reg32 : public x64_reg_base  { using x64_reg_base::x64_reg_base; };
-struct x64_reg16 : public x64_reg_base  { using x64_reg_base::x64_reg_base; };
+struct x64_reg32   : public x64_reg_base  { using x64_reg_base::x64_reg_base; };
+struct x64_reg32gp : public x64_reg32     { using x64_reg32::x64_reg32; };
+struct x64_reg32sp : public x64_reg32     { using x64_reg32::x64_reg32; };
 
-struct x64_reg8  : public x64_reg_base  { using x64_reg_base::x64_reg_base; };
-struct x64_reg8h : public x64_reg8      { using x64_reg8::x64_reg8; };
-struct x64_reg8l : public x64_reg8      { using x64_reg8::x64_reg8; };
+struct x64_reg16   : public x64_reg_base  { using x64_reg_base::x64_reg_base; };
+struct x64_reg16gp : public x64_reg16     { using x64_reg16::x64_reg16; };
+struct x64_reg16sp : public x64_reg16     { using x64_reg16::x64_reg16; };
+
+struct x64_reg8  : public x64_reg_base    { using x64_reg_base::x64_reg_base; };
+struct x64_reg8h : public x64_reg8        { using x64_reg8::x64_reg8; };
+struct x64_reg8l : public x64_reg8        { using x64_reg8::x64_reg8; };
 
 struct x64_regs
 {
 	/* 64 bit registers */
-	constexpr static x64_reg64a rax = 0;
-	constexpr static x64_reg64a rcx = 1;
-	constexpr static x64_reg64a rdx = 2;
-	constexpr static x64_reg64a rbx = 3;
-	constexpr static x64_reg64a rsp = 4;
-	constexpr static x64_reg64a rbp = 5;
-	constexpr static x64_reg64a rsi = 6;
-	constexpr static x64_reg64a rdi = 7;
+	constexpr static x64_reg64agp rax = 0;
+	constexpr static x64_reg64agp rcx = 1;
+	constexpr static x64_reg64agp rdx = 2;
+	constexpr static x64_reg64agp rbx = 3;
+	constexpr static x64_reg64asp rsp = 4;
+	constexpr static x64_reg64agp rbp = 5;
+	constexpr static x64_reg64agp rsi = 6;
+	constexpr static x64_reg64agp rdi = 7;
 
 	/* 64 bit extended registers */
 	constexpr static x64_reg64b  r8 = 8;
@@ -53,24 +60,24 @@ struct x64_regs
 	constexpr static x64_reg64b r15 = 15;
 
 	/* 32 bit registers */
-	constexpr static x64_reg32 eax = 0;
-	constexpr static x64_reg32 ecx = 1;
-	constexpr static x64_reg32 edx = 2;
-	constexpr static x64_reg32 ebx = 3;
-	constexpr static x64_reg32 esp = 4;
-	constexpr static x64_reg32 ebp = 5;
-	constexpr static x64_reg32 esi = 6;
-	constexpr static x64_reg32 edi = 7;
+	constexpr static x64_reg32gp eax = 0;
+	constexpr static x64_reg32gp ecx = 1;
+	constexpr static x64_reg32gp edx = 2;
+	constexpr static x64_reg32gp ebx = 3;
+	constexpr static x64_reg32sp esp = 4;
+	constexpr static x64_reg32gp ebp = 5;
+	constexpr static x64_reg32gp esi = 6;
+	constexpr static x64_reg32gp edi = 7;
 
 	/* 16 bit registers */
-	constexpr static x64_reg16 ax = 0;
-	constexpr static x64_reg16 cx = 1;
-	constexpr static x64_reg16 dx = 2;
-	constexpr static x64_reg16 bx = 3;
-	constexpr static x64_reg16 sp = 4;
-	constexpr static x64_reg16 bp = 5;
-	constexpr static x64_reg16 si = 6;
-	constexpr static x64_reg16 di = 7;
+	constexpr static x64_reg16gp ax = 0;
+	constexpr static x64_reg16gp cx = 1;
+	constexpr static x64_reg16gp dx = 2;
+	constexpr static x64_reg16gp bx = 3;
+	constexpr static x64_reg16sp sp = 4;
+	constexpr static x64_reg16gp bp = 5;
+	constexpr static x64_reg16gp si = 6;
+	constexpr static x64_reg16gp di = 7;
 
 	/* lower 8 bit registers */
 	constexpr static x64_reg8l al = 0;
@@ -103,6 +110,14 @@ struct x64_modrm
 
 } __attribute__((packed));
 
+enum class sib_scale
+{
+	s1 = 0,
+	s2,
+	s4,
+	s8
+};
+
 struct x64_sib
 {
 	unsigned int base:3;
@@ -111,8 +126,8 @@ struct x64_sib
 
 	x64_sib() : base(0), index(0), scale(0) { }
 
-	x64_sib(unsigned int base, unsigned int index, unsigned int scale)
-	 : base(base), index(index), scale(scale)
+	x64_sib(x64_reg64 base, x64_reg64 index, sib_scale scale)
+	 : base(base.value), index(index.value), scale(static_cast<unsigned int>(scale))
 	{ }
 
 	x64_sib(uint8_t b)
@@ -148,14 +163,21 @@ struct x64_addr_ptr
 	const T ptr;
 };
 
-struct x64_reg_ptr32  : public x64_addr_ptr<x64_reg32> { using x64_addr_ptr::x64_addr_ptr; };
-struct x64_reg_ptr64  : public x64_addr_ptr<x64_reg64> { using x64_addr_ptr::x64_addr_ptr; };
-struct x64_reg_ptr64a : public x64_reg_ptr64 { using x64_reg_ptr64::x64_reg_ptr64; };
-struct x64_reg_ptr64b : public x64_reg_ptr64 { using x64_reg_ptr64::x64_reg_ptr64; };
+struct x64_reg_ptr32    : public x64_addr_ptr<x64_reg32> { using x64_addr_ptr::x64_addr_ptr; };
+struct x64_reg_ptr32gp  : public x64_reg_ptr32 { using x64_reg_ptr32::x64_reg_ptr32; };
+struct x64_reg_ptr32sp  : public x64_reg_ptr32 { using x64_reg_ptr32::x64_reg_ptr32; };
 
-static constexpr x64_reg_ptr32  x64_reg_addr(const x64_reg32&  reg) { return x64_reg_ptr32(reg); }
-static constexpr x64_reg_ptr64a x64_reg_addr(const x64_reg64a& reg) { return x64_reg_ptr64a(reg); }
-static constexpr x64_reg_ptr64b x64_reg_addr(const x64_reg64b& reg) { return x64_reg_ptr64b(reg); }
+struct x64_reg_ptr64    : public x64_addr_ptr<x64_reg64> { using x64_addr_ptr::x64_addr_ptr; };
+struct x64_reg_ptr64a   : public x64_reg_ptr64 { using x64_reg_ptr64::x64_reg_ptr64; };
+struct x64_reg_ptr64agp : public x64_reg_ptr64a { using x64_reg_ptr64a::x64_reg_ptr64a; };
+struct x64_reg_ptr64asp : public x64_reg_ptr64a { using x64_reg_ptr64a::x64_reg_ptr64a; };
+struct x64_reg_ptr64b   : public x64_reg_ptr64 { using x64_reg_ptr64::x64_reg_ptr64; };
+
+static constexpr x64_reg_ptr32gp  x64_reg_addr(const x64_reg32gp&  reg) { return x64_reg_ptr32gp(reg); }
+static constexpr x64_reg_ptr32sp  x64_reg_addr(const x64_reg32sp&  reg) { return x64_reg_ptr32sp(reg); }
+static constexpr x64_reg_ptr64agp x64_reg_addr(const x64_reg64agp& reg) { return x64_reg_ptr64agp(reg); }
+static constexpr x64_reg_ptr64asp x64_reg_addr(const x64_reg64asp& reg) { return x64_reg_ptr64asp(reg); }
+static constexpr x64_reg_ptr64b   x64_reg_addr(const x64_reg64b& reg)   { return x64_reg_ptr64b(reg); }
 
 class x64_instruction : public instruction
 {
@@ -365,7 +387,7 @@ public:
 
 	/* Move register pointer + 8 bit  offset into register */
 	x64_mov(x64_reg64 reg, x64_reg_ptr64 addr, int8_t off) : x64_instruction(std::array<uint8_t, 2> { extend_reg_prefix(addr.ptr, reg), 0x8b }, x64_modrm{addr.ptr, reg, 1}, off) { }
-	x64_mov(x64_reg32 reg, x64_reg_ptr64a addr, int8_t off) : x64_instruction(std::array<uint8_t, 1> { 0x8b }, x64_modrm{addr.ptr, reg, 1}, off) { }
+	x64_mov(x64_reg32 reg, x64_reg_ptr64agp addr, int8_t off) : x64_instruction(std::array<uint8_t, 1> { 0x8b }, x64_modrm{addr.ptr, reg, 1}, off) { }
 	x64_mov(x64_reg32 reg, x64_reg_ptr64b addr, int8_t off) : x64_instruction(std::array<uint8_t, 2> { x64_rex::b, 0x8b }, x64_modrm{addr.ptr, reg, 1}, off) { }
 	x64_mov(x64_reg16 reg, x64_reg_ptr64a addr, int8_t off) : x64_instruction(std::array<uint8_t, 2> { x64_override::oper_size, 0x8b }, x64_modrm{addr.ptr, reg, 1}, off) { }
 	x64_mov(x64_reg16 reg, x64_reg_ptr64b addr, int8_t off) : x64_instruction(std::array<uint8_t, 3> { x64_override::oper_size, x64_rex::b, 0x8b }, x64_modrm{addr.ptr, reg, 1}, off) { }
@@ -394,18 +416,24 @@ public:
 
 	/* Move register pointer + 32 bit offset into register */
 	x64_mov(x64_reg64 reg, x64_reg_ptr64 addr, int32_t off) : x64_instruction(std::array<uint8_t, 2> { extend_reg_prefix(addr.ptr, reg), 0x8b }, x64_modrm{addr.ptr, reg, 2}, off) { }
-	x64_mov(x64_reg32 reg, x64_reg_ptr64a addr, int32_t off) : x64_instruction(std::array<uint8_t, 1> { 0x8b }, x64_modrm{addr.ptr, reg, 2}, off) { }
+	x64_mov(x64_reg64 reg, x64_reg_ptr64asp addr, int32_t off) = delete; // To be implemented
+	x64_mov(x64_reg32 reg, x64_reg_ptr64agp addr, int32_t off) : x64_instruction(std::array<uint8_t, 1> { 0x8b }, x64_modrm{addr.ptr, reg, 2}, off) { }
 	x64_mov(x64_reg32 reg, x64_reg_ptr64b addr, int32_t off) : x64_instruction(std::array<uint8_t, 2> { x64_rex::b, 0x8b }, x64_modrm{addr.ptr, reg, 2}, off) { }
-	x64_mov(x64_reg16 reg, x64_reg_ptr64a addr, int32_t off) : x64_instruction(std::array<uint8_t, 2> { x64_override::oper_size, 0x8b }, x64_modrm{addr.ptr, reg, 2}, off) { }
+	x64_mov(x64_reg16 reg, x64_reg_ptr64agp addr, int32_t off) : x64_instruction(std::array<uint8_t, 2> { x64_override::oper_size, 0x8b }, x64_modrm{addr.ptr, reg, 2}, off) { }
 	x64_mov(x64_reg16 reg, x64_reg_ptr64b addr, int32_t off) : x64_instruction(std::array<uint8_t, 3> { x64_override::oper_size, x64_rex::b, 0x8b }, x64_modrm{addr.ptr, reg, 2}, off) { }
-	x64_mov(x64_reg8 reg, x64_reg_ptr64a addr, int32_t off) : x64_instruction(std::array<uint8_t, 1> { 0x8a }, x64_modrm{addr.ptr, reg, 2}, off) { }
+	x64_mov(x64_reg8 reg, x64_reg_ptr64agp addr, int32_t off) : x64_instruction(std::array<uint8_t, 1> { 0x8a }, x64_modrm{addr.ptr, reg, 2}, off) { }
 	x64_mov(x64_reg8l reg, x64_reg_ptr64b addr, int32_t off) : x64_instruction(std::array<uint8_t, 2> { x64_rex::b, 0x8a }, x64_modrm{addr.ptr, reg, 2}, off) { }
 
-	x64_mov(x64_reg64 reg, x64_reg_ptr32 addr, int32_t off) : x64_instruction(std::array<uint8_t, 3> { x64_override::addr_size, extend_reg_prefix(0, reg), 0x8b }, x64_modrm{addr.ptr, reg, 2}, off) { }
-	x64_mov(x64_reg32 reg, x64_reg_ptr32 addr, int32_t off) : x64_instruction(std::array<uint8_t, 2> { x64_override::addr_size, 0x8b }, x64_modrm{addr.ptr, reg, 2}, off) { }
-	x64_mov(x64_reg16 reg, x64_reg_ptr32 addr, int32_t off) : x64_instruction(std::array<uint8_t, 3> { x64_override::addr_size, x64_override::oper_size, 0x8b }, x64_modrm{addr.ptr, reg, 2}, off) { }
-	x64_mov(x64_reg8 reg, x64_reg_ptr32 addr, int32_t off) : x64_instruction(std::array<uint8_t, 2> { x64_override::addr_size, 0x8a }, x64_modrm{addr.ptr, reg, 2}, off) { }
+	x64_mov(x64_reg64 reg, x64_reg_ptr32gp addr, int32_t off) : x64_instruction(std::array<uint8_t, 3> { x64_override::addr_size, extend_reg_prefix(0, reg), 0x8b }, x64_modrm{addr.ptr, reg, 2}, off) { }
+	x64_mov(x64_reg32 reg, x64_reg_ptr32gp addr, int32_t off) : x64_instruction(std::array<uint8_t, 2> { x64_override::addr_size, 0x8b }, x64_modrm{addr.ptr, reg, 2}, off) { }
+	x64_mov(x64_reg16 reg, x64_reg_ptr32gp addr, int32_t off) : x64_instruction(std::array<uint8_t, 3> { x64_override::addr_size, x64_override::oper_size, 0x8b }, x64_modrm{addr.ptr, reg, 2}, off) { }
+	x64_mov(x64_reg8 reg, x64_reg_ptr32gp addr, int32_t off) : x64_instruction(std::array<uint8_t, 2> { x64_override::addr_size, 0x8a }, x64_modrm{addr.ptr, reg, 2}, off) { }
 
+	// XXX
+
+
+//	x64_mov(x64_reg32 reg, x64_reg_ptr64a addr, int32_t off) : x64_instruction(std::array<uint8_t, 1> { 0x8b }, x64_modrm{addr.ptr, reg, 2}, off) { }
+	//x64_mov(x64_reg32 dst, x64_reg64a base, x64_reg64 idx, sib_scale scale, int8_t off) : x64_instruction(std::array<uint8_t, 1> { 0x8b }, x64_modrm{base, dst, 1}, off) { }
 
 	/* Move immediate into register */
 	x64_mov(x64_reg32 reg, uint32_t imm) : x64_instruction(std::array<uint8_t, 1> { static_cast<uint8_t>(0xb8 | reg.value) }, imm) { }
