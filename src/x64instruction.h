@@ -17,9 +17,14 @@ struct x64_reg_base
 {
 	inline constexpr x64_reg_base(int value) : value(value) { }
 	const int value;
+	const bool is_extended() { return value >= 8; }
+	const bool is_sp() { return value == 4; }
 };
 
-struct x64_reg64    : public x64_reg_base { using x64_reg_base::x64_reg_base; };
+struct x64_reg64    : public x64_reg_base {
+	using x64_reg_base::x64_reg_base;
+	static const std::string names[16];// = {};
+};
 struct x64_reg64a   : public x64_reg64    { using x64_reg64::x64_reg64; };
 struct x64_reg64agp : public x64_reg64a   { using x64_reg64a::x64_reg64a; };
 struct x64_reg64asp : public x64_reg64a   { using x64_reg64a::x64_reg64a; };

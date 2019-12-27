@@ -11,11 +11,15 @@
 #include "instructionstream.h"
 
 #include <cstdint>
+#include <string>
 
 class x64_disassembler
 {
 public:
-	static void disassemble(const uint8_t* data, std::size_t len);
-	static void disassemble(instruction_stream s);
+	static std::string disassemble(const uint8_t* data, std::size_t len, std::string format = "att", bool wide = false);
+	static std::string disassemble(const instruction_stream& s, std::string format = "att", bool wide = false);
+
+private:
+	static std::string exec(std::string cmd);
 };
 #endif /* X64DISASSEMBLER_H_ */

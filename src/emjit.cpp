@@ -4,6 +4,9 @@
 #include <cstdint>
 #include <sys/mman.h>
 #include <memory>
+#include <exception>
+
+#include <regex>
 
 #include "segvcatcher.h"
 #include "autoallocator.h"
@@ -23,6 +26,87 @@ void print_stream_debug(const instruction_stream& s)
 	cout << '\n';
 }
 
+class unit_test_exception : exception
+{
+public:
+	unit_test_exception(const char* what_arg)
+	 : what_arg(what_arg)
+	{ }
+
+	const char * what () { return what_arg; }
+
+private:
+	const char* what_arg;
+};
+bool BothAreSpaces(char lhs, char rhs) { return (lhs == rhs) && (lhs == ' '); }
+void mov_unit_tests(const std::shared_ptr<auto_allocator>& allocator)
+{
+	instruction_stream s(allocator);
+
+//	for (auto i = 0; i < 8; i++)
+//	{
+//		for (auto j = 0; j < 8; j++)
+//		{
+//			s << x64_mov(x64_reg32gp(j), x64_reg32gp(i));
+//		}
+//	}
+
+//	regex spaces_regex("/\\s\\s+/g");
+	regex spaces_regex("  *");
+
+	for (auto i = 0; i < 16; i++)
+	{
+		for (auto j = 0; j < 16; j++)
+		{
+			auto inst = x64_mov(x64_reg64(j), x64_reg64(i));
+			auto data = inst.data();
+			auto size = inst.size();
+
+			//cout << hex << (intptr_t(s.pos())) << ": ";
+			cout << " " << hex << (intptr_t(data)) << ":\t";
+			for (size_t x = 0; x < inst.size(); x++)
+				cout << ((int) data[x]) << " ";
+
+			cout << "\tmov " << x64_reg64::names[j] << "," << x64_reg64::names[i];
+
+			cout << '\n';
+
+			auto disassembly = x64_disassembler::disassemble(data, size, "intel", true);
+
+			/* Remove multiple spaces */
+			disassembly = std::regex_replace(disassembly, spaces_regex, " ");
+
+			if (disassembly.length() <= 2)
+				throw unit_test_exception("wattafak");
+
+			auto last_newline = disassembly.find_last_of('\n', disassembly.length() - 2);
+			if (last_newline == string::npos)
+				throw unit_test_exception("wattafak");
+
+			auto last_line = disassembly.substr(last_newline + 1);
+
+			cout << last_line;
+//			cout << disassembly;
+
+			s << inst;
+		}
+	}
+
+//	s << x64_mov(x64_regs::rax, x64_regs::rbx);
+//	s << x64_mov(x64_regs::rax, x64_regs::r10);
+//	s << x64_mov(x64_regs::r15, x64_regs::rbx);
+//	s << x64_mov(x64_regs::r15, x64_regs::r10);
+//	s << x64_mov(x64_regs::eax, x64_regs::ebx);
+//	s << x64_mov(x64_regs::bx, x64_regs::dx);
+//	s << x64_mov(x64_regs::bl, x64_regs::dl);
+//	s << x64_mov(x64_regs::bl, x64_regs::dh);
+
+//	auto disassembly = x64_disassembler::disassemble(s, "intel", true);
+
+	//cout << disassembly;
+
+}
+
 int main()
 {
 	uintptr_t start = 65536;
@@ -31,6 +115,9 @@ int main()
 	auto allocator = std::make_shared<auto_allocator> (start, len, PROT_READ | PROT_WRITE | PROT_EXEC);
 
 	instruction_stream s(allocator);
+
+	mov_unit_tests(allocator);
+	return 0;
 
 	//auto entry_fn = s.entry_point<uint64_t()>();
 
@@ -225,9 +312,7 @@ int main()
 //	s << x64_mov(x64_regs::cx, x64_reg_addr(x64_regs::edi), (int32_t) -0x42);
 //	s << x64_mov(x64_regs::cl, x64_reg_addr(x64_regs::edi), (int32_t) -0x42);
 
-	x64_instruction& iii = x64_mov(x64_regs::ebx, x64_reg_addr(x64_regs::rax), (int32_t) -0x42);
 
-	x64_mov& bla = dynamic_cast<x64_mov&>(iii);
 //
 //	s << x64_mov(x64_regs::ch, x64_reg_addr(x64_regs::eax), (int32_t) -0x42);
 //	s << x64_mov(x64_regs::ch, x64_reg_addr(x64_regs::ecx), (int32_t) -0x42);
@@ -283,7 +368,9 @@ int main()
 	//r = entry_fn();
 	//cout << "r: " << r << '\n';
 
-	x64_disassembler::disassemble(s);
+	auto disassembly = x64_disassembler::disassemble(s, "intel", true);
+
+	cout << disassembly;
 
 	cout << "finished\n";
 

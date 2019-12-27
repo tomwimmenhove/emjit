@@ -16,7 +16,7 @@
 
 using namespace std;
 
-void x64_disassembler::disassemble(const uint8_t* data, std::size_t len)
+string x64_disassembler::disassemble(const uint8_t* data, std::size_t len, std::string format, bool wide)
 {
 	char filename[PATH_MAX] = "/tmp/x64.asmXXXXXX";
 	int fd = mkstemp(filename);
@@ -25,19 +25,43 @@ void x64_disassembler::disassemble(const uint8_t* data, std::size_t len)
 
 	close(fd);
 
-	//string command = "objdump -b binary -D -m i386:x86-64 --adjust-vma=";
-	string command = "objdump -b binary -D -m i386:x86-64 -M intel --adjust-vma=";
+	string command = "objdump -b binary -D -m i386:x86-64 --adjust-vma=";
 
 	command += to_string((intptr_t) data);
+	command += " -M ";
+	command += format;
 	command += " ";
 	command += filename;
 
-	system(command.c_str());
+	if (wide)
+		command += " --wide";
+
+	auto disassembly = exec(command);
 
 	unlink(filename);
+
+	return disassembly;
 }
 
-void x64_disassembler::disassemble(instruction_stream s)
+string x64_disassembler::disassemble(const instruction_stream& s, std::string format, bool wide)
 {
-	disassemble(s.data(), s.size());
+	return disassemble(s.data(), s.size(), format, wide);
+}
+
+string x64_disassembler::exec(string command)
+{
+    array<char, 4096> buffer;
+    string result;
+    unique_ptr<FILE, decltype(&pclose)> pipe(popen(command.c_str(), "r"), pclose);
+
+    if (!pipe)
+    {
+        throw std::runtime_error("popen() failed!");
+    }
+
+    while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr)
+    {
+        result += buffer.data();
+    }
+    return result;
 }

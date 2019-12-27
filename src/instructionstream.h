@@ -18,7 +18,7 @@
 class instruction_stream
 {
 public:
-	inline instruction_stream(std::shared_ptr<auto_allocator> allocator)
+	inline instruction_stream(const std::shared_ptr<auto_allocator>& allocator)
 	 : data_ptr((uint8_t*) allocator->start()), max_size(allocator->size())
 	{ }
 

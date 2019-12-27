@@ -16,15 +16,6 @@ constexpr x64_reg64agp x64_regs::rbp;
 constexpr x64_reg64agp x64_regs::rsi;
 constexpr x64_reg64agp x64_regs::rdi;
 
-constexpr x64_reg32gp x64_regs::eax;
-constexpr x64_reg32gp x64_regs::ecx;
-constexpr x64_reg32gp x64_regs::edx;
-constexpr x64_reg32gp x64_regs::ebx;
-constexpr x64_reg32sp x64_regs::esp;
-constexpr x64_reg32gp x64_regs::ebp;
-constexpr x64_reg32gp x64_regs::esi;
-constexpr x64_reg32gp x64_regs::edi;
-
 constexpr x64_reg64b x64_regs::r8;
 constexpr x64_reg64b x64_regs::r9;
 constexpr x64_reg64b x64_regs::r10;
@@ -33,6 +24,35 @@ constexpr x64_reg64b x64_regs::r12;
 constexpr x64_reg64b x64_regs::r13;
 constexpr x64_reg64b x64_regs::r14;
 constexpr x64_reg64b x64_regs::r15;
+
+const std::string x64_reg64::names[16] = {
+		"rax",
+		"rcx",
+		"rdx",
+		"rbx",
+		"rsp",
+		"rbp",
+		"rsi",
+		"rdi",
+
+		"r8",
+		"r9",
+		"r10",
+		"r11",
+		"r12",
+		"r13",
+		"r14",
+		"r15",
+};
+
+constexpr x64_reg32gp x64_regs::eax;
+constexpr x64_reg32gp x64_regs::ecx;
+constexpr x64_reg32gp x64_regs::edx;
+constexpr x64_reg32gp x64_regs::ebx;
+constexpr x64_reg32sp x64_regs::esp;
+constexpr x64_reg32gp x64_regs::ebp;
+constexpr x64_reg32gp x64_regs::esi;
+constexpr x64_reg32gp x64_regs::edi;
 
 constexpr x64_reg16gp x64_regs::ax;
 constexpr x64_reg16gp x64_regs::cx;
