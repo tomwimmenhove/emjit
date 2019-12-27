@@ -5,7 +5,7 @@
 #include <sys/mman.h>
 #include <memory>
 #include <exception>
-
+#include <cassert>
 #include <regex>
 
 #include "segvcatcher.h"
@@ -29,15 +29,18 @@ void print_stream_debug(const instruction_stream& s)
 class unit_test_exception : exception
 {
 public:
-	unit_test_exception(const char* what_arg)
+	explicit unit_test_exception(const string what_arg)
 	 : what_arg(what_arg)
 	{ }
 
-	const char * what () { return what_arg; }
+	virtual const char* what() const throw () { return what_arg.c_str(); }
+
+	virtual ~unit_test_exception() throw (){}
 
 private:
-	const char* what_arg;
+	const string what_arg;
 };
+
 bool BothAreSpaces(char lhs, char rhs) { return (lhs == rhs) && (lhs == ' '); }
 void mov_unit_tests(const std::shared_ptr<auto_allocator>& allocator)
 {
@@ -62,14 +65,15 @@ void mov_unit_tests(const std::shared_ptr<auto_allocator>& allocator)
 			auto data = inst.data();
 			auto size = inst.size();
 
-			//cout << hex << (intptr_t(s.pos())) << ": ";
-			cout << " " << hex << (intptr_t(data)) << ":\t";
+			std::stringstream stream;
+			//stream << hex << (intptr_t(s.pos())) << ": ";
+			stream << " " << hex << (intptr_t(data)) << ":\t";
 			for (size_t x = 0; x < inst.size(); x++)
-				cout << ((int) data[x]) << " ";
+				stream << ((int) data[x]) << " ";
 
-			cout << "\tmov " << x64_reg64::names[j] << "," << x64_reg64::names[i];
+			stream << "\tmov " << x64_reg64::names[j] << "," << x64_reg64::names[i] << '\n';
 
-			cout << '\n';
+			auto expected = stream.str();
 
 			auto disassembly = x64_disassembler::disassemble(data, size, "intel", true);
 
@@ -85,7 +89,21 @@ void mov_unit_tests(const std::shared_ptr<auto_allocator>& allocator)
 
 			auto last_line = disassembly.substr(last_newline + 1);
 
+			if (last_line != expected)
+			{
+				std::stringstream stream;
+
+				stream << "Expected: " << expected;
+				stream << "Result  : " << last_line;
+
+				throw unit_test_exception(stream.str());
+			}
+
+			assert (last_line == expected);
+			cout << expected;
 			cout << last_line;
+
+
 //			cout << disassembly;
 
 			s << inst;
@@ -116,7 +134,19 @@ int main()
 
 	instruction_stream s(allocator);
 
-	mov_unit_tests(allocator);
+	try
+	{
+		mov_unit_tests(allocator);
+	}
+	catch( const unit_test_exception& ex )
+	{
+		cerr << "Unit test failed:\n" << ex.what() << '\n';
+
+		return 1;
+	}
+
+	cout << "OK\n";
+
 	return 0;
 
 	//auto entry_fn = s.entry_point<uint64_t()>();
