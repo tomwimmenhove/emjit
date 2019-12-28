@@ -38,7 +38,7 @@ string x64_disassembler::disassemble(const uint8_t* data, std::size_t len, std::
 
 	auto disassembly = exec(command);
 
-	unlink(filename);
+//	unlink(filename);
 
 	return disassembly;
 }

@@ -51,6 +51,12 @@
                                 								
                                 <option id="gnu.cpp.compiler.option.dialect.flags.217960970" name="Other dialect flags" superClass="gnu.cpp.compiler.option.dialect.flags" useByScannerDiscovery="true" value="" valueType="string"/>
                                 								
+                                <option id="gnu.cpp.compiler.option.warnings.pedantic.1886949878" superClass="gnu.cpp.compiler.option.warnings.pedantic" useByScannerDiscovery="false" value="true" valueType="boolean"/>
+                                								
+                                <option id="gnu.cpp.compiler.option.warnings.extrawarn.1717765479" superClass="gnu.cpp.compiler.option.warnings.extrawarn" useByScannerDiscovery="false" value="true" valueType="boolean"/>
+                                								
+                                <option id="gnu.cpp.compiler.option.debugging.other.1731650076" superClass="gnu.cpp.compiler.option.debugging.other" useByScannerDiscovery="false" value="-Wuninitialized" valueType="string"/>
+                                								
                                 <inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.608401144" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
                                 							
                             </tool>

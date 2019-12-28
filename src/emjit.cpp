@@ -16,6 +16,8 @@
 #include "x64disassembler.h"
 #include "x64testing.h"
 
+#include "x64instr.h"
+
 using namespace std;
 
 void print_stream_debug(const instruction_stream& s)
@@ -30,6 +32,31 @@ void print_stream_debug(const instruction_stream& s)
 
 int main()
 {
+	uintptr_t start = 65536;
+	size_t len = 1024*1024*1024;
+
+	auto allocator = std::make_shared<auto_allocator> (start, len, PROT_READ | PROT_WRITE | PROT_EXEC);
+
+	instruction_stream s(allocator);
+
+	x64_instr inst1;
+
+	inst1.add_opcode(0x42);
+
+	inst1.set_imm((uint8_t) 0xdead);
+
+	auto bla = inst1.get_imm<uint64_t>();
+
+	s << x64_instr_mov(x64_regs::rbx, x64_regs::r15);
+
+	cout << "Size: " << inst1.size() << '\n';
+	cout << "imm: " << hex << (int) bla << '\n';
+
+	auto disassmebly = x64_disassembler::disassemble(s, "intel");
+
+	cout << disassmebly;
+
+	return 0;
 	x64_testing testing;
 
 	try
@@ -44,16 +71,9 @@ int main()
 		return 1;
 	}
 
-	cout << "OK\n";
-
 	return 0;
 
-	uintptr_t start = 65536;
-	size_t len = 1024*1024*1024;
 
-	auto allocator = std::make_shared<auto_allocator> (start, len, PROT_READ | PROT_WRITE | PROT_EXEC);
-
-	instruction_stream s(allocator);
 
 	//auto entry_fn = s.entry_point<uint64_t()>();
 

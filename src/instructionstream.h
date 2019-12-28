@@ -13,6 +13,7 @@
 #include <functional>
 
 #include "instruction.h"
+#include "instr.h"
 #include "autoallocator.h"
 
 class instruction_stream
@@ -29,19 +30,19 @@ public:
 	template<typename PROTOTYPE>
 	inline PROTOTYPE* entry_point() { return (PROTOTYPE*) pos(); }
 
-	inline void insert_at(uint8_t* address, const instruction& inst)
-	{
-		size_t inst_size = inst.size();
-
-		if (address < data_ptr ||
-				address + inst_size > data_ptr + data_size)
-			throw std::out_of_range("Address was out of range for instruction");
-
-		/* Copy the instruction */
-		const uint8_t* id = inst.data();
-		for (size_t i = 0; i < inst_size; i++)
-					*address++ = id[i];
-	}
+//	inline void insert_at(uint8_t* address, const instruction& inst)
+//	{
+//		size_t inst_size = inst.size();
+//
+//		if (address < data_ptr ||
+//				address + inst_size > data_ptr + data_size)
+//			throw std::out_of_range("Address was out of range for instruction");
+//
+//		/* Copy the instruction */
+//		const uint8_t* id = inst.data();
+//		for (size_t i = 0; i < inst_size; i++)
+//					*address++ = id[i];
+//	}
 
 	//__attribute__((optimize("unroll-loops"))) // <=- Makes it WORSE
     inline friend instruction_stream& operator<<(instruction_stream& output, const instruction& inst)
@@ -58,6 +59,21 @@ public:
 
        return output;
     }
+
+    inline friend instruction_stream& operator<<(instruction_stream& output, const instr& inst)
+     {
+ 		size_t inst_size = inst.size();
+
+ 		if (inst_size + output.data_size > output.max_size)
+ 			throw std::overflow_error("Tried to stream instruction beyond end of buffer");
+
+ 		/* Copy the instruction */
+ 		inst.emit_to(output.data_ptr + output.data_size);
+
+ 		output.data_size += inst_size;
+
+        return output;
+     }
 
 private:
     uint8_t* data_ptr;

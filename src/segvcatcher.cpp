@@ -42,7 +42,7 @@ void segv_catcher::restore()
 	sigaction(SIGSEGV, &saved_action, nullptr);
 }
 
-void segv_catcher::handler(int sig, siginfo_t *si, void *context)
+void segv_catcher::handler(int, siginfo_t *si, void*)
 {
 	auto addr = (uintptr_t) si->si_addr;
 

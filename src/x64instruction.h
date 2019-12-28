@@ -17,8 +17,21 @@ struct x64_reg_base
 {
 	inline constexpr x64_reg_base(int value) : value(value) { }
 	const int value;
-	const bool is_extended() { return value >= 8; }
-	const bool is_sp() { return value == 4; }
+
+	inline constexpr static bool is_extended(int value) { return value >= 8; }
+	inline constexpr static bool is_sp(int value) { return value == 4; }
+	inline constexpr static bool is_r12(int value) { return value == 8 + 4; }
+	inline constexpr static bool is_bp(int value) { return value == 5; }
+	inline constexpr static bool is_r13(int value) { return value == 8 + 5; }
+	inline constexpr static bool is_special(int value) { return is_sp(value) || is_bp(value)
+			|| is_r12(value) || is_r13(value); }
+
+	inline constexpr bool is_extended() { return is_extended(value); }
+	inline constexpr bool is_sp() { return is_sp(value); }
+	inline constexpr bool is_r12() { return is_r12(value); }
+	inline constexpr bool is_bp() { return is_bp(value); }
+	inline constexpr bool is_r13() { return is_r13(value); }
+	inline constexpr bool is_special() { return is_special(value); }
 };
 
 struct x64_reg64    : public x64_reg_base
@@ -366,6 +379,8 @@ public:
 
 	/* Move register into register pointer */
 	x64_mov(x64_reg_ptr64 addr, x64_reg64 reg) : x64_instruction(std::array<uint8_t, 2> { extend_reg_prefix(addr.ptr, reg), 0x89 }, x64_modrm{addr.ptr, reg, 0}) { }
+	x64_mov(x64_reg_ptr64asp addr, x64_reg64 reg) : x64_instruction(std::array<uint8_t, 2> { extend_reg_prefix(addr.ptr, reg), 0x89 }, x64_modrm{addr.ptr, reg, 0}, x64_sib(0x24)) { }
+
 	x64_mov(x64_reg_ptr64a addr, x64_reg32 reg) : x64_instruction(std::array<uint8_t, 1> { 0x89 }, x64_modrm{addr.ptr, reg, 0}) { }
 	x64_mov(x64_reg_ptr64b addr, x64_reg32 reg) : x64_instruction(std::array<uint8_t, 2> { x64_rex::b, 0x89 }, x64_modrm{addr.ptr, reg, 0}) { }
 	x64_mov(x64_reg_ptr64a addr, x64_reg16 reg) : x64_instruction(std::array<uint8_t, 2> { x64_override::oper_size, 0x89 }, x64_modrm{addr.ptr, reg, 0}) { }
@@ -490,6 +505,8 @@ public:
 	x64_mov(x64_addr_ptr<uint32_t*> addr, x64_reg32 reg) : x64_mov(reg, addr, 0xa3) { };
 	x64_mov(x64_addr_ptr<uint16_t*> addr, x64_reg16 reg) : x64_mov(reg, addr, x64_override::oper_size, 0xa3) { };
 	x64_mov(x64_addr_ptr<uint8_t*>  addr, x64_reg8l reg) : x64_mov(reg, addr, 0xa2) { };
+
+	virtual ~x64_mov() { }
 
 private:
 	/* Register <=> immediate address */
