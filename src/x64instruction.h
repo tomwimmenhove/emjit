@@ -37,6 +37,7 @@ struct x64_reg_base
 struct x64_reg64    : public x64_reg_base
 {
 	using x64_reg_base::x64_reg_base;
+	using value_type = uint64_t;
 	static const std::string names[16];
 };
 struct x64_reg64a   : public x64_reg64    { using x64_reg64::x64_reg64; };
@@ -48,6 +49,7 @@ struct x64_reg64b   : public x64_reg64    { using x64_reg64::x64_reg64; };
 struct x64_reg32   : public x64_reg_base
 {
 	using x64_reg_base::x64_reg_base;
+	using value_type = uint32_t;
 	static const std::string names[8];
 };
 struct x64_reg32gp : public x64_reg32     { using x64_reg32::x64_reg32; };
@@ -57,6 +59,7 @@ struct x64_reg32sp : public x64_reg32     { using x64_reg32::x64_reg32; };
 struct x64_reg16   : public x64_reg_base
 {
 	using x64_reg_base::x64_reg_base;
+	using value_type = uint16_t;
 	static const std::string names[8];
 };
 struct x64_reg16gp : public x64_reg16     { using x64_reg16::x64_reg16; };
@@ -66,6 +69,7 @@ struct x64_reg16sp : public x64_reg16     { using x64_reg16::x64_reg16; };
 struct x64_reg8  : public x64_reg_base
 {
 	using x64_reg_base::x64_reg_base;
+	using value_type = uint8_t;
 	static const std::string names[8];
 };
 struct x64_reg8h : public x64_reg8        { using x64_reg8::x64_reg8; };
@@ -197,11 +201,19 @@ struct x64_addr_ptr
 	const T ptr;
 };
 
-struct x64_reg_ptr32    : public x64_addr_ptr<x64_reg32> { using x64_addr_ptr::x64_addr_ptr; };
+struct x64_reg_ptr32    : public x64_addr_ptr<x64_reg32>
+{
+	using x64_addr_ptr::x64_addr_ptr;
+	using reg_type = x64_reg32;
+};
 struct x64_reg_ptr32gp  : public x64_reg_ptr32 { using x64_reg_ptr32::x64_reg_ptr32; };
 struct x64_reg_ptr32sp  : public x64_reg_ptr32 { using x64_reg_ptr32::x64_reg_ptr32; };
 
-struct x64_reg_ptr64    : public x64_addr_ptr<x64_reg64> { using x64_addr_ptr::x64_addr_ptr; };
+struct x64_reg_ptr64    : public x64_addr_ptr<x64_reg64>
+{
+	using x64_addr_ptr::x64_addr_ptr;
+	using reg_type = x64_reg64;
+};
 struct x64_reg_ptr64a   : public x64_reg_ptr64 { using x64_reg_ptr64::x64_reg_ptr64; };
 struct x64_reg_ptr64agp : public x64_reg_ptr64a { using x64_reg_ptr64a::x64_reg_ptr64a; };
 struct x64_reg_ptr64asp : public x64_reg_ptr64a { using x64_reg_ptr64a::x64_reg_ptr64a; };
@@ -216,85 +228,207 @@ static constexpr x64_reg_ptr64b   x64_reg_addr(const x64_reg64b& reg)   { return
 class x64_instruction : public instruction
 {
 public:
-	template<std::size_t OPCODE_SIZE, typename IMM_TYPE>
-	x64_instruction(
-			const std::array<uint8_t, OPCODE_SIZE>& opcode,
-			const struct x64_modrm modrm,
-			const struct x64_sib sib,
-			IMM_TYPE imm,
-			uint8_t* data = nullptr)
-	 : x64_instruction(opcode, &modrm, &sib, &imm, data)
-	{ }
-
-	template<std::size_t OPCODE_SIZE>
-	x64_instruction(
-			const std::array<uint8_t, OPCODE_SIZE>& opcode,
-			const struct x64_modrm modrm,
-			const struct x64_sib sib,
-			uint8_t* data = nullptr)
-	 : x64_instruction(opcode, &modrm, &sib, (uint32_t*) nullptr, data)
-	{ }
+	x64_instruction() { }
 
 	template<std::size_t OPCODE_SIZE, typename IMM_TYPE>
 	x64_instruction(
 			const std::array<uint8_t, OPCODE_SIZE>& opcode,
-			const struct x64_modrm modrm,
-			IMM_TYPE imm,
-			uint8_t* data = nullptr)
-	 : x64_instruction(opcode, &modrm, nullptr, &imm, data)
-	{ }
+			const struct x64_modrm& m,
+			const struct x64_sib& s,
+			IMM_TYPE imm)
+	 : has_modrm(true), modrm(m), has_sib(true), sib(s),
+	   imm_size(sizeof(IMM_TYPE)), imm64(static_cast<uint64_t>(from_or_to_little(imm)))
+	{ add_opcode(opcode); }
 
 	template<std::size_t OPCODE_SIZE>
 	x64_instruction(
 			const std::array<uint8_t, OPCODE_SIZE>& opcode,
-			const struct x64_modrm modrm,
-			uint8_t* data = nullptr)
-	 : x64_instruction(opcode, &modrm, nullptr, (uint32_t*) nullptr, data)
-	{ }
+			const struct x64_modrm m,
+			const struct x64_sib s)
+	 : has_modrm(true), modrm(m), has_sib(true), sib(s)
+	{ add_opcode(opcode); }
 
 	template<std::size_t OPCODE_SIZE, typename IMM_TYPE>
 	x64_instruction(
 			const std::array<uint8_t, OPCODE_SIZE>& opcode,
-			const struct x64_sib sib,
-			IMM_TYPE imm,
-			uint8_t* data = nullptr)
-	 : x64_instruction(opcode, nullptr, &sib, &imm, data)
-	{ }
+			const struct x64_modrm m,
+			IMM_TYPE imm)
+	 : has_modrm(true), modrm(m),
+	   imm_size(sizeof(IMM_TYPE)), imm64(static_cast<uint64_t>(from_or_to_little(imm)))
+	{ add_opcode(opcode); }
 
 	template<std::size_t OPCODE_SIZE>
 	x64_instruction(
 			const std::array<uint8_t, OPCODE_SIZE>& opcode,
-			const struct x64_sib sib,
-			uint8_t* data = nullptr)
-	 : x64_instruction(opcode, nullptr, &sib, (uint32_t*) nullptr, data)
-	{ }
+			const struct x64_modrm m)
+	 : has_modrm(true), modrm(m)
+	{ add_opcode(opcode); }
 
 	template<std::size_t OPCODE_SIZE, typename IMM_TYPE>
 	x64_instruction(
 			const std::array<uint8_t, OPCODE_SIZE>& opcode,
-			IMM_TYPE imm,
-			uint8_t* data = nullptr)
-	 : x64_instruction(opcode, nullptr, nullptr, &imm, data)
-	{ }
+			const struct x64_sib s,
+			IMM_TYPE imm)
+	 : has_modrm(true), has_sib(true), sib(s),
+	   imm_size(sizeof(IMM_TYPE)), imm64(static_cast<uint64_t>(from_or_to_little(imm)))
+	{ add_opcode(opcode); }
 
 	template<std::size_t OPCODE_SIZE>
 	x64_instruction(
 			const std::array<uint8_t, OPCODE_SIZE>& opcode,
-			uint8_t* data = nullptr)
-	 : x64_instruction( opcode, nullptr, nullptr, (uint32_t*) nullptr, data)
+			const struct x64_sib s)
+	 : has_modrm(true), has_sib(true), sib(s)
+	{ add_opcode(opcode); }
+
+	template<std::size_t OPCODE_SIZE, typename IMM_TYPE>
+	x64_instruction(
+			const std::array<uint8_t, OPCODE_SIZE>& opcode,
+			IMM_TYPE imm)
+	 : imm_size(sizeof(IMM_TYPE)), imm64(static_cast<uint64_t>(from_or_to_little(imm)))
+	{ add_opcode(opcode); }
+
+	template<std::size_t OPCODE_SIZE>
+	x64_instruction(const std::array<uint8_t, OPCODE_SIZE>& opcode)
+	{ add_opcode(opcode); }
+
+	/* The same as above, but without an opcode parameter in order to add it dynamically later */
+	template<std::size_t OPCODE_SIZE, typename IMM_TYPE>
+	x64_instruction(
+			const struct x64_modrm& m,
+			const struct x64_sib& s,
+			IMM_TYPE imm)
+	 : has_modrm(true), modrm(m), has_sib(true), sib(s),
+	   imm_size(sizeof(IMM_TYPE)), imm64(static_cast<uint64_t>(from_or_to_little(imm)))
 	{ }
 
-	inline std::size_t size() const override { return data_size; }
-	inline uint8_t* data() const override { return data_ptr; }
+	template<std::size_t OPCODE_SIZE>
+	x64_instruction(
+			const struct x64_modrm m,
+			const struct x64_sib s)
+	 : has_modrm(true), modrm(m), has_sib(true), sib(s)
+	{ }
 
-	inline struct x64_modrm &modrm() { return *modrm_ptr; }
-	inline struct x64_sib &sib() { return *sib_ptr; }
+	template<std::size_t OPCODE_SIZE, typename IMM_TYPE>
+	x64_instruction(
+			const struct x64_modrm m,
+			IMM_TYPE imm)
+	 : has_modrm(true), modrm(m),
+	   imm_size(sizeof(IMM_TYPE)), imm64(static_cast<uint64_t>(from_or_to_little(imm)))
+	{ }
 
-	/* This gets a reference to either the immediate or the displacement value */
-	template<typename IMM_TYPE>
-	inline IMM_TYPE& immediate() { return *(IMM_TYPE*)imm_ptr; }
+	template<std::size_t OPCODE_SIZE>
+	x64_instruction(
+			const struct x64_modrm m)
+	 : has_modrm(true), modrm(m)
+	{ }
+
+	template<std::size_t OPCODE_SIZE, typename IMM_TYPE>
+	x64_instruction(
+			const struct x64_sib s,
+			IMM_TYPE imm)
+	 : has_modrm(true), has_sib(true), sib(s),
+	   imm_size(sizeof(IMM_TYPE)), imm64(static_cast<uint64_t>(from_or_to_little(imm)))
+	{ }
+
+	template<std::size_t OPCODE_SIZE>
+	x64_instruction(
+			const struct x64_sib s)
+	 : has_modrm(true), has_sib(true), sib(s)
+	{ }
+
+	template<std::size_t OPCODE_SIZE, typename IMM_TYPE>
+	x64_instruction(
+			IMM_TYPE imm)
+	 : imm_size(sizeof(IMM_TYPE)), imm64(static_cast<uint64_t>(from_or_to_little(imm)))
+	{ }
+
+	inline std::size_t size() const override
+	{
+		return  opcode_size +
+				(has_modrm ? 1 : 0) +
+				(has_sib ? 1 : 0) +
+				imm_size;
+	}
+
+	bool emit_to(uint8_t* p) const override
+	{
+		for (size_t i = 0; i < opcode_size; i++)
+			*p++ = opcode[i];
+
+		if (has_modrm)
+			*p++ = modrm_byte;
+
+		if (has_sib)
+			*p++ = sib_byte;
+
+		for (size_t i = 0; i < imm_size; i++)
+			*p++ = imm_data[i];
+
+		return true;
+	}
 
 	virtual ~x64_instruction() { }
+
+	template<std::size_t OPCODE_SIZE>
+	inline void add_opcode(const std::array<uint8_t, OPCODE_SIZE>& oc)
+	{
+		if (oc.size() + opcode_size > 15)
+			throw std::overflow_error("instructionuction was too long");
+		/* Add the opcode */
+
+		for(const auto& b : oc)
+			opcode[opcode_size++] = b;
+	}
+
+	inline void add_opcode(uint8_t oc)
+	{
+		if (opcode_size >= sizeof(opcode))
+			throw std::overflow_error("X86/64 opcode longer than 15 bytes");
+
+		opcode[opcode_size++] = oc;
+	}
+	inline void reset_opcode() { opcode_size = 0; }
+
+	inline void set_modrm(const x64_modrm& m)
+	{
+		has_modrm = true;
+		modrm = m;
+	}
+	inline void set_modrm(uint8_t m)
+	{
+		has_modrm = true;
+		modrm_byte = m;
+	}
+	inline const struct x64_modrm& get_modrm() { return modrm; }
+	inline void reset_modrm() { has_modrm = false; }
+
+	inline void set_sib(const x64_sib& s)
+	{
+		has_sib = true;
+		sib = s;
+	}
+	inline void set_sib(uint8_t s)
+	{
+		has_sib = true;
+		sib_byte = s;
+	}
+	inline const struct x64_sib& get_sib() { return sib; }
+	inline void reset_sib() { has_sib = false; }
+
+	template<typename T>
+	inline void set_imm(T x)
+	{
+		imm_size = sizeof(x);
+		imm64 = static_cast<uint64_t>(from_or_to_little(x));
+	}
+
+	template<typename T>
+	inline T get_imm()
+	{
+		 return static_cast<T>(from_or_to_little(imm64));
+	}
+
+	inline void reset_imm() { imm_size = 0; }
 
 protected:
 	inline uint8_t extend_reg_prefix(const x64_reg64& dst, const x64_reg64& src)
@@ -304,63 +438,52 @@ protected:
 				(src.value > x64_regs::rdi.value ? x64_rex::w | x64_rex::r : x64_rex::w));
 	}
 
+public:
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+	inline static uint64_t from_or_to_little(uint64_t x) { return x; }
+	inline static uint32_t from_or_to_little(uint32_t x) { return x; }
+	inline static uint16_t from_or_to_little(uint16_t x) { return x; }
+	inline static int64_t from_or_to_little(int64_t x) { return x; }
+	inline static int32_t from_or_to_little(int32_t x) { return x; }
+	inline static int16_t from_or_to_little(int16_t x) { return x; }
+#elif __BYTE_ORDER == __BIG_ENDIAN
+	inline static uint64_t from_or_to_little(uint64_t x) { return __builtin_bswap64(x); }
+	inline static uint32_t from_or_to_little(uint32_t x) { return __builtin_bswap32(x); }
+	inline static uint16_t from_or_to_little(uint16_t x) { return __builtin_bswap16(x); }
+	inline static int64_t from_or_to_little(int64_t x) { return __builtin_bswap64(x); }
+	inline static int32_t from_or_to_little(int32_t x) { return __builtin_bswap32(x); }
+	inline static int16_t from_or_to_little(int16_t x) { return __builtin_bswap16(x); }
+#else
+#error Cannot determine endianness
+#endif
+
 private:
-	template<std::size_t OPCODE_SIZE, typename IMM_TYPE>
-	x64_instruction(
-			const std::array<uint8_t, OPCODE_SIZE>& opcode,
-			const struct x64_modrm* modrm_p,
-			const struct x64_sib* sib_p,
-			IMM_TYPE* imm_p,
-			uint8_t* data_p = nullptr)
+	size_t opcode_size = 0;
+	uint8_t opcode[15]; // 15 is the maximum instructionuction size on x64
+
+	bool has_modrm = false;
+	union
 	{
-		data_size = opcode.size() +
-				(modrm_p ? 1 : 0) +
-				(sib_p ? 1 : 0) +
-				(imm_p ? sizeof(IMM_TYPE) : 0);
+		struct x64_modrm modrm;
+		uint8_t modrm_byte;
+	};
 
-		if (data_size > 15)
-			throw std::overflow_error("Instruction was too long");
+	bool has_sib = false;
+	union
+	{
+		struct x64_sib sib;
+		uint8_t sib_byte;
+	};
 
-		data_ptr = data_p ? data_p : data_alloc;
-
-		/* Get a pointer to the instruction data */
-		auto ptr = this->data_ptr;
-
-		/* Add the opcode */
-		for(const auto& opcode_byte : opcode)
-			*ptr++ = opcode_byte;
-
-		/* Add ModR/M */
-		if (modrm_p)
-		{
-			modrm_ptr = (struct x64_modrm*) ptr;
-			*modrm_ptr = *modrm_p;
-			ptr++;
-		}
-
-		/* Add ModR/M */
-		if (sib_p)
-		{
-			sib_ptr = (struct x64_sib*) ptr;
-			*sib_ptr = *sib_p;
-			ptr++;
-		}
-
-		/* Add immediate/displacement */
-		if (imm_p)
-		{
-			imm_ptr = ptr;
-			*(IMM_TYPE*)imm_ptr = *imm_p;
-		}
-	}
-
-	uint8_t data_alloc[15]; // 15 is the maximum instruction size on x64
-
-	struct x64_modrm* modrm_ptr = nullptr;
-	struct x64_sib* sib_ptr = nullptr;
-	void* imm_ptr = nullptr;
-	uint8_t* data_ptr;
-	std::size_t data_size;
+	size_t imm_size = 0;
+	union
+	{
+		uint64_t imm64;
+		uint32_t imm32;
+		uint16_t imm16;
+		uint8_t imm8;
+		uint8_t imm_data[8];
+	};
 };
 
 struct x64_nop1	: public x64_instruction{x64_nop1()	: x64_instruction(std::array<uint8_t, 1> { 0x90 }) {} };
@@ -371,11 +494,32 @@ struct x64_ud2	: public x64_instruction{x64_ud2()	: x64_instruction(std::array<u
 class x64_mov : public x64_instruction
 {
 public:
+	template<typename T>
+	void x64_mov_reg_reg(T dst, T src)
+	{
+		/* if it's a 64 bit register, we need a REX prefix */
+		if (sizeof(typename T::value_type) == 8)
+		{
+			add_opcode(extend_reg_prefix(x64_reg64(dst.value), x64_reg64(src.value)));
+		}
+
+		/* If it's a 16 bit value, override the operand size */
+		if (sizeof(typename T::value_type) == 2)
+		{
+			add_opcode(x64_override::oper_size);
+		}
+
+		/* For 8-bit reg-reg moves, the opcode is 0x88, otherwise it's 0x89 */
+		add_opcode(sizeof(typename T::value_type) == 1 ? 0x88 : 0x89);
+
+		set_modrm(x64_modrm{dst, src, 3});
+	}
+
 	/* Move register into register */
-	x64_mov(x64_reg64 dst, x64_reg64 src) : x64_instruction(std::array<uint8_t, 2> { extend_reg_prefix(dst, src), 0x89 }, x64_modrm{dst, src, 3}) {}
-	x64_mov(x64_reg32 dst, x64_reg32 src) : x64_instruction(std::array<uint8_t, 1> { 0x89 }, x64_modrm{dst, src, 3}) {}
-	x64_mov(x64_reg16 dst, x64_reg16 src) : x64_instruction(std::array<uint8_t, 2> { x64_override::oper_size, 0x89 }, x64_modrm{dst, src, 3}) {}
-	x64_mov(x64_reg8  dst, x64_reg8  src) : x64_instruction(std::array<uint8_t, 1> { 0x88 }, x64_modrm{dst, src, 3}) {}
+	x64_mov(x64_reg64 dst, x64_reg64 src) { x64_mov_reg_reg(dst, src); } //: x64_instruction(std::array<uint8_t, 2> { extend_reg_prefix(dst, src), 0x89 }, x64_modrm{dst, src, 3}) {}
+	x64_mov(x64_reg32 dst, x64_reg32 src) { x64_mov_reg_reg(dst, src); } //: x64_instruction(std::array<uint8_t, 1> { 0x89 }, x64_modrm{dst, src, 3}) {}
+	x64_mov(x64_reg16 dst, x64_reg16 src) { x64_mov_reg_reg(dst, src); } //: x64_instruction(std::array<uint8_t, 2> { x64_override::oper_size, 0x89 }, x64_modrm{dst, src, 3}) {}
+	x64_mov(x64_reg8  dst, x64_reg8  src) { x64_mov_reg_reg(dst, src); } //: x64_instruction(std::array<uint8_t, 1> { 0x88 }, x64_modrm{dst, src, 3}) {}
 
 	/* Move register into register pointer */
 	x64_mov(x64_reg_ptr64 addr, x64_reg64 reg) : x64_instruction(std::array<uint8_t, 2> { extend_reg_prefix(addr.ptr, reg), 0x89 }, x64_modrm{addr.ptr, reg, 0}) { }

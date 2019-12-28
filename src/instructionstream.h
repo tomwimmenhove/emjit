@@ -13,7 +13,6 @@
 #include <functional>
 
 #include "instruction.h"
-#include "instr.h"
 #include "autoallocator.h"
 
 class instruction_stream
@@ -45,22 +44,22 @@ public:
 //	}
 
 	//__attribute__((optimize("unroll-loops"))) // <=- Makes it WORSE
+//    inline friend instruction_stream& operator<<(instruction_stream& output, const instruction& inst)
+//    {
+//		size_t inst_size = inst.size();
+//
+//		if (inst_size + output.data_size > output.max_size)
+//			throw std::overflow_error("Tried to stream instruction beyond end of buffer");
+//
+//		/* Copy the instruction */
+//		const uint8_t* id = inst.data();
+//		for (size_t i = 0; i < inst_size; i++)
+//			output.data_ptr[output.data_size++] = id[i];
+//
+//       return output;
+//    }
+
     inline friend instruction_stream& operator<<(instruction_stream& output, const instruction& inst)
-    {
-		size_t inst_size = inst.size();
-
-		if (inst_size + output.data_size > output.max_size)
-			throw std::overflow_error("Tried to stream instruction beyond end of buffer");
-
-		/* Copy the instruction */
-		const uint8_t* id = inst.data();
-		for (size_t i = 0; i < inst_size; i++)
-			output.data_ptr[output.data_size++] = id[i];
-
-       return output;
-    }
-
-    inline friend instruction_stream& operator<<(instruction_stream& output, const instr& inst)
      {
  		size_t inst_size = inst.size();
 

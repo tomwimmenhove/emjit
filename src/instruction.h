@@ -14,7 +14,7 @@ class instruction
 {
 public:
 	virtual std::size_t size() const = 0;
-	virtual uint8_t* data() const = 0;
+	virtual bool emit_to(uint8_t* p) const = 0;
 
 	virtual ~instruction() { }
 };
