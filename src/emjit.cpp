@@ -64,7 +64,7 @@ int main()
 	}
 	catch( const unit_test_exception& ex )
 	{
-		cerr << "Unit test failed:\n" << ex.what() << '\n';
+		cerr << "Unit test failed:\n" << ex.what() << '\n' << flush;
 
 		return 1;
 	}
