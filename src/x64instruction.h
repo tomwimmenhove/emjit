@@ -508,7 +508,7 @@ public:
 	}
 
 	template<typename T, typename U>
-	void x64_add_prefix(const T& a, const x64_addr_ptr<U>& b)
+	void x64_add_prefixes(const T& a, const x64_addr_ptr<U>& b)
 	{
 		if (sizeof(typename U::value_type) == sizeof(uint32_t))
 			add_opcode(x64_override::addr_size);
@@ -520,7 +520,7 @@ public:
 	}
 
 	template<typename T>
-	void x64_add_prefix(const T& a, const T& b)
+	void x64_add_prefixes(const T& a, const T& b)
 	{
 		if (sizeof(typename T::value_type) == sizeof(uint16_t))
 			add_opcode(x64_override::oper_size);
@@ -528,43 +528,44 @@ public:
 		x64_add_rex(a, b, sizeof(typename T::value_type));
 	}
 
-	template<typename T, typename U, int MOD, uint8_t OC>
-	void x64_reg_reg(T a, U b)
+	template<typename T, typename U>
+	void x64_reg_reg(T a, U b, uint8_t oc, int mod)
 	{
-		add_opcode(OC);
-		set_modrm(x64_modrm{a, b, MOD});
+		add_opcode(oc);
+		set_modrm(x64_modrm{a, b, mod});
 	}
 
-	template<typename T, typename U, uint8_t OC>
-	void x64_mov_reg_regptr(const T& a, const x64_addr_ptr<U>& b)
+	template<typename T, typename U>
+	void x64_mov_reg_regptr(const T& a, const x64_addr_ptr<U>& b, uint8_t oc)
 	{
-		x64_add_prefix(a, b);
-		x64_reg_reg_ptr<T, U, OC>(a, b);
+		x64_add_prefixes(a, b);
+		x64_reg_reg_ptr(a, b, oc);
 	}
 
-	template<typename T, typename U, uint8_t OC>
-	void x64_mov_regptr_reg(const x64_addr_ptr<T>& a, const U& b)
+	template<typename T, typename U>
+	void x64_mov_regptr_reg(const x64_addr_ptr<T>& a, const U& b, uint8_t oc)
 	{
-		x64_add_prefix(b, a);
-		x64_reg_reg_ptr<U, T, OC>(b, a);
+		x64_add_prefixes(b, a);
+		x64_reg_reg_ptr(b, a, oc);
 	}
 
-	template<typename T, typename U, uint8_t OC>
-	void x64_reg_reg_ptr(const T& a, const x64_addr_ptr<U>& b)
+	template<typename T, typename U>
+	void x64_reg_reg_ptr(const T& a, const x64_addr_ptr<U>& b, uint8_t oc)
 	{
 		/*
 		 * %sp, %r12 and %bp, r13 require some special treatment.
 		 * See: https://stackoverflow.com/questions/36529449/why-are-rbp-and-rsp-called-general-purpose-registers
 		 */
 
+		/* %bp and %r12 can only be used with a zero-offset */
 		if (b.ptr.is_bp() || b.ptr.is_r13())
 		{
-			x64_mov_reg_reg_ptr_off<T, U, uint8_t, 1, OC>(a, b, static_cast<uint8_t>(0));
+			x64_mov_reg_reg_ptr_off(a, b, oc, 1, static_cast<uint8_t>(0));
 
 			return;
 		}
 
-		x64_reg_reg<U, T, 0, OC>(b.ptr, a);
+		x64_reg_reg(b.ptr, a, oc, 0);
 
 		/* %sp and %r12 always require a 0x24 sib byte. See stackoverflow link above */
 		if (b.ptr.is_sp() || b.ptr.is_r12())
@@ -573,10 +574,10 @@ public:
 		}
 	}
 
-	template<typename T, typename U, typename W, int MOD, uint8_t OC>
-	void x64_mov_reg_reg_ptr_off(const T& a, const x64_addr_ptr<U>& b, W imm)
+	template<typename T, typename U, typename W>
+	void x64_mov_reg_reg_ptr_off(const T& a, const x64_addr_ptr<U>& b, uint8_t oc, int mod, W imm)
 	{
-		x64_reg_reg<U, T, MOD, OC>(b.ptr, a);
+		x64_reg_reg(b.ptr, a, oc, mod);
 
 		if ((a.is_sp() || a.is_r12()) && !(b.ptr.is_bp() || b.ptr.is_r13()))
 		{
@@ -586,41 +587,41 @@ public:
 		set_imm(imm);
 	}
 
-	template<typename T, uint8_t OC>
-	void x64_mov_reg_reg(T a, T b)
+	template<typename T>
+	void x64_mov_reg_reg(T a, T b, uint8_t oc)
 	{
-		x64_add_prefix(a, b);
-		x64_reg_reg<T, T, 3, OC>(a, b);
+		x64_add_prefixes(a, b);
+		x64_reg_reg(a, b, oc, 3);
 	}
 
 
 	/* Move register into register */
-	x64_mov(x64_reg64 dst, x64_reg64 src) { x64_mov_reg_reg<x64_reg64, 0x89>(dst, src); }
-	x64_mov(x64_reg32 dst, x64_reg32 src) { x64_mov_reg_reg<x64_reg32, 0x89>(dst, src); }
-	x64_mov(x64_reg16 dst, x64_reg16 src) { x64_mov_reg_reg<x64_reg16, 0x89>(dst, src); }
-	x64_mov(x64_reg8  dst, x64_reg8  src) { x64_mov_reg_reg<x64_reg8, 0x88>(dst, src); }
+	x64_mov(x64_reg64 dst, x64_reg64 src) { x64_mov_reg_reg(dst, src, 0x89); }
+	x64_mov(x64_reg32 dst, x64_reg32 src) { x64_mov_reg_reg(dst, src, 0x89); }
+	x64_mov(x64_reg16 dst, x64_reg16 src) { x64_mov_reg_reg(dst, src, 0x89); }
+	x64_mov(x64_reg8  dst, x64_reg8  src) { x64_mov_reg_reg(dst, src, 0x88); }
 
 	/* Move register into register pointer */
-	x64_mov(x64_reg_ptr64 addr, x64_reg64 reg) { x64_mov_regptr_reg<x64_reg64, x64_reg64, 0x89>(addr, reg); }
-	x64_mov(x64_reg_ptr64 addr, x64_reg32 reg) { x64_mov_regptr_reg<x64_reg64, x64_reg32, 0x89>(addr, reg); }
-	x64_mov(x64_reg_ptr64 addr, x64_reg16 reg) { x64_mov_regptr_reg<x64_reg64, x64_reg16, 0x89>(addr, reg); }
-	x64_mov(x64_reg_ptr64 addr, x64_reg8l reg) { x64_mov_regptr_reg<x64_reg64, x64_reg8, 0x88>(addr, reg); }
+	x64_mov(x64_reg_ptr64 addr, x64_reg64 reg) { x64_mov_regptr_reg(addr, reg, 0x89); }
+	x64_mov(x64_reg_ptr64 addr, x64_reg32 reg) { x64_mov_regptr_reg(addr, reg, 0x89); }
+	x64_mov(x64_reg_ptr64 addr, x64_reg16 reg) { x64_mov_regptr_reg(addr, reg, 0x89); }
+	x64_mov(x64_reg_ptr64 addr, x64_reg8l reg) { x64_mov_regptr_reg(addr, reg, 0x88); }
 
-	x64_mov(x64_reg_ptr32 addr, x64_reg64 reg) { x64_mov_regptr_reg<x64_reg32, x64_reg64, 0x89>(addr, reg); }
-	x64_mov(x64_reg_ptr32 addr, x64_reg32 reg) { x64_mov_regptr_reg<x64_reg32, x64_reg32, 0x89>(addr, reg); }
-	x64_mov(x64_reg_ptr32 addr, x64_reg16 reg) { x64_mov_regptr_reg<x64_reg32, x64_reg16, 0x89>(addr, reg); }
-	x64_mov(x64_reg_ptr32 addr, x64_reg8l reg) { x64_mov_regptr_reg<x64_reg32, x64_reg8, 0x88>(addr, reg); }
+	x64_mov(x64_reg_ptr32 addr, x64_reg64 reg) { x64_mov_regptr_reg(addr, reg, 0x89); }
+	x64_mov(x64_reg_ptr32 addr, x64_reg32 reg) { x64_mov_regptr_reg(addr, reg, 0x89); }
+	x64_mov(x64_reg_ptr32 addr, x64_reg16 reg) { x64_mov_regptr_reg(addr, reg, 0x89); }
+	x64_mov(x64_reg_ptr32 addr, x64_reg8l reg) { x64_mov_regptr_reg(addr, reg, 0x88); }
 
 	/* Move register pointer into register */
-	x64_mov(x64_reg64 reg, x64_reg_ptr64 addr) { x64_mov_reg_regptr<x64_reg64, x64_reg64, 0x8b>(reg, addr); }
-	x64_mov(x64_reg32 reg, x64_reg_ptr64 addr) { x64_mov_reg_regptr<x64_reg32, x64_reg64, 0x8b>(reg, addr); }
-	x64_mov(x64_reg16 reg, x64_reg_ptr64 addr) { x64_mov_reg_regptr<x64_reg16, x64_reg64, 0x8b>(reg, addr); }
-	x64_mov(x64_reg8l reg, x64_reg_ptr64 addr) { x64_mov_reg_regptr<x64_reg8, x64_reg64, 0x8a>(reg, addr); }
+	x64_mov(x64_reg64 reg, x64_reg_ptr64 addr) { x64_mov_reg_regptr(reg, addr, 0x8b); }
+	x64_mov(x64_reg32 reg, x64_reg_ptr64 addr) { x64_mov_reg_regptr(reg, addr, 0x8b); }
+	x64_mov(x64_reg16 reg, x64_reg_ptr64 addr) { x64_mov_reg_regptr(reg, addr, 0x8b); }
+	x64_mov(x64_reg8l reg, x64_reg_ptr64 addr) { x64_mov_reg_regptr(reg, addr, 0x8a); }
 
-	x64_mov(x64_reg64 reg, x64_reg_ptr32 addr) { x64_mov_reg_regptr<x64_reg64, x64_reg32, 0x8b>(reg, addr); }
-	x64_mov(x64_reg32 reg, x64_reg_ptr32 addr) { x64_mov_reg_regptr<x64_reg32, x64_reg32, 0x8b>(reg, addr); }
-	x64_mov(x64_reg16 reg, x64_reg_ptr32 addr) { x64_mov_reg_regptr<x64_reg16, x64_reg32, 0x8b>(reg, addr); }
-	x64_mov(x64_reg8l reg, x64_reg_ptr32 addr) { x64_mov_reg_regptr<x64_reg8, x64_reg32, 0x8a>(reg, addr); }
+	x64_mov(x64_reg64 reg, x64_reg_ptr32 addr) { x64_mov_reg_regptr(reg, addr, 0x8b); }
+	x64_mov(x64_reg32 reg, x64_reg_ptr32 addr) { x64_mov_reg_regptr(reg, addr, 0x8b); }
+	x64_mov(x64_reg16 reg, x64_reg_ptr32 addr) { x64_mov_reg_regptr(reg, addr, 0x8b); }
+	x64_mov(x64_reg8l reg, x64_reg_ptr32 addr) { x64_mov_reg_regptr(reg, addr, 0x8a); }
 
 	/* Move register into register pointer + 8 bit offset */
 	//x64_mov(x64_reg_ptr64 addr, x64_reg64 reg, int8_t off) { x64_mov_reg_reg_ptr_off<x64_reg64, x64_reg64, int8_t, 1>(addr.ptr, reg, off); } //: x64_instruction(std::array<uint8_t, 2> { extend_reg_prefix(addr.ptr, reg), 0x89 }, x64_modrm{addr.ptr, reg, 1}, off) { }
