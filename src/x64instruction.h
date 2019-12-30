@@ -491,33 +491,32 @@ struct x64_ud2	: public x64_instruction{x64_ud2()	: x64_instruction(std::array<u
 class x64_mov : public x64_instruction
 {
 public:
-	/* For 8-bit reg-reg moves, the opcode is 0x88, otherwise it's 0x89 */
-	template<typename OPER_TYPE, typename ADDR_TYPE>
-	void x64_add_overrides()
+	template<typename T, typename U>
+	void x64_add_rex(const T& a, const U& b, size_t oper_size)
 	{
-		if (sizeof(typename ADDR_TYPE::value_type) == sizeof(uint32_t))
-			add_opcode(x64_override::addr_size);
+		uint8_t rex = 0;
 
-		if (sizeof(typename OPER_TYPE::value_type) == sizeof(uint16_t))
-			add_opcode(x64_override::oper_size);
+		if (a.is_extended())
+			rex |= x64_rex::b;
+		if (b.is_extended())
+			rex |= x64_rex::r;
+		if (oper_size == sizeof(uint64_t))
+			rex |= x64_rex::w;
+
+		if (rex)
+			add_opcode(rex);
 	}
 
 	template<typename T, typename U>
 	void x64_add_prefix(const T& a, const x64_addr_ptr<U>& b)
 	{
-		x64_add_overrides<T, U>();
+		if (sizeof(typename U::value_type) == sizeof(uint32_t))
+			add_opcode(x64_override::addr_size);
 
-		uint8_t rex = 0;
+		if (sizeof(typename T::value_type) == sizeof(uint16_t))
+			add_opcode(x64_override::oper_size);
 
-		if (a.is_extended())
-			rex |= x64_rex::r;
-		if (b.ptr.is_extended())
-			rex |= x64_rex::b;
-		if (sizeof(typename T::value_type) == sizeof(uint64_t))
-			rex |= x64_rex::w;
-
-		if (rex)
-			add_opcode(rex);
+		x64_add_rex(b.ptr, a, sizeof(typename T::value_type));
 	}
 
 	template<typename T>
@@ -526,17 +525,7 @@ public:
 		if (sizeof(typename T::value_type) == sizeof(uint16_t))
 			add_opcode(x64_override::oper_size);
 
-		uint8_t rex = 0;
-
-		if (a.is_extended())
-			rex |= x64_rex::b;
-		if (b.is_extended())
-			rex |= x64_rex::r;
-		if (sizeof(typename T::value_type) == sizeof(uint64_t))
-			rex |= x64_rex::w;
-
-		if (rex)
-			add_opcode(rex);
+		x64_add_rex(a, b, sizeof(typename T::value_type));
 	}
 
 	template<typename T, typename U, int MOD, uint8_t OC>
