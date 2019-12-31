@@ -435,7 +435,27 @@ protected:
 				(src.is_extended() ? x64_rex::w | x64_rex::r : x64_rex::w));
 	}
 
-public:
+	template<typename T, typename U>
+	inline void x64_add_prefixes(const T& a, const x64_addr_ptr<U>& b)
+	{
+		if (sizeof(typename U::value_type) == sizeof(uint32_t))
+			add_opcode(x64_override::addr_size);
+
+		if (sizeof(typename T::value_type) == sizeof(uint16_t))
+			add_opcode(x64_override::oper_size);
+
+		x64_add_rex(b.ptr, a, sizeof(typename T::value_type));
+	}
+
+	template<typename T>
+	inline void x64_add_prefixes(const T& a, const T& b)
+	{
+		if (sizeof(typename T::value_type) == sizeof(uint16_t))
+			add_opcode(x64_override::oper_size);
+
+		x64_add_rex(a, b, sizeof(typename T::value_type));
+	}
+
 #if __BYTE_ORDER == __LITTLE_ENDIAN
 	inline static uint64_t from_or_to_little(uint64_t x) { return x; }
 	inline static uint32_t from_or_to_little(uint32_t x) { return x; }
@@ -455,6 +475,22 @@ public:
 #endif
 
 private:
+	template<typename T, typename U>
+	inline void x64_add_rex(const T& a, const U& b, size_t oper_size)
+	{
+		uint8_t rex = 0;
+
+		if (a.is_extended())
+			rex |= x64_rex::b;
+		if (b.is_extended())
+			rex |= x64_rex::r;
+		if (oper_size == sizeof(uint64_t))
+			rex |= x64_rex::w;
+
+		if (rex)
+			add_opcode(rex);
+	}
+
 	size_t opcode_size = 0;
 	uint8_t opcode[15]; // 15 is the maximum instructionuction size on x64
 
@@ -492,43 +528,6 @@ class x64_mov : public x64_instruction
 {
 public:
 	template<typename T, typename U>
-	void x64_add_rex(const T& a, const U& b, size_t oper_size)
-	{
-		uint8_t rex = 0;
-
-		if (a.is_extended())
-			rex |= x64_rex::b;
-		if (b.is_extended())
-			rex |= x64_rex::r;
-		if (oper_size == sizeof(uint64_t))
-			rex |= x64_rex::w;
-
-		if (rex)
-			add_opcode(rex);
-	}
-
-	template<typename T, typename U>
-	void x64_add_prefixes(const T& a, const x64_addr_ptr<U>& b)
-	{
-		if (sizeof(typename U::value_type) == sizeof(uint32_t))
-			add_opcode(x64_override::addr_size);
-
-		if (sizeof(typename T::value_type) == sizeof(uint16_t))
-			add_opcode(x64_override::oper_size);
-
-		x64_add_rex(b.ptr, a, sizeof(typename T::value_type));
-	}
-
-	template<typename T>
-	void x64_add_prefixes(const T& a, const T& b)
-	{
-		if (sizeof(typename T::value_type) == sizeof(uint16_t))
-			add_opcode(x64_override::oper_size);
-
-		x64_add_rex(a, b, sizeof(typename T::value_type));
-	}
-
-	template<typename T, typename U>
 	void x64_reg_reg(T a, U b, uint8_t oc, int mod)
 	{
 		add_opcode(oc);
@@ -561,7 +560,6 @@ public:
 		if (b.ptr.is_bp() || b.ptr.is_r13())
 		{
 			x64_mov_reg_reg_ptr_off(a, b, oc, 1, static_cast<uint8_t>(0));
-
 			return;
 		}
 
@@ -569,9 +567,7 @@ public:
 
 		/* %sp and %r12 always require a 0x24 sib byte. See stackoverflow link above */
 		if (b.ptr.is_sp() || b.ptr.is_r12())
-		{
 			set_sib(x64_sib(0x24));
-		}
 	}
 
 	template<typename T, typename U, typename W>
@@ -580,9 +576,7 @@ public:
 		x64_reg_reg(b.ptr, a, oc, mod);
 
 		if ((a.is_sp() || a.is_r12()) && !(b.ptr.is_bp() || b.ptr.is_r13()))
-		{
 			set_sib(x64_sib(0x24));
-		}
 
 		set_imm(imm);
 	}
@@ -593,7 +587,6 @@ public:
 		x64_add_prefixes(a, b);
 		x64_reg_reg(a, b, oc, 3);
 	}
-
 
 	/* Move register into register */
 	x64_mov(x64_reg64 dst, x64_reg64 src) { x64_mov_reg_reg(dst, src, 0x89); }
