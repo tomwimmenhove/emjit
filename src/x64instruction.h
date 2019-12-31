@@ -440,7 +440,7 @@ public:
 
 protected:
 	template<typename T, typename U>
-	inline void x64_add_prefixes(const T& a, const x64_addr_ptr<U>& b)
+	inline void add_prefixes(const T& a, const x64_addr_ptr<U>& b)
 	{
 		if (sizeof(typename U::value_type) == sizeof(uint32_t))
 			add_opcode(x64_override::addr_size);
@@ -452,7 +452,7 @@ protected:
 	}
 
 	template<typename T>
-	inline void x64_add_prefixes(const T& a, const T& b)
+	inline void add_prefixes(const T& a, const T& b)
 	{
 		if (sizeof(typename T::value_type) == sizeof(uint16_t))
 			add_opcode(x64_override::oper_size);
@@ -461,9 +461,16 @@ protected:
 	}
 
 	template<typename T, typename U>
+	void x64_reg_reg(T a, U b, uint8_t oc, int mod)
+	{
+		add_opcode(oc);
+		set_modrm(x64_modrm{a, b, mod});
+	}
+
+	template<typename T, typename U>
 	void x64_orred_oc_reg_imm(T reg, U imm, uint8_t oc)
 	{
-		x64_add_prefixes(reg, T(0));
+		add_prefixes(reg, T(0));
 		add_opcode(oc | reg.value);
 		set_imm(imm);
 	}
@@ -471,7 +478,7 @@ protected:
 	template<typename T, typename U>
 	void x64_reg_imm(T reg, x64_addr_ptr<U> addr, uint8_t oc)
 	{
-		x64_add_prefixes(T(0), reg);
+		add_prefixes(T(0), reg);
 		add_opcode(oc);
 		set_modrm(x64_modrm(4, reg, 0));
 		set_sib(x64_sib(0x25));
@@ -550,13 +557,6 @@ class x64_mov : public x64_instruction
 {
 public:
 	template<typename T, typename U>
-	void x64_reg_reg(T a, U b, uint8_t oc, int mod)
-	{
-		add_opcode(oc);
-		set_modrm(x64_modrm{a, b, mod});
-	}
-
-	template<typename T, typename U>
 	void x64_mov_reg_reg_ptr(const T& a, const x64_addr_ptr<U>& b, uint8_t oc)
 	{
 		/*
@@ -571,7 +571,7 @@ public:
 			return;
 		}
 
-		x64_add_prefixes(a, b);
+		add_prefixes(a, b);
 		x64_reg_reg(b.ptr, a, oc, 0);
 
 		/* %sp and %r12 always require a 0x24 sib byte. See stackoverflow link above */
@@ -582,7 +582,7 @@ public:
 	template<typename T, typename U, typename W>
 	void x64_mov_reg_reg_ptr_off(const T& a, const x64_addr_ptr<U>& b, uint8_t oc, int mod, W imm)
 	{
-		x64_add_prefixes(a, b);
+		add_prefixes(a, b);
 		x64_reg_reg(b.ptr, a, oc, mod);
 
 		if (b.ptr.is_sp() || b.ptr.is_r12())
@@ -594,7 +594,7 @@ public:
 	template<typename T>
 	void x64_mov_reg_reg(T a, T b, uint8_t oc)
 	{
-		x64_add_prefixes(a, b);
+		add_prefixes(a, b);
 		x64_reg_reg(a, b, oc, 3);
 	}
 
@@ -678,7 +678,7 @@ public:
 	x64_mov(x64_reg8  reg, uint8_t  imm) { x64_orred_oc_reg_imm(reg, imm, 0xb0); }
 	x64_mov(x64_reg64 reg, uint32_t imm)
 	{
-		x64_add_prefixes(reg, x64_reg64(0));
+		add_prefixes(reg, x64_reg64(0));
 		add_opcode(0xc7);
 		set_modrm(x64_modrm{reg, 0, 3});
 		set_imm(imm);
@@ -686,10 +686,10 @@ public:
 
 	/* Move immediate address into register */
 	/* 32 bit pointers */
-	x64_mov(x64_reg64 reg, x64_addr_ptr<uint32_t> addr) { x64_reg_imm(reg, addr, 0x8b); }
-	x64_mov(x64_reg32 reg, x64_addr_ptr<uint32_t> addr) { x64_reg_imm(reg, addr, 0x8b); }
-	x64_mov(x64_reg16 reg, x64_addr_ptr<uint32_t> addr) { x64_reg_imm(reg, addr, 0x8b); }
-	x64_mov(x64_reg8  reg, x64_addr_ptr<uint32_t> addr) { x64_reg_imm(reg, addr, 0x8a); }
+	x64_mov(x64_reg64 reg, x64_addr_ptr<int32_t> addr) { x64_reg_imm(reg, addr, 0x8b); }
+	x64_mov(x64_reg32 reg, x64_addr_ptr<int32_t> addr) { x64_reg_imm(reg, addr, 0x8b); }
+	x64_mov(x64_reg16 reg, x64_addr_ptr<int32_t> addr) { x64_reg_imm(reg, addr, 0x8b); }
+	x64_mov(x64_reg8  reg, x64_addr_ptr<int32_t> addr) { x64_reg_imm(reg, addr, 0x8a); }
 
 	/* 64 bit pointers */
 	x64_mov(x64_reg64 reg, x64_addr_ptr<uint64_t*> addr) { x64_orred_oc_reg_imm(reg, reinterpret_cast<uint64_t>(addr.ptr), 0xa1); }
@@ -700,10 +700,10 @@ public:
 
 	/* Move register into immediate address */
 	/* 32 bit pointers */
-	x64_mov(x64_addr_ptr<uint32_t> addr, x64_reg64 reg) { x64_reg_imm(reg, addr, 0x89); }
-	x64_mov(x64_addr_ptr<uint32_t> addr, x64_reg32 reg) { x64_reg_imm(reg, addr, 0x89); }
-	x64_mov(x64_addr_ptr<uint32_t> addr, x64_reg16 reg) { x64_reg_imm(reg, addr, 0x89); }
-	x64_mov(x64_addr_ptr<uint32_t> addr, x64_reg8  reg) { x64_reg_imm(reg, addr, 0x88); }
+	x64_mov(x64_addr_ptr<int32_t> addr, x64_reg64 reg) { x64_reg_imm(reg, addr, 0x89); }
+	x64_mov(x64_addr_ptr<int32_t> addr, x64_reg32 reg) { x64_reg_imm(reg, addr, 0x89); }
+	x64_mov(x64_addr_ptr<int32_t> addr, x64_reg16 reg) { x64_reg_imm(reg, addr, 0x89); }
+	x64_mov(x64_addr_ptr<int32_t> addr, x64_reg8  reg) { x64_reg_imm(reg, addr, 0x88); }
 
 	/* 64 bit pointers */
 	x64_mov(x64_addr_ptr<uint64_t*> addr, x64_reg64 reg) { x64_orred_oc_reg_imm(reg, reinterpret_cast<uint64_t>(addr.ptr), 0xa3); }
@@ -712,29 +712,6 @@ public:
 	x64_mov(x64_addr_ptr<uint8_t*>  addr, x64_reg8l reg) { x64_orred_oc_reg_imm(reg, reinterpret_cast<uint64_t>(addr.ptr), 0xa2); }
 
 	virtual ~x64_mov() { }
-
-private:
-	/* Register <=> immediate address */
-	/* 64 bit pointers */
-	template<typename REG_TYPE, typename IMM_TYPE>
-	x64_mov(REG_TYPE reg, x64_addr_ptr<IMM_TYPE*> addr, uint8_t prefix, uint8_t oc)
-	 : x64_instruction(
-				std::array<uint8_t, 2> { prefix, oc },
-				reinterpret_cast<uint64_t>(addr.ptr))
-	{
-		if (static_cast<int>(reg.value) != 0)
-			throw std::out_of_range("Register not supported");
-	}
-
-	template<typename REG_TYPE, typename IMM_TYPE>
-	x64_mov(REG_TYPE reg, x64_addr_ptr<IMM_TYPE*> addr, uint8_t oc)
-	 : x64_instruction(
-				std::array<uint8_t, 1> { oc },
-				reinterpret_cast<uint64_t>(addr.ptr))
-	{
-		if (static_cast<int>(reg.value) != 0)
-			throw std::out_of_range("Register not supported");
-	}
 };
 
 #endif /* X64INSTRUCTION_H_ */
