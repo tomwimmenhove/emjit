@@ -48,11 +48,6 @@ struct x64_reg64    : public x64_reg_base_normal
 	using value_type = uint64_t;
 	static const std::string names[16];
 };
-struct x64_reg64a   : public x64_reg64    { using x64_reg64::x64_reg64; };
-struct x64_reg64agp : public x64_reg64a   { using x64_reg64a::x64_reg64a; };
-struct x64_reg64asp : public x64_reg64a   { using x64_reg64a::x64_reg64a; };
-struct x64_reg64abp : public x64_reg64a   { using x64_reg64a::x64_reg64a; };
-struct x64_reg64b   : public x64_reg64    { using x64_reg64::x64_reg64; };
 
 struct x64_reg32   : public x64_reg_base_normal
 {
@@ -60,9 +55,6 @@ struct x64_reg32   : public x64_reg_base_normal
 	using value_type = uint32_t;
 	static const std::string names[8];
 };
-struct x64_reg32gp : public x64_reg32     { using x64_reg32::x64_reg32; };
-struct x64_reg32bp : public x64_reg32     { using x64_reg32::x64_reg32; };
-struct x64_reg32sp : public x64_reg32     { using x64_reg32::x64_reg32; };
 
 struct x64_reg16   : public x64_reg_base_normal
 {
@@ -70,9 +62,6 @@ struct x64_reg16   : public x64_reg_base_normal
 	using value_type = uint16_t;
 	static const std::string names[8];
 };
-struct x64_reg16gp : public x64_reg16     { using x64_reg16::x64_reg16; };
-struct x64_reg16bp : public x64_reg16     { using x64_reg16::x64_reg16; };
-struct x64_reg16sp : public x64_reg16     { using x64_reg16::x64_reg16; };
 
 struct x64_reg8  : public x64_reg_base8
 {
@@ -86,44 +75,44 @@ struct x64_reg8l : public x64_reg8        { using x64_reg8::x64_reg8; };
 struct x64_regs
 {
 	/* 64 bit registers */
-	constexpr static x64_reg64agp rax = 0;
-	constexpr static x64_reg64agp rcx = 1;
-	constexpr static x64_reg64agp rdx = 2;
-	constexpr static x64_reg64agp rbx = 3;
-	constexpr static x64_reg64asp rsp = 4;
-	constexpr static x64_reg64abp rbp = 5;
-	constexpr static x64_reg64agp rsi = 6;
-	constexpr static x64_reg64agp rdi = 7;
+	constexpr static x64_reg64 rax = 0;
+	constexpr static x64_reg64 rcx = 1;
+	constexpr static x64_reg64 rdx = 2;
+	constexpr static x64_reg64 rbx = 3;
+	constexpr static x64_reg64 rsp = 4;
+	constexpr static x64_reg64 rbp = 5;
+	constexpr static x64_reg64 rsi = 6;
+	constexpr static x64_reg64 rdi = 7;
 
 	/* 64 bit extended registers */
-	constexpr static x64_reg64b  r8 = 8;
-	constexpr static x64_reg64b  r9 = 9;
-	constexpr static x64_reg64b r10 = 10;
-	constexpr static x64_reg64b r11 = 11;
-	constexpr static x64_reg64b r12 = 12;
-	constexpr static x64_reg64b r13 = 13;
-	constexpr static x64_reg64b r14 = 14;
-	constexpr static x64_reg64b r15 = 15;
+	constexpr static x64_reg64  r8 = 8;
+	constexpr static x64_reg64  r9 = 9;
+	constexpr static x64_reg64 r10 = 10;
+	constexpr static x64_reg64 r11 = 11;
+	constexpr static x64_reg64 r12 = 12;
+	constexpr static x64_reg64 r13 = 13;
+	constexpr static x64_reg64 r14 = 14;
+	constexpr static x64_reg64 r15 = 15;
 
 	/* 32 bit registers */
-	constexpr static x64_reg32gp eax = 0;
-	constexpr static x64_reg32gp ecx = 1;
-	constexpr static x64_reg32gp edx = 2;
-	constexpr static x64_reg32gp ebx = 3;
-	constexpr static x64_reg32sp esp = 4;
-	constexpr static x64_reg32bp ebp = 5;
-	constexpr static x64_reg32gp esi = 6;
-	constexpr static x64_reg32gp edi = 7;
+	constexpr static x64_reg32 eax = 0;
+	constexpr static x64_reg32 ecx = 1;
+	constexpr static x64_reg32 edx = 2;
+	constexpr static x64_reg32 ebx = 3;
+	constexpr static x64_reg32 esp = 4;
+	constexpr static x64_reg32 ebp = 5;
+	constexpr static x64_reg32 esi = 6;
+	constexpr static x64_reg32 edi = 7;
 
 	/* 16 bit registers */
-	constexpr static x64_reg16gp ax = 0;
-	constexpr static x64_reg16gp cx = 1;
-	constexpr static x64_reg16gp dx = 2;
-	constexpr static x64_reg16gp bx = 3;
-	constexpr static x64_reg16sp sp = 4;
-	constexpr static x64_reg16bp bp = 5;
-	constexpr static x64_reg16gp si = 6;
-	constexpr static x64_reg16gp di = 7;
+	constexpr static x64_reg16 ax = 0;
+	constexpr static x64_reg16 cx = 1;
+	constexpr static x64_reg16 dx = 2;
+	constexpr static x64_reg16 bx = 3;
+	constexpr static x64_reg16 sp = 4;
+	constexpr static x64_reg16 bp = 5;
+	constexpr static x64_reg16 si = 6;
+	constexpr static x64_reg16 di = 7;
 
 	/* lower 8 bit registers */
 	constexpr static x64_reg8l al = 0;
@@ -220,18 +209,9 @@ struct x64_reg_ptr64    : public x64_addr_ptr<x64_reg64>
 	using x64_addr_ptr::x64_addr_ptr;
 	using reg_type = x64_reg64;
 };
-struct x64_reg_ptr64a   : public x64_reg_ptr64 { using x64_reg_ptr64::x64_reg_ptr64; };
-struct x64_reg_ptr64agp : public x64_reg_ptr64a { using x64_reg_ptr64a::x64_reg_ptr64a; };
-struct x64_reg_ptr64asp : public x64_reg_ptr64a { using x64_reg_ptr64a::x64_reg_ptr64a; };
-struct x64_reg_ptr64abp : public x64_reg_ptr64a { using x64_reg_ptr64a::x64_reg_ptr64a; };
-struct x64_reg_ptr64b   : public x64_reg_ptr64 { using x64_reg_ptr64::x64_reg_ptr64; };
 
-static constexpr x64_reg_ptr32gp  x64_reg_addr(const x64_reg32gp&  reg) { return x64_reg_ptr32gp(reg); }
-static constexpr x64_reg_ptr32sp  x64_reg_addr(const x64_reg32sp&  reg) { return x64_reg_ptr32sp(reg); }
-static constexpr x64_reg_ptr64agp x64_reg_addr(const x64_reg64agp& reg) { return x64_reg_ptr64agp(reg); }
-static constexpr x64_reg_ptr64abp x64_reg_addr(const x64_reg64abp& reg) { return x64_reg_ptr64abp(reg); }
-static constexpr x64_reg_ptr64asp x64_reg_addr(const x64_reg64asp& reg) { return x64_reg_ptr64asp(reg); }
-static constexpr x64_reg_ptr64b   x64_reg_addr(const x64_reg64b& reg)   { return x64_reg_ptr64b(reg); }
+static constexpr x64_reg_ptr32  x64_reg_addr(const x64_reg32& reg) { return x64_reg_ptr32(reg); }
+static constexpr x64_reg_ptr64  x64_reg_addr(const x64_reg64& reg) { return x64_reg_ptr64(reg); }
 
 class x64_instruction : public instruction
 {
