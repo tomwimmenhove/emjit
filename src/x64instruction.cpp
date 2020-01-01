@@ -7,7 +7,7 @@
 
 #include "x64instruction.h"
 
-constexpr x64_reg64 x64_regs::rax;
+constexpr x64_reg64_0 x64_regs::rax;
 constexpr x64_reg64 x64_regs::rcx;
 constexpr x64_reg64 x64_regs::rdx;
 constexpr x64_reg64 x64_regs::rbx;
@@ -44,7 +44,7 @@ const std::string x64_reg64::names[16] = {
 		"r15",
 };
 
-constexpr x64_reg32 x64_regs::eax;
+constexpr x64_reg32_0 x64_regs::eax;
 constexpr x64_reg32 x64_regs::ecx;
 constexpr x64_reg32 x64_regs::edx;
 constexpr x64_reg32 x64_regs::ebx;
@@ -64,7 +64,7 @@ const std::string x64_reg32::names[8] =
 		"edi",
 };
 
-constexpr x64_reg16 x64_regs::ax;
+constexpr x64_reg16_0 x64_regs::ax;
 constexpr x64_reg16 x64_regs::cx;
 constexpr x64_reg16 x64_regs::dx;
 constexpr x64_reg16 x64_regs::bx;
@@ -84,7 +84,7 @@ const std::string x64_reg16::names[8] =
 		"di",
 };
 
-constexpr x64_reg8l x64_regs::al;
+constexpr x64_reg8l_0 x64_regs::al;
 constexpr x64_reg8l x64_regs::cl;
 constexpr x64_reg8l x64_regs::dl;
 constexpr x64_reg8l x64_regs::bl;
