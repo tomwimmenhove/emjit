@@ -668,28 +668,28 @@ public:
 
 
 	/* Move 64 bit base address + index * scale into reg */
-	x64_mov(x64_reg64 reg, x64_reg_ptr64 addr, x64_reg64 index, sib_scale scale) { x64_mov_reg_reg_ptr_idx(reg, addr, index, scale, 0x8b, 0); }
-	x64_mov(x64_reg32 reg, x64_reg_ptr64 addr, x64_reg64 index, sib_scale scale) { x64_mov_reg_reg_ptr_idx(reg, addr, index, scale, 0x8b, 0); }
-	x64_mov(x64_reg16 reg, x64_reg_ptr64 addr, x64_reg64 index, sib_scale scale) { x64_mov_reg_reg_ptr_idx(reg, addr, index, scale, 0x8b, 0); }
-	x64_mov(x64_reg8l reg, x64_reg_ptr64 addr, x64_reg64 index, sib_scale scale) { x64_mov_reg_reg_ptr_idx(reg, addr, index, scale, 0x8a, 0); }
+	x64_mov(x64_reg64 reg, x64_reg_ptr64 addr, x64_reg64 index, sib_scale scale) { x64_mov_reg_reg_ptr_idx(reg, addr, index, scale, 0x8b); }
+	x64_mov(x64_reg32 reg, x64_reg_ptr64 addr, x64_reg64 index, sib_scale scale) { x64_mov_reg_reg_ptr_idx(reg, addr, index, scale, 0x8b); }
+	x64_mov(x64_reg16 reg, x64_reg_ptr64 addr, x64_reg64 index, sib_scale scale) { x64_mov_reg_reg_ptr_idx(reg, addr, index, scale, 0x8b); }
+	x64_mov(x64_reg8l reg, x64_reg_ptr64 addr, x64_reg64 index, sib_scale scale) { x64_mov_reg_reg_ptr_idx(reg, addr, index, scale, 0x8a); }
 
 	/* Move 32 bit base address + index * scale into reg */
-	x64_mov(x64_reg64 reg, x64_reg_ptr32 addr, x64_reg32 index, sib_scale scale) { x64_mov_reg_reg_ptr_idx(reg, addr, index, scale, 0x8b, 0); }
-	x64_mov(x64_reg32 reg, x64_reg_ptr32 addr, x64_reg32 index, sib_scale scale) { x64_mov_reg_reg_ptr_idx(reg, addr, index, scale, 0x8b, 0); }
-	x64_mov(x64_reg16 reg, x64_reg_ptr32 addr, x64_reg32 index, sib_scale scale) { x64_mov_reg_reg_ptr_idx(reg, addr, index, scale, 0x8b, 0); }
-	x64_mov(x64_reg8l reg, x64_reg_ptr32 addr, x64_reg32 index, sib_scale scale) { x64_mov_reg_reg_ptr_idx(reg, addr, index, scale, 0x8a, 0); }
+	x64_mov(x64_reg64 reg, x64_reg_ptr32 addr, x64_reg32 index, sib_scale scale) { x64_mov_reg_reg_ptr_idx(reg, addr, index, scale, 0x8b); }
+	x64_mov(x64_reg32 reg, x64_reg_ptr32 addr, x64_reg32 index, sib_scale scale) { x64_mov_reg_reg_ptr_idx(reg, addr, index, scale, 0x8b); }
+	x64_mov(x64_reg16 reg, x64_reg_ptr32 addr, x64_reg32 index, sib_scale scale) { x64_mov_reg_reg_ptr_idx(reg, addr, index, scale, 0x8b); }
+	x64_mov(x64_reg8l reg, x64_reg_ptr32 addr, x64_reg32 index, sib_scale scale) { x64_mov_reg_reg_ptr_idx(reg, addr, index, scale, 0x8a); }
 
 	/* Move reg into 64 bit base address + index * scale */
-	x64_mov(x64_reg_ptr64 addr, x64_reg64 index, sib_scale scale, x64_reg64 reg) { x64_mov_reg_reg_ptr_idx(reg, addr, index, scale, 0x89, 0); }
-	x64_mov(x64_reg_ptr64 addr, x64_reg64 index, sib_scale scale, x64_reg32 reg) { x64_mov_reg_reg_ptr_idx(reg, addr, index, scale, 0x89, 0); }
-	x64_mov(x64_reg_ptr64 addr, x64_reg64 index, sib_scale scale, x64_reg16 reg) { x64_mov_reg_reg_ptr_idx(reg, addr, index, scale, 0x89, 0); }
-	x64_mov(x64_reg_ptr64 addr, x64_reg64 index, sib_scale scale, x64_reg8l reg) { x64_mov_reg_reg_ptr_idx(reg, addr, index, scale, 0x88, 0); }
+	x64_mov(x64_reg_ptr64 addr, x64_reg64 index, sib_scale scale, x64_reg64 reg) { x64_mov_reg_reg_ptr_idx(reg, addr, index, scale, 0x89); }
+	x64_mov(x64_reg_ptr64 addr, x64_reg64 index, sib_scale scale, x64_reg32 reg) { x64_mov_reg_reg_ptr_idx(reg, addr, index, scale, 0x89); }
+	x64_mov(x64_reg_ptr64 addr, x64_reg64 index, sib_scale scale, x64_reg16 reg) { x64_mov_reg_reg_ptr_idx(reg, addr, index, scale, 0x89); }
+	x64_mov(x64_reg_ptr64 addr, x64_reg64 index, sib_scale scale, x64_reg8l reg) { x64_mov_reg_reg_ptr_idx(reg, addr, index, scale, 0x88); }
 
 	/* Move reg into 32 bit base address + index * scale */
-	x64_mov(x64_reg_ptr32 addr, x64_reg32 index, sib_scale scale, x64_reg64 reg) { x64_mov_reg_reg_ptr_idx(reg, addr, index, scale, 0x89, 0); }
-	x64_mov(x64_reg_ptr32 addr, x64_reg32 index, sib_scale scale, x64_reg32 reg) { x64_mov_reg_reg_ptr_idx(reg, addr, index, scale, 0x89, 0); }
-	x64_mov(x64_reg_ptr32 addr, x64_reg32 index, sib_scale scale, x64_reg16 reg) { x64_mov_reg_reg_ptr_idx(reg, addr, index, scale, 0x89, 0); }
-	x64_mov(x64_reg_ptr32 addr, x64_reg32 index, sib_scale scale, x64_reg8l reg) { x64_mov_reg_reg_ptr_idx(reg, addr, index, scale, 0x88, 0); }
+	x64_mov(x64_reg_ptr32 addr, x64_reg32 index, sib_scale scale, x64_reg64 reg) { x64_mov_reg_reg_ptr_idx(reg, addr, index, scale, 0x89); }
+	x64_mov(x64_reg_ptr32 addr, x64_reg32 index, sib_scale scale, x64_reg32 reg) { x64_mov_reg_reg_ptr_idx(reg, addr, index, scale, 0x89); }
+	x64_mov(x64_reg_ptr32 addr, x64_reg32 index, sib_scale scale, x64_reg16 reg) { x64_mov_reg_reg_ptr_idx(reg, addr, index, scale, 0x89); }
+	x64_mov(x64_reg_ptr32 addr, x64_reg32 index, sib_scale scale, x64_reg8l reg) { x64_mov_reg_reg_ptr_idx(reg, addr, index, scale, 0x88); }
 
 
 	/* Move 64 bit base address + index * scale + 8 bit offset into reg */
@@ -787,21 +787,33 @@ private:
 	}
 
 	template<typename T, typename U>
-	void x64_mov_reg_reg_ptr_idx(const T& a, const x64_addr_ptr<U>& b, const U& c, sib_scale scale, uint8_t oc, int mod)
+	void x64_mov_reg_reg_ptr_idx(const T& a, const x64_addr_ptr<U>& b, const U& c, sib_scale scale, uint8_t oc)
 	{
-		if (c.is_sp() || c.is_r12())
-			throw std::invalid_argument("Stack pointer (and r12) cannot be used as index register");
+		if (c.is_sp())
+			throw std::invalid_argument("Stack pointer cannot be used as index register");
+
+		if (b.ptr.is_bp() || b.ptr.is_r13())
+		{
+			x64_mov_reg_reg_ptr_idx_off(a, b, c, scale, static_cast<int8_t>(0), oc, 1);
+			return;
+		}
 
 		add_prefixes(a, b, c);
 		add_opcode(oc);
-		set_modrm(x64_modrm{4, a, mod});
+		set_modrm(x64_modrm{4, a, 0});
 		set_sib(x64_sib(b.ptr, c, scale));
 	}
 
 	template<typename T, typename U, typename V>
 	void x64_mov_reg_reg_ptr_idx_off(const T& a, const x64_addr_ptr<U>& b, const U& c, sib_scale scale, V off, uint8_t oc, int mod)
 	{
-		x64_mov_reg_reg_ptr_idx(a, b, c, scale, oc, mod);
+		if (c.is_sp())
+			throw std::invalid_argument("Stack pointer cannot be used as index register");
+
+		add_prefixes(a, b, c);
+		add_opcode(oc);
+		set_modrm(x64_modrm{4, a, mod});
+		set_sib(x64_sib(b.ptr, c, scale));
 		set_imm(off);
 	}
 };
