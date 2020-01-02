@@ -51,11 +51,11 @@
                                 								
                                 <option id="gnu.cpp.compiler.option.dialect.flags.217960970" name="Other dialect flags" superClass="gnu.cpp.compiler.option.dialect.flags" useByScannerDiscovery="true" value="" valueType="string"/>
                                 								
-                                <option id="gnu.cpp.compiler.option.warnings.pedantic.1886949878" superClass="gnu.cpp.compiler.option.warnings.pedantic" useByScannerDiscovery="false" value="true" valueType="boolean"/>
+                                <option id="gnu.cpp.compiler.option.warnings.pedantic.1886949878" name="Pedantic (-pedantic)" superClass="gnu.cpp.compiler.option.warnings.pedantic" useByScannerDiscovery="false" value="true" valueType="boolean"/>
                                 								
-                                <option id="gnu.cpp.compiler.option.warnings.extrawarn.1717765479" superClass="gnu.cpp.compiler.option.warnings.extrawarn" useByScannerDiscovery="false" value="true" valueType="boolean"/>
+                                <option id="gnu.cpp.compiler.option.warnings.extrawarn.1717765479" name="Extra warnings (-Wextra)" superClass="gnu.cpp.compiler.option.warnings.extrawarn" useByScannerDiscovery="false" value="true" valueType="boolean"/>
                                 								
-                                <option id="gnu.cpp.compiler.option.debugging.other.1731650076" superClass="gnu.cpp.compiler.option.debugging.other" useByScannerDiscovery="false" value="-Wuninitialized" valueType="string"/>
+                                <option id="gnu.cpp.compiler.option.debugging.other.1731650076" name="Other debugging flags" superClass="gnu.cpp.compiler.option.debugging.other" useByScannerDiscovery="false" value="-Wuninitialized" valueType="string"/>
                                 								
                                 <inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.608401144" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
                                 							
@@ -245,7 +245,21 @@
     	
     <storageModule moduleId="org.eclipse.cdt.core.LanguageSettingsProviders"/>
     	
-    <storageModule moduleId="refreshScope"/>
+    <storageModule moduleId="refreshScope" versionNumber="2">
+        		
+        <configuration configurationName="Debug">
+            			
+            <resource resourceType="PROJECT" workspacePath="/emjit"/>
+            		
+        </configuration>
+        		
+        <configuration configurationName="Release">
+            			
+            <resource resourceType="PROJECT" workspacePath="/emjit"/>
+            		
+        </configuration>
+        	
+    </storageModule>
     	
     <storageModule moduleId="org.eclipse.cdt.make.core.buildtargets"/>
     

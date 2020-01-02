@@ -11,11 +11,13 @@
 #include <iomanip>
 #include <memory>
 #include <alloca.h>
+#include <chrono>
 
 #include "x64testing.h"
 #include "x64disassembler.h"
 #include "x64instruction.h"
 
+using namespace std::chrono;
 using namespace std;
 
 x64_testing::x64_testing()
@@ -263,9 +265,9 @@ void x64_testing::reg_reg_ptr_idx(instruction_stream& s, std::vector<std::string
 		{
 			for (auto k = 0; k < nj; k++)
 			{
-				auto regoff = V(k);
+				auto regidx = V(k);
 
-				if (regoff.is_sp())
+				if (regidx.is_sp())
 					continue;
 
 				auto dst = T(i);
@@ -273,7 +275,7 @@ void x64_testing::reg_reg_ptr_idx(instruction_stream& s, std::vector<std::string
 
 				auto shift = (i + j + k) & 3;
 				int scale_fact = 1 << shift;
-				auto inst = x64_mov(dst, regptr, regoff, static_cast<sib_scale>(shift));
+				auto inst = x64_mov(dst, regptr, regidx, static_cast<sib_scale>(shift));
 
 				stringstream stream;
 
@@ -284,6 +286,130 @@ void x64_testing::reg_reg_ptr_idx(instruction_stream& s, std::vector<std::string
 				if (regptr.ptr.is_bp() || regptr.ptr.is_r13())
 					stream << "+0x0";
 				stream << ']';
+				stream.flush();
+
+				expected_lines.push_back(stream.str());
+
+				s << inst;
+			}
+		}
+	}
+}
+
+template<typename T, typename U, typename V>
+void x64_testing::reg_ptr_idx_reg(instruction_stream& s, std::vector<std::string>& expected_lines, std::string width_name, int ni, int nj)
+{
+	for (auto i = 0; i < ni; i++)
+	{
+		for (auto j = 0; j < ni; j++)
+		{
+			for (auto k = 0; k < nj; k++)
+			{
+				auto regoff = U(j);
+
+				if (regoff.is_sp())
+					continue;
+
+				auto regptr = T(U(i));
+				auto src = V(k);
+
+				auto shift = (i + j + k) & 3;
+				int scale_fact = 1 << shift;
+				auto inst = x64_mov(regptr, regoff, static_cast<sib_scale>(shift), src);
+
+				stringstream stream;
+
+				add_to_strinstream(stream, s, inst);
+				stream << "\tmov " << width_name
+						<< " PTR [" << U::names[i] << '+'
+						<< U::names[j] << '*' << scale_fact;
+				if (regptr.ptr.is_bp() || regptr.ptr.is_r13())
+					stream << "+0x0";
+				stream << "]," << V::names[k];
+				stream.flush();
+
+				expected_lines.push_back(stream.str());
+
+				s << inst;
+			}
+		}
+	}
+}
+
+template<typename T, typename U, typename V, typename W>
+void x64_testing::reg_reg_ptr_idx_off(instruction_stream& s, std::vector<std::string>& expected_lines, std::string width_name, int ni, int nj)
+{
+	for (auto i = 0; i < ni; i++)
+	{
+		for (auto j = 0; j < nj; j++)
+		{
+			for (auto k = 0; k < nj; k++)
+			{
+				auto regidx = V(k);
+
+				if (regidx.is_sp())
+					continue;
+
+				auto dst = T(i);
+				auto regptr = U(V(j));
+				W offs = (j + 1) * 999 + (i + 1) * 333 + (k + 1) * 234;
+				auto shift = (i + j + k) & 3;
+				int scale_fact = 1 << shift;
+				auto inst = x64_mov(dst, regptr, regidx, static_cast<sib_scale>(shift), offs);
+
+				stringstream stream;
+
+				add_to_strinstream(stream, s, inst);
+				stream << "\tmov " << T::names[i] << "," << width_name
+						<< " PTR [" << V::names[j] << '+'
+						<< V::names[k] << '*' << scale_fact;
+				if (offs < 0)
+					stream << "-0x" << hex << setw(0) << (int(-offs));
+				else
+					stream << "+0x" << hex << setw(0) << (int(offs));
+				stream << ']';
+				stream.flush();
+
+				expected_lines.push_back(stream.str());
+
+				s << inst;
+			}
+		}
+	}
+}
+
+template<typename T, typename U, typename V, typename W>
+void x64_testing::reg_ptr_idx_off_reg(instruction_stream& s, std::vector<std::string>& expected_lines, std::string width_name, int ni, int nj)
+{
+	for (auto i = 0; i < ni; i++)
+	{
+		for (auto j = 0; j < ni; j++)
+		{
+			for (auto k = 0; k < nj; k++)
+			{
+				auto regoff = U(j);
+
+				if (regoff.is_sp())
+					continue;
+
+				auto regptr = T(U(i));
+				auto src = W(k);
+				V offs = (j + 1) * 999 + (i + 1) * 333 + (k + 1) * 234;
+				auto shift = (i + j + k) & 3;
+				int scale_fact = 1 << shift;
+				auto inst = x64_mov(regptr, regoff, static_cast<sib_scale>(shift), offs, src);
+
+				stringstream stream;
+
+				add_to_strinstream(stream, s, inst);
+				stream << "\tmov " << width_name
+						<< " PTR [" << U::names[i] << '+'
+						<< U::names[j] << '*' << scale_fact;
+				if (offs < 0)
+					stream << "-0x" << hex << setw(0) << (int(-offs));
+				else
+					stream << "+0x" << hex << setw(0) << (int(offs));
+				stream << "]," << W::names[k];
 				stream.flush();
 
 				expected_lines.push_back(stream.str());
@@ -398,99 +524,99 @@ void x64_testing::mov_unit_tests()
 
 	vector<string> expected_lines;
 
-//	direct_reg_reg<x64_reg64>(s, expected_lines, 16);
-//	direct_reg_reg<x64_reg32>(s, expected_lines, 8);
-//	direct_reg_reg<x64_reg16>(s, expected_lines, 8);
-//	direct_reg_reg<x64_reg8>(s, expected_lines, 8);
-//
-//	regptr_reg<x64_reg64, x64_reg64, x64_reg_ptr64>(s, expected_lines, "QWORD", 16, 16);
-//	regptr_reg<x64_reg64, x64_reg32, x64_reg_ptr64>(s, expected_lines, "DWORD", 16, 8);
-//	regptr_reg<x64_reg64, x64_reg16, x64_reg_ptr64>(s, expected_lines, "WORD", 16, 8);
-//	regptr_reg<x64_reg64, x64_reg8l, x64_reg_ptr64>(s, expected_lines, "BYTE", 16, 4);
-//
-//	regptr_reg<x64_reg32, x64_reg64, x64_reg_ptr32>(s, expected_lines, "QWORD", 8, 16);
-//	regptr_reg<x64_reg32, x64_reg32, x64_reg_ptr32>(s, expected_lines, "DWORD", 8, 8);
-//	regptr_reg<x64_reg32, x64_reg16, x64_reg_ptr32>(s, expected_lines, "WORD", 8, 8);
-//	regptr_reg<x64_reg32, x64_reg8l, x64_reg_ptr32>(s, expected_lines, "BYTE", 8, 4);
-//
-//	reg_regptr<x64_reg64, x64_reg64, x64_reg_ptr64>(s, expected_lines, "QWORD", 16, 16);
-//	reg_regptr<x64_reg32, x64_reg64, x64_reg_ptr64>(s, expected_lines, "DWORD", 8, 16);
-//	reg_regptr<x64_reg16, x64_reg64, x64_reg_ptr64>(s, expected_lines, "WORD", 8, 16);
-//	reg_regptr<x64_reg8l, x64_reg64, x64_reg_ptr64>(s, expected_lines, "BYTE", 4, 16);
-//
-//	reg_regptr<x64_reg64, x64_reg32, x64_reg_ptr32>(s, expected_lines, "QWORD", 16, 8);
-//	reg_regptr<x64_reg32, x64_reg32, x64_reg_ptr32>(s, expected_lines, "DWORD", 8, 8);
-//	reg_regptr<x64_reg16, x64_reg32, x64_reg_ptr32>(s, expected_lines, "WORD", 8, 8);
-//	reg_regptr<x64_reg8l, x64_reg32, x64_reg_ptr32>(s, expected_lines, "BYTE", 4, 8);
-//
-//
-//	regptr_offs_reg<x64_reg64, x64_reg64, x64_reg_ptr64, int8_t>(s, expected_lines, "QWORD", 16, 16);
-//	regptr_offs_reg<x64_reg64, x64_reg32, x64_reg_ptr64, int8_t>(s, expected_lines, "DWORD", 16, 8);
-//	regptr_offs_reg<x64_reg64, x64_reg16, x64_reg_ptr64, int8_t>(s, expected_lines, "WORD", 16, 8);
-//	regptr_offs_reg<x64_reg64, x64_reg8l, x64_reg_ptr64, int8_t>(s, expected_lines, "BYTE", 16, 4);
-//
-//	regptr_offs_reg<x64_reg32, x64_reg64, x64_reg_ptr32, int8_t>(s, expected_lines, "QWORD", 8, 16);
-//	regptr_offs_reg<x64_reg32, x64_reg32, x64_reg_ptr32, int8_t>(s, expected_lines, "DWORD", 8, 8);
-//	regptr_offs_reg<x64_reg32, x64_reg16, x64_reg_ptr32, int8_t>(s, expected_lines, "WORD", 8, 8);
-//	regptr_offs_reg<x64_reg32, x64_reg8l, x64_reg_ptr32, int8_t>(s, expected_lines, "BYTE", 8, 4);
-//
-//
-//	reg_regptr_offs<x64_reg64, x64_reg64, x64_reg_ptr64, int8_t>(s, expected_lines, "QWORD", 16, 16);
-//	reg_regptr_offs<x64_reg32, x64_reg64, x64_reg_ptr64, int8_t>(s, expected_lines, "DWORD", 8, 16);
-//	reg_regptr_offs<x64_reg16, x64_reg64, x64_reg_ptr64, int8_t>(s, expected_lines, "WORD", 8, 16);
-//	reg_regptr_offs<x64_reg8l, x64_reg64, x64_reg_ptr64, int8_t>(s, expected_lines, "BYTE", 4, 16);
-//
-//	reg_regptr_offs<x64_reg64, x64_reg32, x64_reg_ptr32, int8_t>(s, expected_lines, "QWORD", 16, 8);
-//	reg_regptr_offs<x64_reg32, x64_reg32, x64_reg_ptr32, int8_t>(s, expected_lines, "DWORD", 8, 8);
-//	reg_regptr_offs<x64_reg16, x64_reg32, x64_reg_ptr32, int8_t>(s, expected_lines, "WORD", 8, 8);
-//	reg_regptr_offs<x64_reg8l, x64_reg32, x64_reg_ptr32, int8_t>(s, expected_lines, "BYTE", 4, 8);
-//
-//	regptr_offs_reg<x64_reg64, x64_reg64, x64_reg_ptr64, int32_t>(s, expected_lines, "QWORD", 16, 16);
-//	regptr_offs_reg<x64_reg64, x64_reg32, x64_reg_ptr64, int32_t>(s, expected_lines, "DWORD", 16, 8);
-//	regptr_offs_reg<x64_reg64, x64_reg16, x64_reg_ptr64, int32_t>(s, expected_lines, "WORD", 16, 8);
-//	regptr_offs_reg<x64_reg64, x64_reg8l, x64_reg_ptr64, int32_t>(s, expected_lines, "BYTE", 16, 4);
-//
-//	regptr_offs_reg<x64_reg32, x64_reg64, x64_reg_ptr32, int32_t>(s, expected_lines, "QWORD", 8, 16);
-//	regptr_offs_reg<x64_reg32, x64_reg32, x64_reg_ptr32, int32_t>(s, expected_lines, "DWORD", 8, 8);
-//	regptr_offs_reg<x64_reg32, x64_reg16, x64_reg_ptr32, int32_t>(s, expected_lines, "WORD", 8, 8);
-//	regptr_offs_reg<x64_reg32, x64_reg8l, x64_reg_ptr32, int32_t>(s, expected_lines, "BYTE", 8, 4);
-//
-//
-//	reg_regptr_offs<x64_reg64, x64_reg64, x64_reg_ptr64, int32_t>(s, expected_lines, "QWORD", 16, 16);
-//	reg_regptr_offs<x64_reg32, x64_reg64, x64_reg_ptr64, int32_t>(s, expected_lines, "DWORD", 8, 16);
-//	reg_regptr_offs<x64_reg16, x64_reg64, x64_reg_ptr64, int32_t>(s, expected_lines, "WORD", 8, 16);
-//	reg_regptr_offs<x64_reg8l, x64_reg64, x64_reg_ptr64, int32_t>(s, expected_lines, "BYTE", 4, 16);
-//
-//	reg_regptr_offs<x64_reg64, x64_reg32, x64_reg_ptr32, int32_t>(s, expected_lines, "QWORD", 16, 8);
-//	reg_regptr_offs<x64_reg32, x64_reg32, x64_reg_ptr32, int32_t>(s, expected_lines, "DWORD", 8, 8);
-//	reg_regptr_offs<x64_reg16, x64_reg32, x64_reg_ptr32, int32_t>(s, expected_lines, "WORD", 8, 8);
-//	reg_regptr_offs<x64_reg8l, x64_reg32, x64_reg_ptr32, int32_t>(s, expected_lines, "BYTE", 4, 8);
-//
-//	reg_imm<x64_reg64, uint64_t>(s, expected_lines, "movabs", 16);
-//	reg_imm<x64_reg32, uint32_t>(s, expected_lines, "mov", 8);
-//	reg_imm<x64_reg16, uint16_t>(s, expected_lines, "mov", 8);
-//	reg_imm<x64_reg8, uint8_t>(s, expected_lines, "mov", 8);
-//
-//	reg_imm_addr<x64_reg64, int32_t>(s, expected_lines, "QWORD", 16);
-//	reg_imm_addr<x64_reg32, int32_t>(s, expected_lines, "DWORD", 8);
-//	reg_imm_addr<x64_reg16, int32_t>(s, expected_lines, "WORD", 8);
-//	reg_imm_addr<x64_reg8, int32_t>(s, expected_lines, "BYTE", 8);
-//
-//	imm_addr_reg<int32_t, x64_reg64>(s, expected_lines, "QWORD", 16);
-//	imm_addr_reg<int32_t, x64_reg32>(s, expected_lines, "DWORD", 8);
-//	imm_addr_reg<int32_t, x64_reg16>(s, expected_lines, "WORD", 8);
-//	imm_addr_reg<int32_t, x64_reg8>(s, expected_lines, "BYTE", 8);
-//
-//	/* 64 bit pointers only support the first register (al, ax, eax, rax) */
-//	reg_ptr64<x64_reg64_0, uint64_t>(s, expected_lines, x64_regs::rax);
-//	reg_ptr64<x64_reg32_0, uint32_t>(s, expected_lines, x64_regs::eax);
-//	reg_ptr64<x64_reg16_0, uint16_t>(s, expected_lines, x64_regs::ax);
-//	reg_ptr64<x64_reg8l_0, uint8_t>(s, expected_lines, x64_regs::al);
-//
-//	ptr64_reg<uint64_t, x64_reg64_0>(s, expected_lines, x64_regs::rax);
-//	ptr64_reg<uint32_t, x64_reg32_0>(s, expected_lines, x64_regs::eax);
-//	ptr64_reg<uint16_t, x64_reg16_0>(s, expected_lines, x64_regs::ax);
-//	ptr64_reg<uint8_t, x64_reg8l_0>(s, expected_lines, x64_regs::al);
+	direct_reg_reg<x64_reg64>(s, expected_lines, 16);
+	direct_reg_reg<x64_reg32>(s, expected_lines, 8);
+	direct_reg_reg<x64_reg16>(s, expected_lines, 8);
+	direct_reg_reg<x64_reg8>(s, expected_lines, 8);
+
+	regptr_reg<x64_reg64, x64_reg64, x64_reg_ptr64>(s, expected_lines, "QWORD", 16, 16);
+	regptr_reg<x64_reg64, x64_reg32, x64_reg_ptr64>(s, expected_lines, "DWORD", 16, 8);
+	regptr_reg<x64_reg64, x64_reg16, x64_reg_ptr64>(s, expected_lines, "WORD", 16, 8);
+	regptr_reg<x64_reg64, x64_reg8l, x64_reg_ptr64>(s, expected_lines, "BYTE", 16, 4);
+
+	regptr_reg<x64_reg32, x64_reg64, x64_reg_ptr32>(s, expected_lines, "QWORD", 8, 16);
+	regptr_reg<x64_reg32, x64_reg32, x64_reg_ptr32>(s, expected_lines, "DWORD", 8, 8);
+	regptr_reg<x64_reg32, x64_reg16, x64_reg_ptr32>(s, expected_lines, "WORD", 8, 8);
+	regptr_reg<x64_reg32, x64_reg8l, x64_reg_ptr32>(s, expected_lines, "BYTE", 8, 4);
+
+	reg_regptr<x64_reg64, x64_reg64, x64_reg_ptr64>(s, expected_lines, "QWORD", 16, 16);
+	reg_regptr<x64_reg32, x64_reg64, x64_reg_ptr64>(s, expected_lines, "DWORD", 8, 16);
+	reg_regptr<x64_reg16, x64_reg64, x64_reg_ptr64>(s, expected_lines, "WORD", 8, 16);
+	reg_regptr<x64_reg8l, x64_reg64, x64_reg_ptr64>(s, expected_lines, "BYTE", 4, 16);
+
+	reg_regptr<x64_reg64, x64_reg32, x64_reg_ptr32>(s, expected_lines, "QWORD", 16, 8);
+	reg_regptr<x64_reg32, x64_reg32, x64_reg_ptr32>(s, expected_lines, "DWORD", 8, 8);
+	reg_regptr<x64_reg16, x64_reg32, x64_reg_ptr32>(s, expected_lines, "WORD", 8, 8);
+	reg_regptr<x64_reg8l, x64_reg32, x64_reg_ptr32>(s, expected_lines, "BYTE", 4, 8);
+
+
+	regptr_offs_reg<x64_reg64, x64_reg64, x64_reg_ptr64, int8_t>(s, expected_lines, "QWORD", 16, 16);
+	regptr_offs_reg<x64_reg64, x64_reg32, x64_reg_ptr64, int8_t>(s, expected_lines, "DWORD", 16, 8);
+	regptr_offs_reg<x64_reg64, x64_reg16, x64_reg_ptr64, int8_t>(s, expected_lines, "WORD", 16, 8);
+	regptr_offs_reg<x64_reg64, x64_reg8l, x64_reg_ptr64, int8_t>(s, expected_lines, "BYTE", 16, 4);
+
+	regptr_offs_reg<x64_reg32, x64_reg64, x64_reg_ptr32, int8_t>(s, expected_lines, "QWORD", 8, 16);
+	regptr_offs_reg<x64_reg32, x64_reg32, x64_reg_ptr32, int8_t>(s, expected_lines, "DWORD", 8, 8);
+	regptr_offs_reg<x64_reg32, x64_reg16, x64_reg_ptr32, int8_t>(s, expected_lines, "WORD", 8, 8);
+	regptr_offs_reg<x64_reg32, x64_reg8l, x64_reg_ptr32, int8_t>(s, expected_lines, "BYTE", 8, 4);
+
+
+	reg_regptr_offs<x64_reg64, x64_reg64, x64_reg_ptr64, int8_t>(s, expected_lines, "QWORD", 16, 16);
+	reg_regptr_offs<x64_reg32, x64_reg64, x64_reg_ptr64, int8_t>(s, expected_lines, "DWORD", 8, 16);
+	reg_regptr_offs<x64_reg16, x64_reg64, x64_reg_ptr64, int8_t>(s, expected_lines, "WORD", 8, 16);
+	reg_regptr_offs<x64_reg8l, x64_reg64, x64_reg_ptr64, int8_t>(s, expected_lines, "BYTE", 4, 16);
+
+	reg_regptr_offs<x64_reg64, x64_reg32, x64_reg_ptr32, int8_t>(s, expected_lines, "QWORD", 16, 8);
+	reg_regptr_offs<x64_reg32, x64_reg32, x64_reg_ptr32, int8_t>(s, expected_lines, "DWORD", 8, 8);
+	reg_regptr_offs<x64_reg16, x64_reg32, x64_reg_ptr32, int8_t>(s, expected_lines, "WORD", 8, 8);
+	reg_regptr_offs<x64_reg8l, x64_reg32, x64_reg_ptr32, int8_t>(s, expected_lines, "BYTE", 4, 8);
+
+	regptr_offs_reg<x64_reg64, x64_reg64, x64_reg_ptr64, int32_t>(s, expected_lines, "QWORD", 16, 16);
+	regptr_offs_reg<x64_reg64, x64_reg32, x64_reg_ptr64, int32_t>(s, expected_lines, "DWORD", 16, 8);
+	regptr_offs_reg<x64_reg64, x64_reg16, x64_reg_ptr64, int32_t>(s, expected_lines, "WORD", 16, 8);
+	regptr_offs_reg<x64_reg64, x64_reg8l, x64_reg_ptr64, int32_t>(s, expected_lines, "BYTE", 16, 4);
+
+	regptr_offs_reg<x64_reg32, x64_reg64, x64_reg_ptr32, int32_t>(s, expected_lines, "QWORD", 8, 16);
+	regptr_offs_reg<x64_reg32, x64_reg32, x64_reg_ptr32, int32_t>(s, expected_lines, "DWORD", 8, 8);
+	regptr_offs_reg<x64_reg32, x64_reg16, x64_reg_ptr32, int32_t>(s, expected_lines, "WORD", 8, 8);
+	regptr_offs_reg<x64_reg32, x64_reg8l, x64_reg_ptr32, int32_t>(s, expected_lines, "BYTE", 8, 4);
+
+
+	reg_regptr_offs<x64_reg64, x64_reg64, x64_reg_ptr64, int32_t>(s, expected_lines, "QWORD", 16, 16);
+	reg_regptr_offs<x64_reg32, x64_reg64, x64_reg_ptr64, int32_t>(s, expected_lines, "DWORD", 8, 16);
+	reg_regptr_offs<x64_reg16, x64_reg64, x64_reg_ptr64, int32_t>(s, expected_lines, "WORD", 8, 16);
+	reg_regptr_offs<x64_reg8l, x64_reg64, x64_reg_ptr64, int32_t>(s, expected_lines, "BYTE", 4, 16);
+
+	reg_regptr_offs<x64_reg64, x64_reg32, x64_reg_ptr32, int32_t>(s, expected_lines, "QWORD", 16, 8);
+	reg_regptr_offs<x64_reg32, x64_reg32, x64_reg_ptr32, int32_t>(s, expected_lines, "DWORD", 8, 8);
+	reg_regptr_offs<x64_reg16, x64_reg32, x64_reg_ptr32, int32_t>(s, expected_lines, "WORD", 8, 8);
+	reg_regptr_offs<x64_reg8l, x64_reg32, x64_reg_ptr32, int32_t>(s, expected_lines, "BYTE", 4, 8);
+
+	reg_imm<x64_reg64, uint64_t>(s, expected_lines, "movabs", 16);
+	reg_imm<x64_reg32, uint32_t>(s, expected_lines, "mov", 8);
+	reg_imm<x64_reg16, uint16_t>(s, expected_lines, "mov", 8);
+	reg_imm<x64_reg8, uint8_t>(s, expected_lines, "mov", 8);
+
+	reg_imm_addr<x64_reg64, int32_t>(s, expected_lines, "QWORD", 16);
+	reg_imm_addr<x64_reg32, int32_t>(s, expected_lines, "DWORD", 8);
+	reg_imm_addr<x64_reg16, int32_t>(s, expected_lines, "WORD", 8);
+	reg_imm_addr<x64_reg8, int32_t>(s, expected_lines, "BYTE", 8);
+
+	imm_addr_reg<int32_t, x64_reg64>(s, expected_lines, "QWORD", 16);
+	imm_addr_reg<int32_t, x64_reg32>(s, expected_lines, "DWORD", 8);
+	imm_addr_reg<int32_t, x64_reg16>(s, expected_lines, "WORD", 8);
+	imm_addr_reg<int32_t, x64_reg8>(s, expected_lines, "BYTE", 8);
+
+	/* 64 bit pointers only support the first register (al, ax, eax, rax) */
+	reg_ptr64<x64_reg64_0, uint64_t>(s, expected_lines, x64_regs::rax);
+	reg_ptr64<x64_reg32_0, uint32_t>(s, expected_lines, x64_regs::eax);
+	reg_ptr64<x64_reg16_0, uint16_t>(s, expected_lines, x64_regs::ax);
+	reg_ptr64<x64_reg8l_0, uint8_t>(s, expected_lines, x64_regs::al);
+
+	ptr64_reg<uint64_t, x64_reg64_0>(s, expected_lines, x64_regs::rax);
+	ptr64_reg<uint32_t, x64_reg32_0>(s, expected_lines, x64_regs::eax);
+	ptr64_reg<uint16_t, x64_reg16_0>(s, expected_lines, x64_regs::ax);
+	ptr64_reg<uint8_t, x64_reg8l_0>(s, expected_lines, x64_regs::al);
 
 
 	reg_reg_ptr_idx<x64_reg64, x64_reg_ptr64, x64_reg64>(s, expected_lines, "QWORD", 16, 16);
@@ -503,7 +629,110 @@ void x64_testing::mov_unit_tests()
 	reg_reg_ptr_idx<x64_reg16, x64_reg_ptr32, x64_reg32>(s, expected_lines, "WORD", 8, 8);
 	reg_reg_ptr_idx<x64_reg8l, x64_reg_ptr32, x64_reg32>(s, expected_lines, "BYTE", 4, 8);
 
+	reg_ptr_idx_reg<x64_reg_ptr64, x64_reg64, x64_reg64>(s, expected_lines, "QWORD", 16, 16);
+	reg_ptr_idx_reg<x64_reg_ptr64, x64_reg64, x64_reg32>(s, expected_lines, "DWORD", 16, 8);
+	reg_ptr_idx_reg<x64_reg_ptr64, x64_reg64, x64_reg16>(s, expected_lines, "WORD", 16, 8);
+	reg_ptr_idx_reg<x64_reg_ptr64, x64_reg64, x64_reg8l>(s, expected_lines, "BYTE", 16, 4);
+
+	reg_ptr_idx_reg<x64_reg_ptr32, x64_reg32, x64_reg64>(s, expected_lines, "QWORD", 8, 16);
+	reg_ptr_idx_reg<x64_reg_ptr32, x64_reg32, x64_reg32>(s, expected_lines, "DWORD", 8, 8);
+	reg_ptr_idx_reg<x64_reg_ptr32, x64_reg32, x64_reg16>(s, expected_lines, "WORD", 8, 8);
+	reg_ptr_idx_reg<x64_reg_ptr32, x64_reg32, x64_reg8l>(s, expected_lines, "BYTE", 8, 4);
+
+
+	reg_reg_ptr_idx_off<x64_reg64, x64_reg_ptr64, x64_reg64, int8_t>(s, expected_lines, "QWORD", 16, 16);
+	reg_reg_ptr_idx_off<x64_reg32, x64_reg_ptr64, x64_reg64, int8_t>(s, expected_lines, "DWORD", 8, 16);
+	reg_reg_ptr_idx_off<x64_reg16, x64_reg_ptr64, x64_reg64, int8_t>(s, expected_lines, "WORD", 8, 16);
+	reg_reg_ptr_idx_off<x64_reg8l, x64_reg_ptr64, x64_reg64, int8_t>(s, expected_lines, "BYTE", 4, 16);
+
+	reg_reg_ptr_idx_off<x64_reg64, x64_reg_ptr32, x64_reg32, int8_t>(s, expected_lines, "QWORD", 16, 8);
+	reg_reg_ptr_idx_off<x64_reg32, x64_reg_ptr32, x64_reg32, int8_t>(s, expected_lines, "DWORD", 8, 8);
+	reg_reg_ptr_idx_off<x64_reg16, x64_reg_ptr32, x64_reg32, int8_t>(s, expected_lines, "WORD", 8, 8);
+	reg_reg_ptr_idx_off<x64_reg8l, x64_reg_ptr32, x64_reg32, int8_t>(s, expected_lines, "BYTE", 4, 8);
+
+	reg_ptr_idx_off_reg<x64_reg_ptr64, x64_reg64, int8_t, x64_reg64>(s, expected_lines, "QWORD", 16, 16);
+	reg_ptr_idx_off_reg<x64_reg_ptr64, x64_reg64, int8_t, x64_reg32>(s, expected_lines, "DWORD", 16, 8);
+	reg_ptr_idx_off_reg<x64_reg_ptr64, x64_reg64, int8_t, x64_reg16>(s, expected_lines, "WORD", 16, 8);
+	reg_ptr_idx_off_reg<x64_reg_ptr64, x64_reg64, int8_t, x64_reg8l>(s, expected_lines, "BYTE", 16, 4);
+
+	reg_ptr_idx_off_reg<x64_reg_ptr32, x64_reg32, int8_t, x64_reg64>(s, expected_lines, "QWORD", 8, 16);
+	reg_ptr_idx_off_reg<x64_reg_ptr32, x64_reg32, int8_t, x64_reg32>(s, expected_lines, "DWORD", 8, 8);
+	reg_ptr_idx_off_reg<x64_reg_ptr32, x64_reg32, int8_t, x64_reg16>(s, expected_lines, "WORD", 8, 8);
+	reg_ptr_idx_off_reg<x64_reg_ptr32, x64_reg32, int8_t, x64_reg8l>(s, expected_lines, "BYTE", 8, 4);
+
+
+	reg_reg_ptr_idx_off<x64_reg64, x64_reg_ptr64, x64_reg64, int32_t>(s, expected_lines, "QWORD", 16, 16);
+	reg_reg_ptr_idx_off<x64_reg32, x64_reg_ptr64, x64_reg64, int32_t>(s, expected_lines, "DWORD", 8, 16);
+	reg_reg_ptr_idx_off<x64_reg16, x64_reg_ptr64, x64_reg64, int32_t>(s, expected_lines, "WORD", 8, 16);
+	reg_reg_ptr_idx_off<x64_reg8l, x64_reg_ptr64, x64_reg64, int32_t>(s, expected_lines, "BYTE", 4, 16);
+
+	reg_reg_ptr_idx_off<x64_reg64, x64_reg_ptr32, x64_reg32, int32_t>(s, expected_lines, "QWORD", 16, 8);
+	reg_reg_ptr_idx_off<x64_reg32, x64_reg_ptr32, x64_reg32, int32_t>(s, expected_lines, "DWORD", 8, 8);
+	reg_reg_ptr_idx_off<x64_reg16, x64_reg_ptr32, x64_reg32, int32_t>(s, expected_lines, "WORD", 8, 8);
+	reg_reg_ptr_idx_off<x64_reg8l, x64_reg_ptr32, x64_reg32, int32_t>(s, expected_lines, "BYTE", 4, 8);
+
+	reg_ptr_idx_off_reg<x64_reg_ptr64, x64_reg64, int32_t, x64_reg64>(s, expected_lines, "QWORD", 16, 16);
+	reg_ptr_idx_off_reg<x64_reg_ptr64, x64_reg64, int32_t, x64_reg32>(s, expected_lines, "DWORD", 16, 8);
+	reg_ptr_idx_off_reg<x64_reg_ptr64, x64_reg64, int32_t, x64_reg16>(s, expected_lines, "WORD", 16, 8);
+	reg_ptr_idx_off_reg<x64_reg_ptr64, x64_reg64, int32_t, x64_reg8l>(s, expected_lines, "BYTE", 16, 4);
+
+	reg_ptr_idx_off_reg<x64_reg_ptr32, x64_reg32, int32_t, x64_reg64>(s, expected_lines, "QWORD", 8, 16);
+	reg_ptr_idx_off_reg<x64_reg_ptr32, x64_reg32, int32_t, x64_reg32>(s, expected_lines, "DWORD", 8, 8);
+	reg_ptr_idx_off_reg<x64_reg_ptr32, x64_reg32, int32_t, x64_reg16>(s, expected_lines, "WORD", 8, 8);
+	reg_ptr_idx_off_reg<x64_reg_ptr32, x64_reg32, int32_t, x64_reg8l>(s, expected_lines, "BYTE", 8, 4);
+
 	compare_assembly(s, expected_lines);
+
+	auto start = high_resolution_clock::now();
+	int n_loops = 10000;
+	for (int i = 0; i < n_loops ; i++)
+	{
+		s << x64_mov(x64_regs::rax, (uint64_t) 0x1234567812345678);
+		s << x64_mov(x64_regs::rax, (uint32_t) 0x12345678);
+		s << x64_mov(x64_regs::eax, (uint32_t) 0x12345678);
+		s << x64_mov(x64_regs::ax, (uint16_t) 0x1234);
+		s << x64_mov(x64_regs::ah, (uint8_t) 0x12);
+		s << x64_mov(x64_regs::al, (uint8_t) 0x12);
+		s << x64_nop1();
+		s << x64_nop1();
+		s << x64_mov(x64_regs::rax, x64_addr_ptr<uint64_t*>((uint64_t*)0x1234567812345678));
+		s << x64_mov(x64_regs::eax, x64_addr_ptr<uint32_t*>((uint32_t*)0x1234567812345678));
+		s << x64_mov(x64_regs::ax, x64_addr_ptr<uint16_t*>((uint16_t*)0x1234567812345678));
+		s << x64_mov(x64_regs::al, x64_addr_ptr<uint8_t*>((uint8_t*)0x1234567812345678));
+		s << x64_nop1();
+		s << x64_mov(x64_addr_ptr<uint64_t*>((uint64_t*)0x1234567812345678), x64_regs::rax);
+		s << x64_mov(x64_addr_ptr<uint32_t*>((uint32_t*)0x1234567812345678), x64_regs::eax);
+		s << x64_mov(x64_addr_ptr<uint16_t*>((uint16_t*)0x1234567812345678), x64_regs::ax);
+		s << x64_mov(x64_addr_ptr<uint8_t*>((uint8_t*)0x1234567812345678), x64_regs::al);
+		s << x64_mov(x64_regs::rax, x64_addr_ptr<uint64_t*>((uint64_t*)0x42));
+		s << x64_mov(x64_addr_ptr<uint64_t*>((uint64_t*)0x42), x64_regs::rax);
+		s << x64_mov(x64_addr_ptr<uint32_t*>((uint32_t*)0x42), x64_regs::eax);
+		s << x64_nop1();
+		s << x64_mov(x64_regs::al, x64_addr_ptr<int32_t>(0x12345678));
+		s << x64_mov(x64_regs::ax, x64_reg_ptr64(x64_regs::rax), x64_regs::rax, sib_scale::s8);
+		s << x64_mov(x64_reg_ptr64(x64_regs::rax), x64_regs::rax, sib_scale::s8, x64_regs::eax);
+		s << x64_mov(x64_regs::rax, x64_reg_ptr64(x64_regs::rax), x64_regs::rbx, sib_scale::s8, (int8_t) 0x42);
+		s << x64_mov(x64_regs::rax, x64_reg_ptr64(x64_regs::rax), x64_regs::rbx, sib_scale::s8, (int32_t) 0x42);
+		s << x64_mov(x64_reg_ptr64(x64_regs::rax), x64_regs::rbx, sib_scale::s8, (int8_t) 0x42, x64_regs::rax);
+		s << x64_mov(x64_reg_ptr64(x64_regs::rax), x64_regs::rbx, sib_scale::s8, (int32_t) 0x42, x64_regs::rax);
+		s << x64_nop1();
+		s << x64_mov(x64_regs::rax, x64_reg_ptr64(x64_regs::rax), x64_regs::rax, sib_scale::s8);
+		s << x64_mov(x64_regs::eax, x64_reg_ptr64(x64_regs::rax), x64_regs::rax, sib_scale::s8);
+		s << x64_mov(x64_regs::ax, x64_reg_ptr64(x64_regs::rax), x64_regs::rax, sib_scale::s8);
+		s << x64_mov(x64_regs::al, x64_reg_ptr64(x64_regs::rax), x64_regs::rax, sib_scale::s8);
+		s << x64_mov(x64_regs::rax, x64_reg_ptr32(x64_regs::eax), x64_regs::eax, sib_scale::s8);
+		s << x64_mov(x64_regs::eax, x64_reg_ptr32(x64_regs::eax), x64_regs::eax, sib_scale::s8);
+		s << x64_mov(x64_regs::ax, x64_reg_ptr32(x64_regs::eax), x64_regs::eax, sib_scale::s8);
+	}
+
+	auto n = 36 * n_loops;
+	auto stop = high_resolution_clock::now();
+	auto duration = duration_cast<microseconds>(stop - start);
+	auto seconds = ((double) duration.count() / 1000000.0);
+
+	// -O0: Code creation: 3600000 instructions in 0.39589 seconds (9.09344e+06 instructions/second
+	// -O3: Code creation: 3600000 instructions in 0.063178 seconds (5.69819e+07 instructions/second
+	cout << "Code creation: " << n << " instructions in " << seconds << " seconds (" << ((double) n / seconds) << " instructions/second\n";
 }
 
 void x64_testing::add_to_strinstream(stringstream& sstream, const instruction_stream& inst_stream, const instruction& inst)

@@ -69,6 +69,16 @@ private:
 	template<typename T, typename U, typename V>
 	static void reg_reg_ptr_idx(instruction_stream& s, std::vector<std::string>& expected_lines, std::string width_name, int ni, int nj);
 
+	template<typename T, typename U, typename V>
+	static void reg_ptr_idx_reg(instruction_stream& s, std::vector<std::string>& expected_lines, std::string width_name, int ni, int nj);
+
+	template<typename T, typename U, typename V, typename W>
+	static void reg_reg_ptr_idx_off(instruction_stream& s, std::vector<std::string>& expected_lines, std::string width_name, int ni, int nj);
+
+	template<typename T, typename U, typename V, typename W>
+	static void reg_ptr_idx_off_reg(instruction_stream& s, std::vector<std::string>& expected_lines, std::string width_name, int ni, int nj);
+
+
 	//reg_reg_ptr_idx
 
 	void mov_unit_tests();
