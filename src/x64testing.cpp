@@ -425,7 +425,7 @@ void x64_testing::mov_unit_tests()
 {
 	instruction_stream s(allocator);
 
-#if 0
+#if 1
 //	s << x64_mov(x64_regs::rax, (uint64_t) 0x1234567812345678);
 //	s << x64_mov(x64_regs::rax, (uint32_t) 0x12345678);
 //	s << x64_mov(x64_regs::eax, (uint32_t) 0x12345678);
@@ -487,8 +487,16 @@ void x64_testing::mov_unit_tests()
 //
 //	s << x64_mov(x64_regs::al, x64_addr_ptr<int32_t>(0x12345678));
 
-
-	s << x64_mov(x64_regs::ax, x64_reg_ptr64(x64_regs::rax), x64_regs::rax, sib_scale::s8);
+//
+//	s << x64_mov(x64_regs::ax, x64_reg_ptr64(x64_regs::rax), x64_regs::rax, sib_scale::s8);
+//
+//	s << x64_mov(x64_regs::eax, x64_reg_ptr64(x64_regs::rax), x64_regs::rax, sib_scale::s2, 0x42);
+//
+//	//s << x64_mov(x64_addr_ptr<int32_t> addr, x64_regs::rax);
+//	s << x64_mov(x64_addr_ptr<uint32_t>(0x12345678), x64_regs::rax);
+//
+//	//s << x64_mov(x64_regs::rax, x64_addr_ptr<uint64_t*> addr);
+//	s << x64_mov(x64_regs::rax, x64_addr_ptr<uint64_t*>((uint64_t*)0x1234567812345678));
 
 //	s << x64_mov(x64_reg_ptr64(x64_regs::rax), x64_regs::rax, sib_scale::s8, x64_regs::eax);
 //
@@ -516,6 +524,128 @@ void x64_testing::mov_unit_tests()
 //	auto blabla = x64_mov(x64_reg_addr(x64_regs::eax), x64_regs::rax);
 //
 //	blabla.x64_add_prefix(x64_regs::rax, x64_reg_addr(x64_regs::eax));
+
+	s << x64_mov(x64_regs::rax, x64_regs::rax);
+	s << x64_mov(x64_regs::eax, x64_regs::eax);
+	s << x64_mov(x64_regs::ax, x64_regs::ax);
+	s << x64_mov(x64_regs::ah, x64_regs::ah);
+	s << x64_mov(x64_reg_ptr64(x64_regs::rax), x64_regs::rax);
+	s << x64_mov(x64_reg_ptr64(x64_regs::rax), x64_regs::eax);
+	s << x64_mov(x64_reg_ptr64(x64_regs::rax), x64_regs::ax);
+	s << x64_mov(x64_reg_ptr64(x64_regs::rax), x64_regs::al);
+	s << x64_mov(x64_reg_ptr32(x64_regs::eax), x64_regs::rax);
+	s << x64_mov(x64_reg_ptr32(x64_regs::eax), x64_regs::eax);
+	s << x64_mov(x64_reg_ptr32(x64_regs::eax), x64_regs::ax);
+	s << x64_mov(x64_reg_ptr32(x64_regs::eax), x64_regs::al);
+	s << x64_mov(x64_regs::rax, x64_reg_ptr64(x64_regs::rax));
+	s << x64_mov(x64_regs::eax, x64_reg_ptr64(x64_regs::rax));
+	s << x64_mov(x64_regs::ax, x64_reg_ptr64(x64_regs::rax));
+	s << x64_mov(x64_regs::al, x64_reg_ptr64(x64_regs::rax));
+	s << x64_mov(x64_regs::rax, x64_reg_ptr32(x64_regs::eax));
+	s << x64_mov(x64_regs::eax, x64_reg_ptr32(x64_regs::eax));
+	s << x64_mov(x64_regs::ax, x64_reg_ptr32(x64_regs::eax));
+	s << x64_mov(x64_regs::al, x64_reg_ptr32(x64_regs::eax));
+	s << x64_mov(x64_reg_ptr64(x64_regs::rax), (int8_t) 0x42, x64_regs::rax);
+	s << x64_mov(x64_reg_ptr64(x64_regs::rax), (int8_t) 0x42, x64_regs::eax);
+	s << x64_mov(x64_reg_ptr64(x64_regs::rax), (int8_t) 0x42, x64_regs::ax);
+	s << x64_mov(x64_reg_ptr64(x64_regs::rax), (int8_t) 0x42, x64_regs::al);
+	s << x64_mov(x64_reg_ptr32(x64_regs::eax), (int8_t) 0x42, x64_regs::rax);
+	s << x64_mov(x64_reg_ptr32(x64_regs::eax), (int8_t) 0x42, x64_regs::eax);
+	s << x64_mov(x64_reg_ptr32(x64_regs::eax), (int8_t) 0x42, x64_regs::ax);
+	s << x64_mov(x64_reg_ptr32(x64_regs::eax), (int8_t) 0x42, x64_regs::al);
+	s << x64_mov(x64_regs::rax, x64_reg_ptr64(x64_regs::rax), (int8_t) 0x42);
+	s << x64_mov(x64_regs::eax, x64_reg_ptr64(x64_regs::rax), (int8_t) 0x42);
+	s << x64_mov(x64_regs::ax, x64_reg_ptr64(x64_regs::rax), (int8_t) 0x42);
+	s << x64_mov(x64_regs::al, x64_reg_ptr64(x64_regs::rax), (int8_t) 0x42);
+	s << x64_mov(x64_regs::rax, x64_reg_ptr32(x64_regs::eax), (int8_t) 0x42);
+	s << x64_mov(x64_regs::eax, x64_reg_ptr32(x64_regs::eax), (int8_t) 0x42);
+	s << x64_mov(x64_regs::ax, x64_reg_ptr32(x64_regs::eax), (int8_t) 0x42);
+	s << x64_mov(x64_regs::al, x64_reg_ptr32(x64_regs::eax), (int8_t) 0x42);
+	s << x64_mov(x64_reg_ptr64(x64_regs::rax), (int32_t) 0x42, x64_regs::rax);
+	s << x64_mov(x64_reg_ptr64(x64_regs::rax), (int32_t) 0x42, x64_regs::eax);
+	s << x64_mov(x64_reg_ptr64(x64_regs::rax), (int32_t) 0x42, x64_regs::ax);
+	s << x64_mov(x64_reg_ptr64(x64_regs::rax), (int32_t) 0x42, x64_regs::al);
+	s << x64_mov(x64_reg_ptr32(x64_regs::eax), (int32_t) 0x42, x64_regs::rax);
+	s << x64_mov(x64_reg_ptr32(x64_regs::eax), (int32_t) 0x42, x64_regs::eax);
+	s << x64_mov(x64_reg_ptr32(x64_regs::eax), (int32_t) 0x42, x64_regs::ax);
+	s << x64_mov(x64_reg_ptr32(x64_regs::eax), (int32_t) 0x42, x64_regs::al);
+	s << x64_mov(x64_regs::rax, x64_reg_ptr64(x64_regs::rax), (int32_t) 0x42);
+	s << x64_mov(x64_regs::eax, x64_reg_ptr64(x64_regs::rax), (int32_t) 0x42);
+	s << x64_mov(x64_regs::ax, x64_reg_ptr64(x64_regs::rax), (int32_t) 0x42);
+	s << x64_mov(x64_regs::al, x64_reg_ptr64(x64_regs::rax), (int32_t) 0x42);
+	s << x64_mov(x64_regs::rax, x64_reg_ptr32(x64_regs::eax), (int32_t) 0x42);
+	s << x64_mov(x64_regs::eax, x64_reg_ptr32(x64_regs::eax), (int32_t) 0x42);
+	s << x64_mov(x64_regs::ax, x64_reg_ptr32(x64_regs::eax), (int32_t) 0x42);
+	s << x64_mov(x64_regs::al, x64_reg_ptr32(x64_regs::eax), (int32_t) 0x42);
+	s << x64_mov(x64_regs::rax, (uint64_t) 0x42);
+	s << x64_mov(x64_regs::eax, (uint32_t) 0x42);
+	s << x64_mov(x64_regs::ax, (uint16_t) 0x42);
+	s << x64_mov(x64_regs::ah, (uint8_t) 0x42);
+	s << x64_mov(x64_regs::rax, (uint32_t) 0x42);
+	s << x64_mov(x64_regs::rax, x64_addr_ptr<int32_t>(0x12345678));
+	s << x64_mov(x64_regs::eax, x64_addr_ptr<int32_t>(0x12345678));
+	s << x64_mov(x64_regs::ax, x64_addr_ptr<int32_t>(0x12345678));
+	s << x64_mov(x64_regs::ah, x64_addr_ptr<int32_t>(0x12345678));
+	s << x64_mov(x64_regs::rax, x64_addr_ptr<uint64_t*>((uint64_t*)0x1234567812345678));
+	s << x64_mov(x64_regs::eax, x64_addr_ptr<uint32_t*>((uint32_t*)0x1234567812345678));
+	s << x64_mov(x64_regs::ax, x64_addr_ptr<uint16_t*>((uint16_t*)0x1234567812345678));
+	s << x64_mov(x64_regs::al, x64_addr_ptr<uint8_t*>((uint8_t*)0x1234567812345678));
+	s << x64_mov(x64_addr_ptr<int32_t>(0x12345678), x64_regs::rax);
+	s << x64_mov(x64_addr_ptr<int32_t>(0x12345678), x64_regs::eax);
+	s << x64_mov(x64_addr_ptr<int32_t>(0x12345678), x64_regs::ax);
+	s << x64_mov(x64_addr_ptr<int32_t>(0x12345678), x64_regs::ah);
+	s << x64_mov(x64_addr_ptr<uint64_t*>((uint64_t*)0x1234567812345678), x64_regs::rax);
+	s << x64_mov(x64_addr_ptr<uint32_t*>((uint32_t*)0x1234567812345678), x64_regs::eax);
+	s << x64_mov(x64_addr_ptr<uint16_t*>((uint16_t*)0x1234567812345678), x64_regs::ax);
+	s << x64_mov(x64_addr_ptr<uint8_t*>((uint8_t*)0x1234567812345678), x64_regs::al);
+	s << x64_mov(x64_regs::rax, x64_reg_ptr64(x64_regs::rax), x64_regs::rax, sib_scale::s2);
+	s << x64_mov(x64_regs::eax, x64_reg_ptr64(x64_regs::rax), x64_regs::rax, sib_scale::s2);
+	s << x64_mov(x64_regs::ax, x64_reg_ptr64(x64_regs::rax), x64_regs::rax, sib_scale::s2);
+	s << x64_mov(x64_regs::al, x64_reg_ptr64(x64_regs::rax), x64_regs::rax, sib_scale::s2);
+	s << x64_mov(x64_regs::rax, x64_reg_ptr32(x64_regs::eax), x64_regs::eax, sib_scale::s2);
+	s << x64_mov(x64_regs::eax, x64_reg_ptr32(x64_regs::eax), x64_regs::eax, sib_scale::s2);
+	s << x64_mov(x64_regs::ax, x64_reg_ptr32(x64_regs::eax), x64_regs::eax, sib_scale::s2);
+	s << x64_mov(x64_regs::al, x64_reg_ptr32(x64_regs::eax), x64_regs::eax, sib_scale::s2);
+	s << x64_mov(x64_reg_ptr64(x64_regs::rax), x64_regs::rax, sib_scale::s2, x64_regs::rax);
+	s << x64_mov(x64_reg_ptr64(x64_regs::rax), x64_regs::rax, sib_scale::s2, x64_regs::eax);
+	s << x64_mov(x64_reg_ptr64(x64_regs::rax), x64_regs::rax, sib_scale::s2, x64_regs::ax);
+	s << x64_mov(x64_reg_ptr64(x64_regs::rax), x64_regs::rax, sib_scale::s2, x64_regs::al);
+	s << x64_mov(x64_reg_ptr32(x64_regs::eax), x64_regs::eax, sib_scale::s2, x64_regs::rax);
+	s << x64_mov(x64_reg_ptr32(x64_regs::eax), x64_regs::eax, sib_scale::s2, x64_regs::eax);
+	s << x64_mov(x64_reg_ptr32(x64_regs::eax), x64_regs::eax, sib_scale::s2, x64_regs::ax);
+	s << x64_mov(x64_reg_ptr32(x64_regs::eax), x64_regs::eax, sib_scale::s2, x64_regs::al);
+	s << x64_mov(x64_regs::rax, x64_reg_ptr64(x64_regs::rax), x64_regs::rax, sib_scale::s2, (int8_t) 0x42);
+	s << x64_mov(x64_regs::eax, x64_reg_ptr64(x64_regs::rax), x64_regs::rax, sib_scale::s2, (int8_t) 0x42);
+	s << x64_mov(x64_regs::ax, x64_reg_ptr64(x64_regs::rax), x64_regs::rax, sib_scale::s2, (int8_t) 0x42);
+	s << x64_mov(x64_regs::al, x64_reg_ptr64(x64_regs::rax), x64_regs::rax, sib_scale::s2, (int8_t) 0x42);
+	s << x64_mov(x64_regs::rax, x64_reg_ptr32(x64_regs::eax), x64_regs::eax, sib_scale::s2, (int8_t) 0x42);
+	s << x64_mov(x64_regs::eax, x64_reg_ptr32(x64_regs::eax), x64_regs::eax, sib_scale::s2, (int8_t) 0x42);
+	s << x64_mov(x64_regs::ax, x64_reg_ptr32(x64_regs::eax), x64_regs::eax, sib_scale::s2, (int8_t) 0x42);
+	s << x64_mov(x64_regs::al, x64_reg_ptr32(x64_regs::eax), x64_regs::eax, sib_scale::s2, (int8_t) 0x42);
+	s << x64_mov(x64_reg_ptr64(x64_regs::rax), x64_regs::rax, sib_scale::s2, (int8_t) 0x42, x64_regs::rax);
+	s << x64_mov(x64_reg_ptr64(x64_regs::rax), x64_regs::rax, sib_scale::s2, (int8_t) 0x42, x64_regs::eax);
+	s << x64_mov(x64_reg_ptr64(x64_regs::rax), x64_regs::rax, sib_scale::s2, (int8_t) 0x42, x64_regs::ax);
+	s << x64_mov(x64_reg_ptr64(x64_regs::rax), x64_regs::rax, sib_scale::s2, (int8_t) 0x42, x64_regs::al);
+	s << x64_mov(x64_reg_ptr32(x64_regs::eax), x64_regs::eax, sib_scale::s2, (int8_t) 0x42, x64_regs::rax);
+	s << x64_mov(x64_reg_ptr32(x64_regs::eax), x64_regs::eax, sib_scale::s2, (int8_t) 0x42, x64_regs::eax);
+	s << x64_mov(x64_reg_ptr32(x64_regs::eax), x64_regs::eax, sib_scale::s2, (int8_t) 0x42, x64_regs::ax);
+	s << x64_mov(x64_reg_ptr32(x64_regs::eax), x64_regs::eax, sib_scale::s2, (int8_t) 0x42, x64_regs::al);
+	s << x64_mov(x64_regs::rax, x64_reg_ptr64(x64_regs::rax), x64_regs::rax, sib_scale::s2, (int32_t) 0x42);
+	s << x64_mov(x64_regs::eax, x64_reg_ptr64(x64_regs::rax), x64_regs::rax, sib_scale::s2, (int32_t) 0x42);
+	s << x64_mov(x64_regs::ax, x64_reg_ptr64(x64_regs::rax), x64_regs::rax, sib_scale::s2, (int32_t) 0x42);
+	s << x64_mov(x64_regs::al, x64_reg_ptr64(x64_regs::rax), x64_regs::rax, sib_scale::s2, (int32_t) 0x42);
+	s << x64_mov(x64_regs::rax, x64_reg_ptr32(x64_regs::eax), x64_regs::eax, sib_scale::s2, (int32_t) 0x42);
+	s << x64_mov(x64_regs::eax, x64_reg_ptr32(x64_regs::eax), x64_regs::eax, sib_scale::s2, (int32_t) 0x42);
+	s << x64_mov(x64_regs::ax, x64_reg_ptr32(x64_regs::eax), x64_regs::eax, sib_scale::s2, (int32_t) 0x42);
+	s << x64_mov(x64_regs::al, x64_reg_ptr32(x64_regs::eax), x64_regs::eax, sib_scale::s2, (int32_t) 0x42);
+	s << x64_mov(x64_reg_ptr64(x64_regs::rax), x64_regs::rax, sib_scale::s2, (int32_t) 0x42, x64_regs::rax);
+	s << x64_mov(x64_reg_ptr64(x64_regs::rax), x64_regs::rax, sib_scale::s2, (int32_t) 0x42, x64_regs::eax);
+	s << x64_mov(x64_reg_ptr64(x64_regs::rax), x64_regs::rax, sib_scale::s2, (int32_t) 0x42, x64_regs::ax);
+	s << x64_mov(x64_reg_ptr64(x64_regs::rax), x64_regs::rax, sib_scale::s2, (int32_t) 0x42, x64_regs::al);
+	s << x64_mov(x64_reg_ptr32(x64_regs::eax), x64_regs::eax, sib_scale::s2, (int32_t) 0x42, x64_regs::rax);
+	s << x64_mov(x64_reg_ptr32(x64_regs::eax), x64_regs::eax, sib_scale::s2, (int32_t) 0x42, x64_regs::eax);
+	s << x64_mov(x64_reg_ptr32(x64_regs::eax), x64_regs::eax, sib_scale::s2, (int32_t) 0x42, x64_regs::ax);
+	s << x64_mov(x64_reg_ptr32(x64_regs::eax), x64_regs::eax, sib_scale::s2, (int32_t) 0x42, x64_regs::al);
 
 	cout << x64_disassembler::disassemble(s, "intel", true);
 
@@ -685,6 +815,7 @@ void x64_testing::mov_unit_tests()
 
 	auto start = high_resolution_clock::now();
 	int n_loops = 10000;
+	int n_per_loop = 6;//36 - 5;
 	for (int i = 0; i < n_loops ; i++)
 	{
 		s << x64_mov(x64_regs::rax, (uint64_t) 0x1234567812345678);
@@ -693,39 +824,39 @@ void x64_testing::mov_unit_tests()
 		s << x64_mov(x64_regs::ax, (uint16_t) 0x1234);
 		s << x64_mov(x64_regs::ah, (uint8_t) 0x12);
 		s << x64_mov(x64_regs::al, (uint8_t) 0x12);
-		s << x64_nop1();
-		s << x64_nop1();
-		s << x64_mov(x64_regs::rax, x64_addr_ptr<uint64_t*>((uint64_t*)0x1234567812345678));
-		s << x64_mov(x64_regs::eax, x64_addr_ptr<uint32_t*>((uint32_t*)0x1234567812345678));
-		s << x64_mov(x64_regs::ax, x64_addr_ptr<uint16_t*>((uint16_t*)0x1234567812345678));
-		s << x64_mov(x64_regs::al, x64_addr_ptr<uint8_t*>((uint8_t*)0x1234567812345678));
-		s << x64_nop1();
-		s << x64_mov(x64_addr_ptr<uint64_t*>((uint64_t*)0x1234567812345678), x64_regs::rax);
-		s << x64_mov(x64_addr_ptr<uint32_t*>((uint32_t*)0x1234567812345678), x64_regs::eax);
-		s << x64_mov(x64_addr_ptr<uint16_t*>((uint16_t*)0x1234567812345678), x64_regs::ax);
-		s << x64_mov(x64_addr_ptr<uint8_t*>((uint8_t*)0x1234567812345678), x64_regs::al);
-		s << x64_mov(x64_regs::rax, x64_addr_ptr<uint64_t*>((uint64_t*)0x42));
-		s << x64_mov(x64_addr_ptr<uint64_t*>((uint64_t*)0x42), x64_regs::rax);
-		s << x64_mov(x64_addr_ptr<uint32_t*>((uint32_t*)0x42), x64_regs::eax);
-		s << x64_nop1();
-		s << x64_mov(x64_regs::al, x64_addr_ptr<int32_t>(0x12345678));
-		s << x64_mov(x64_regs::ax, x64_reg_ptr64(x64_regs::rax), x64_regs::rax, sib_scale::s8);
-		s << x64_mov(x64_reg_ptr64(x64_regs::rax), x64_regs::rax, sib_scale::s8, x64_regs::eax);
-		s << x64_mov(x64_regs::rax, x64_reg_ptr64(x64_regs::rax), x64_regs::rbx, sib_scale::s8, (int8_t) 0x42);
-		s << x64_mov(x64_regs::rax, x64_reg_ptr64(x64_regs::rax), x64_regs::rbx, sib_scale::s8, (int32_t) 0x42);
-		s << x64_mov(x64_reg_ptr64(x64_regs::rax), x64_regs::rbx, sib_scale::s8, (int8_t) 0x42, x64_regs::rax);
-		s << x64_mov(x64_reg_ptr64(x64_regs::rax), x64_regs::rbx, sib_scale::s8, (int32_t) 0x42, x64_regs::rax);
-		s << x64_nop1();
-		s << x64_mov(x64_regs::rax, x64_reg_ptr64(x64_regs::rax), x64_regs::rax, sib_scale::s8);
-		s << x64_mov(x64_regs::eax, x64_reg_ptr64(x64_regs::rax), x64_regs::rax, sib_scale::s8);
-		s << x64_mov(x64_regs::ax, x64_reg_ptr64(x64_regs::rax), x64_regs::rax, sib_scale::s8);
-		s << x64_mov(x64_regs::al, x64_reg_ptr64(x64_regs::rax), x64_regs::rax, sib_scale::s8);
-		s << x64_mov(x64_regs::rax, x64_reg_ptr32(x64_regs::eax), x64_regs::eax, sib_scale::s8);
-		s << x64_mov(x64_regs::eax, x64_reg_ptr32(x64_regs::eax), x64_regs::eax, sib_scale::s8);
-		s << x64_mov(x64_regs::ax, x64_reg_ptr32(x64_regs::eax), x64_regs::eax, sib_scale::s8);
+//		//s << x64_nop1();
+//		//s << x64_nop1();
+//		s << x64_mov(x64_regs::rax, x64_addr_ptr<uint64_t*>((uint64_t*)0x1234567812345678));
+//		s << x64_mov(x64_regs::eax, x64_addr_ptr<uint32_t*>((uint32_t*)0x1234567812345678));
+//		s << x64_mov(x64_regs::ax, x64_addr_ptr<uint16_t*>((uint16_t*)0x1234567812345678));
+//		s << x64_mov(x64_regs::al, x64_addr_ptr<uint8_t*>((uint8_t*)0x1234567812345678));
+//		//s << x64_nop1();
+//		s << x64_mov(x64_addr_ptr<uint64_t*>((uint64_t*)0x1234567812345678), x64_regs::rax);
+//		s << x64_mov(x64_addr_ptr<uint32_t*>((uint32_t*)0x1234567812345678), x64_regs::eax);
+//		s << x64_mov(x64_addr_ptr<uint16_t*>((uint16_t*)0x1234567812345678), x64_regs::ax);
+//		s << x64_mov(x64_addr_ptr<uint8_t*>((uint8_t*)0x1234567812345678), x64_regs::al);
+//		s << x64_mov(x64_regs::rax, x64_addr_ptr<uint64_t*>((uint64_t*)0x42));
+//		s << x64_mov(x64_addr_ptr<uint64_t*>((uint64_t*)0x42), x64_regs::rax);
+//		s << x64_mov(x64_addr_ptr<uint32_t*>((uint32_t*)0x42), x64_regs::eax);
+//		//s << x64_nop1();
+//		s << x64_mov(x64_regs::al, x64_addr_ptr<int32_t>(0x12345678));
+//		s << x64_mov(x64_regs::ax, x64_reg_ptr64(x64_regs::rax), x64_regs::rax, sib_scale::s8);
+//		s << x64_mov(x64_reg_ptr64(x64_regs::rax), x64_regs::rax, sib_scale::s8, x64_regs::eax);
+//		s << x64_mov(x64_regs::rax, x64_reg_ptr64(x64_regs::rax), x64_regs::rbx, sib_scale::s8, (int8_t) 0x42);
+//		s << x64_mov(x64_regs::rax, x64_reg_ptr64(x64_regs::rax), x64_regs::rbx, sib_scale::s8, (int32_t) 0x42);
+//		s << x64_mov(x64_reg_ptr64(x64_regs::rax), x64_regs::rbx, sib_scale::s8, (int8_t) 0x42, x64_regs::rax);
+//		s << x64_mov(x64_reg_ptr64(x64_regs::rax), x64_regs::rbx, sib_scale::s8, (int32_t) 0x42, x64_regs::rax);
+//		//s << x64_nop1();
+//		s << x64_mov(x64_regs::rax, x64_reg_ptr64(x64_regs::rax), x64_regs::rax, sib_scale::s8);
+//		s << x64_mov(x64_regs::eax, x64_reg_ptr64(x64_regs::rax), x64_regs::rax, sib_scale::s8);
+//		s << x64_mov(x64_regs::ax, x64_reg_ptr64(x64_regs::rax), x64_regs::rax, sib_scale::s8);
+//		s << x64_mov(x64_regs::al, x64_reg_ptr64(x64_regs::rax), x64_regs::rax, sib_scale::s8);
+//		s << x64_mov(x64_regs::rax, x64_reg_ptr32(x64_regs::eax), x64_regs::eax, sib_scale::s8);
+//		s << x64_mov(x64_regs::eax, x64_reg_ptr32(x64_regs::eax), x64_regs::eax, sib_scale::s8);
+//		s << x64_mov(x64_regs::ax, x64_reg_ptr32(x64_regs::eax), x64_regs::eax, sib_scale::s8);
 	}
 
-	auto n = 36 * n_loops;
+	auto n = n_per_loop * n_loops;
 	auto stop = high_resolution_clock::now();
 	auto duration = duration_cast<microseconds>(stop - start);
 	auto seconds = ((double) duration.count() / 1000000.0);
