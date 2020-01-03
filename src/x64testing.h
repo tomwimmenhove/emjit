@@ -36,29 +36,29 @@ public:
 	virtual ~x64_testing() { }
 
 private:
-	template<typename T>
-	static void direct_reg_reg(instruction_stream& s, std::vector<std::string>& expected_lines, int num_regs);
+	template<typename C, typename T>
+	static void direct_reg_reg(std::string inst_name, instruction_stream& s, std::vector<std::string>& expected_lines, int num_regs);
 
-	template<typename T, typename U, typename V>
-	static void regptr_reg(instruction_stream& s, std::vector<std::string>& expected_lines, std::string width_name, int nj, int ni);
+	template<typename C, typename T, typename U, typename V>
+	static void regptr_reg(std::string inst_name, instruction_stream& s, std::vector<std::string>& expected_lines, std::string width_name, int nj, int ni);
 
-	template<typename T, typename U, typename V, typename W>
-	static void regptr_offs_reg(instruction_stream& s, std::vector<std::string>& expected_lines, std::string width_name, int nj, int ni);
+	template<typename C, typename T, typename U, typename V, typename W>
+	static void regptr_offs_reg(std::string inst_name, instruction_stream& s, std::vector<std::string>& expected_lines, std::string width_name, int nj, int ni);
 
-	template<typename T, typename U, typename V>
-	static void reg_regptr(instruction_stream& s, std::vector<std::string>& expected_lines, std::string width_name, int nj, int ni);
+	template<typename C, typename T, typename U, typename V>
+	static void reg_regptr(std::string inst_name, instruction_stream& s, std::vector<std::string>& expected_lines, std::string width_name, int nj, int ni);
 
-	template<typename T, typename U, typename V, typename W>
-	static void reg_regptr_offs(instruction_stream& s, std::vector<std::string>& expected_lines, std::string width_name, int nj, int ni);
+	template<typename C, typename T, typename U, typename V, typename W>
+	static void reg_regptr_offs(std::string inst_name, instruction_stream& s, std::vector<std::string>& expected_lines, std::string width_name, int nj, int ni);
 
-	template<typename T, typename U>
-	static void reg_imm(instruction_stream& s, std::vector<std::string>& expected_lines, std::string inst_name, int n);
+	template<typename C, typename T, typename U>
+	static void reg_imm(std::string inst_name, instruction_stream& s, std::vector<std::string>& expected_lines, int n);
 
-	template<typename T, typename U>
-	static void reg_imm_addr(instruction_stream& s, std::vector<std::string>& expected_lines, std::string width_name, int n);
+	template<typename C, typename T, typename U>
+	static void reg_imm_addr(std::string inst_name, instruction_stream& s, std::vector<std::string>& expected_lines, std::string width_name, int n);
 
-	template<typename T, typename U>
-	static void imm_addr_reg(instruction_stream& s, std::vector<std::string>& expected_lines, std::string width_name, int n);
+	template<typename C, typename T, typename U>
+	static void imm_addr_reg(std::string inst_name, instruction_stream& s, std::vector<std::string>& expected_lines, std::string width_name, int n);
 
 	template<typename T, typename U>
 	void reg_ptr64(instruction_stream& s, std::vector<std::string>& expected_lines, T reg);
@@ -66,18 +66,20 @@ private:
 	template<typename T, typename U>
 	void ptr64_reg(instruction_stream& s, std::vector<std::string>& expected_lines, U reg);
 
-	template<typename T, typename U, typename V>
-	static void reg_reg_ptr_idx(instruction_stream& s, std::vector<std::string>& expected_lines, std::string width_name, int ni, int nj);
+	template<typename C, typename T, typename U, typename V>
+	static void reg_reg_ptr_idx(std::string inst_name, instruction_stream& s, std::vector<std::string>& expected_lines, std::string width_name, int ni, int nj);
 
-	template<typename T, typename U, typename V>
-	static void reg_ptr_idx_reg(instruction_stream& s, std::vector<std::string>& expected_lines, std::string width_name, int ni, int nj);
+	template<typename C, typename T, typename U, typename V>
+	static void reg_ptr_idx_reg(std::string inst_name, instruction_stream& s, std::vector<std::string>& expected_lines, std::string width_name, int ni, int nj);
 
-	template<typename T, typename U, typename V, typename W>
-	static void reg_reg_ptr_idx_off(instruction_stream& s, std::vector<std::string>& expected_lines, std::string width_name, int ni, int nj);
+	template<typename C, typename T, typename U, typename V, typename W>
+	static void reg_reg_ptr_idx_off(std::string inst_name, instruction_stream& s, std::vector<std::string>& expected_lines, std::string width_name, int ni, int nj);
 
-	template<typename T, typename U, typename V, typename W>
-	static void reg_ptr_idx_off_reg(instruction_stream& s, std::vector<std::string>& expected_lines, std::string width_name, int ni, int nj);
+	template<typename C, typename T, typename U, typename V, typename W>
+	static void reg_ptr_idx_off_reg(std::string inst_name, instruction_stream& s, std::vector<std::string>& expected_lines, std::string width_name, int ni, int nj);
 
+	template<typename C>
+	static void test_inst(std::string inst_name, instruction_stream& s, std::vector<std::string>& expected_lines);
 
 	//reg_reg_ptr_idx
 

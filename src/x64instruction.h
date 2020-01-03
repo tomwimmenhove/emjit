@@ -834,16 +834,16 @@ public:
 	using x64_xxx::x64_xxx;
 
 	/* Add immediate into register */
-	x64_add(x64_reg64 reg, int8_t imm) { reg_imm(reg, imm, 0x83); }
-	x64_add(x64_reg64 reg, int32_t imm) { reg_imm_oroc(reg, imm, 0x05, 0x81); }
+	x64_add(x64_reg64 reg, uint8_t imm) { reg_imm(reg, imm, 0x83); }
+	x64_add(x64_reg64 reg, uint32_t imm) { reg_imm_oroc(reg, imm, 0x05, 0x81); }
 
-	x64_add(x64_reg32 reg, int8_t imm) { reg_imm(reg, imm, 0x83); }
-	x64_add(x64_reg32 reg, int32_t imm) { reg_imm_oroc(reg, imm, 0x05, 0x81); }
+	x64_add(x64_reg32 reg, uint8_t imm) { reg_imm(reg, imm, 0x83); }
+	x64_add(x64_reg32 reg, uint32_t imm) { reg_imm_oroc(reg, imm, 0x05, 0x81); }
 
-	x64_add(x64_reg16 reg, int8_t imm) { reg_imm(reg, imm, 0x83); }
-	x64_add(x64_reg16 reg, int16_t imm) { reg_imm_oroc(reg, imm, 0x05, 0x81); }
+	x64_add(x64_reg16 reg, uint8_t imm) { reg_imm(reg, imm, 0x83); }
+	x64_add(x64_reg16 reg, uint16_t imm) { reg_imm_oroc(reg, imm, 0x05, 0x81); }
 
-	x64_add(x64_reg8  reg, int8_t  imm) { reg_imm_oroc(reg, imm, 0x04, 0x80); }
+	x64_add(x64_reg8  reg, uint8_t  imm) { reg_imm_oroc(reg, imm, 0x04, 0x80); }
 
 	virtual ~x64_add() { }
 
