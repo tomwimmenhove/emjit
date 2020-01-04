@@ -13,6 +13,7 @@
 #include <iostream>
 #include <unistd.h>
 #include <string>
+#include <cstring>
 
 using namespace std;
 
@@ -21,7 +22,8 @@ string x64_disassembler::disassemble(const uint8_t* data, std::size_t len, std::
 	char filename[PATH_MAX] = "/tmp/x64.asmXXXXXX";
 	int fd = mkstemp(filename);
 
-	write(fd, data, len);
+	if (write(fd, data, len) == -1)
+		throw ios_base::failure(strerror(errno));
 
 	close(fd);
 
@@ -38,7 +40,7 @@ string x64_disassembler::disassemble(const uint8_t* data, std::size_t len, std::
 
 	auto disassembly = exec(command);
 
-//	unlink(filename);
+	unlink(filename);
 
 	return disassembly;
 }

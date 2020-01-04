@@ -576,7 +576,7 @@ void x64_testing::mov_unit_tests()
 {
 	instruction_stream s(allocator);
 
-#if 1
+#if 0
 	s << x64_sub(x64_regs::rax, x64_regs::rax);
 	s << x64_sub(x64_regs::eax, x64_regs::eax);
 	s << x64_sub(x64_regs::ax, x64_regs::ax);
@@ -687,17 +687,35 @@ void x64_testing::mov_unit_tests()
 	s << x64_sub(x64_reg_ptr32(x64_regs::eax), x64_regs::eax, sib_scale::s2, (int32_t) 0x42, x64_regs::al);
 
 
+	s << x64_nop1() << x64_nop1() << x64_nop1() << x64_nop1();
 
 
-	cout << x64_disassembler::disassemble(s, "intel", true);
+	s << x64_sub(x64_regs::rax, (uint8_t) 0x42);
+
+	s << x64_sub(x64_regs::rax, (uint32_t) 0x12345678);
+	s << x64_sub(x64_regs::rdx, (uint32_t) 0x12345678);
+
+	s << x64_sub(x64_regs::eax, (uint8_t) 0x42);
+
+	s << x64_sub(x64_regs::eax, (uint32_t) 0x12345678);
+	s << x64_sub(x64_regs::edx, (uint32_t) 0x12345678);
+
+	s << x64_sub(x64_regs::ax, (uint8_t) 0x42);
+
+	s << x64_sub(x64_regs::ax, (uint16_t) 0x1234);
+	s << x64_sub(x64_regs::dx, (uint16_t) 0x1234);
+
+	s << x64_sub(x64_regs::al, (uint8_t) 0x42);
+	s << x64_sub(x64_regs::dh, (uint8_t) 0x42);
+
+
+
+	cout << x64_disassembler::disassemble(s, "att", true);
 
 	exit(0);
 #endif
 
 	vector<string> expected_lines;
-
-	test_inst<x64_mov>("mov", s, expected_lines);
-	test_inst<x64_add>("add", s, expected_lines);
 
 	/* 64-bit move-only shit */
 	reg_imm<x64_mov, x64_reg64, uint64_t>("movabs", s, expected_lines, 16);
@@ -713,6 +731,12 @@ void x64_testing::mov_unit_tests()
 	ptr64_reg<uint16_t, x64_reg16_0>(s, expected_lines, x64_regs::ax);
 	ptr64_reg<uint8_t, x64_reg8l_0>(s, expected_lines, x64_regs::al);
 
+	/* General stuff */
+	test_inst<x64_mov>("mov", s, expected_lines);
+	test_inst<x64_add>("add", s, expected_lines);
+	test_inst<x64_sub>("sub", s, expected_lines);
+	test_inst<x64_sbb>("sbb", s, expected_lines);
+	test_inst<x64_adc>("adc", s, expected_lines);
 
 	compare_assembly(s, expected_lines);
 
