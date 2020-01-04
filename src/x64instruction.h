@@ -828,24 +828,24 @@ public:
 };
 
 template<uint8_t A, uint8_t B, uint8_t C, uint8_t D, uint8_t E, uint8_t F, uint8_t MOD>
-class x64_add_sub_base : public x64_xxx<A, B, C, D>
+class x64_arith_base : public x64_xxx<A, B, C, D>
 {
 public:
 	using x64_xxx<A, B, C, D>::x64_xxx;
 
 	/* Add immediate into register */
-	x64_add_sub_base(x64_reg64 reg, uint8_t imm) { reg_imm(reg, imm, 0x83); }
-	x64_add_sub_base(x64_reg64 reg, uint32_t imm) { reg_imm_oroc(reg, imm, F, 0x81); }
+	x64_arith_base(x64_reg64 reg, uint8_t imm) { reg_imm(reg, imm, 0x83); }
+	x64_arith_base(x64_reg64 reg, uint32_t imm) { reg_imm_oroc(reg, imm, F, 0x81); }
 
-	x64_add_sub_base(x64_reg32 reg, uint8_t imm) { reg_imm(reg, imm, 0x83); }
-	x64_add_sub_base(x64_reg32 reg, uint32_t imm) { reg_imm_oroc(reg, imm, F, 0x81); }
+	x64_arith_base(x64_reg32 reg, uint8_t imm) { reg_imm(reg, imm, 0x83); }
+	x64_arith_base(x64_reg32 reg, uint32_t imm) { reg_imm_oroc(reg, imm, F, 0x81); }
 
-	x64_add_sub_base(x64_reg16 reg, uint8_t imm) { reg_imm(reg, imm, 0x83); }
-	x64_add_sub_base(x64_reg16 reg, uint16_t imm) { reg_imm_oroc(reg, imm, F, 0x81); }
+	x64_arith_base(x64_reg16 reg, uint8_t imm) { reg_imm(reg, imm, 0x83); }
+	x64_arith_base(x64_reg16 reg, uint16_t imm) { reg_imm_oroc(reg, imm, F, 0x81); }
 
-	x64_add_sub_base(x64_reg8  reg, uint8_t  imm) { reg_imm_oroc(reg, imm, E, 0x80); }
+	x64_arith_base(x64_reg8  reg, uint8_t  imm) { reg_imm_oroc(reg, imm, E, 0x80); }
 
-	virtual ~x64_add_sub_base() { }
+	virtual ~x64_arith_base() { }
 
 private:
 	template<typename T, typename U>
@@ -872,16 +872,28 @@ private:
 	}
 };
 
-class x64_add: public x64_add_sub_base<0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0>
-{ using x64_add_sub_base::x64_add_sub_base; };
+class x64_add: public x64_arith_base<0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0>
+{ using x64_arith_base::x64_arith_base; };
 
-class x64_adc: public x64_add_sub_base<0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 2>
-{ using x64_add_sub_base::x64_add_sub_base; };
+class x64_or: public x64_arith_base<0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 1>
+{ using x64_arith_base::x64_arith_base; };
 
-class x64_sub: public x64_add_sub_base<0x28, 0x29, 0x2a, 0x2b, 0x2c, 0x2d, 5>
-{ using x64_add_sub_base::x64_add_sub_base; };
+class x64_adc: public x64_arith_base<0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 2>
+{ using x64_arith_base::x64_arith_base; };
 
-class x64_sbb: public x64_add_sub_base<0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 3>
-{ using x64_add_sub_base::x64_add_sub_base; };
+class x64_sbb: public x64_arith_base<0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 3>
+{ using x64_arith_base::x64_arith_base; };
+
+class x64_and: public x64_arith_base<0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 4>
+{ using x64_arith_base::x64_arith_base; };
+
+class x64_sub: public x64_arith_base<0x28, 0x29, 0x2a, 0x2b, 0x2c, 0x2d, 5>
+{ using x64_arith_base::x64_arith_base; };
+
+class x64_xor: public x64_arith_base<0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 6>
+{ using x64_arith_base::x64_arith_base; };
+
+class x64_cmp: public x64_arith_base<0x38, 0x39, 0x3a, 0x3b, 0x3c, 0x3d, 7>
+{ using x64_arith_base::x64_arith_base; };
 
 #endif /* X64INSTRUCTION_H_ */

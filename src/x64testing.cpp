@@ -717,26 +717,31 @@ void x64_testing::mov_unit_tests()
 
 	vector<string> expected_lines;
 
-	/* 64-bit move-only shit */
-	reg_imm<x64_mov, x64_reg64, uint64_t>("movabs", s, expected_lines, 16);
-
-	/* 64 bit pointers only support the first register (al, ax, eax, rax) */
-	reg_ptr64<x64_reg64_0, uint64_t>(s, expected_lines, x64_regs::rax);
-	reg_ptr64<x64_reg32_0, uint32_t>(s, expected_lines, x64_regs::eax);
-	reg_ptr64<x64_reg16_0, uint16_t>(s, expected_lines, x64_regs::ax);
-	reg_ptr64<x64_reg8l_0, uint8_t>(s, expected_lines, x64_regs::al);
-
-	ptr64_reg<uint64_t, x64_reg64_0>(s, expected_lines, x64_regs::rax);
-	ptr64_reg<uint32_t, x64_reg32_0>(s, expected_lines, x64_regs::eax);
-	ptr64_reg<uint16_t, x64_reg16_0>(s, expected_lines, x64_regs::ax);
-	ptr64_reg<uint8_t, x64_reg8l_0>(s, expected_lines, x64_regs::al);
-
-	/* General stuff */
-	test_inst<x64_mov>("mov", s, expected_lines);
-	test_inst<x64_add>("add", s, expected_lines);
-	test_inst<x64_sub>("sub", s, expected_lines);
-	test_inst<x64_sbb>("sbb", s, expected_lines);
-	test_inst<x64_adc>("adc", s, expected_lines);
+//	/* 64-bit move-only shit */
+//	reg_imm<x64_mov, x64_reg64, uint64_t>("movabs", s, expected_lines, 16);
+//
+//	/* 64 bit pointers only support the first register (al, ax, eax, rax) */
+//	reg_ptr64<x64_reg64_0, uint64_t>(s, expected_lines, x64_regs::rax);
+//	reg_ptr64<x64_reg32_0, uint32_t>(s, expected_lines, x64_regs::eax);
+//	reg_ptr64<x64_reg16_0, uint16_t>(s, expected_lines, x64_regs::ax);
+//	reg_ptr64<x64_reg8l_0, uint8_t>(s, expected_lines, x64_regs::al);
+//
+//	ptr64_reg<uint64_t, x64_reg64_0>(s, expected_lines, x64_regs::rax);
+//	ptr64_reg<uint32_t, x64_reg32_0>(s, expected_lines, x64_regs::eax);
+//	ptr64_reg<uint16_t, x64_reg16_0>(s, expected_lines, x64_regs::ax);
+//	ptr64_reg<uint8_t, x64_reg8l_0>(s, expected_lines, x64_regs::al);
+//
+//	/* General stuff */
+//	test_inst<x64_mov>("mov", s, expected_lines);
+//	test_inst<x64_add>("add", s, expected_lines);
+//	test_inst<x64_sub>("sub", s, expected_lines);
+//	test_inst<x64_sbb>("sbb", s, expected_lines);
+//	test_inst<x64_adc>("adc", s, expected_lines);
+//	test_inst<x64_and>("and", s, expected_lines);
+//	test_inst<x64_or>("or", s, expected_lines);
+//	test_inst<x64_cmp>("cmp", s, expected_lines);
+//	test_inst<x64_xor>("xor", s, expected_lines);
+	test_inst<x64_plap>("pap", s, expected_lines);
 
 	compare_assembly(s, expected_lines);
 
