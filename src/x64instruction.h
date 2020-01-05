@@ -444,9 +444,16 @@ protected:
 	{ x64_add_rex(a, T(0), b, oper_size); }
 
 	template<typename T>
+	void single_regptr(const x64_addr_ptr<T>& reg, uint8_t b, uint8_t oc, uint8_t mod)
+	{
+		x64_add_rex(reg.ptr, x64_reg32(0));
+		reg_reg_oc_mod(reg.ptr, x64_reg32(b), oc, mod);
+	}
+
+	template<typename T>
 	void single_reg(const T& reg, uint8_t b, uint8_t oc, uint8_t mod)
 	{
-		x64_add_rex(reg, x64_reg32(0));
+		add_prefixes(reg, T(0));
 		reg_reg_oc_mod(reg, x64_reg32(b), oc, mod);
 	}
 
@@ -876,39 +883,44 @@ private:
 	}
 };
 
-class x64_add: public x64_arith_base<0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0>
+struct x64_add: public x64_arith_base<0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0>
 { using x64_arith_base::x64_arith_base; };
 
-class x64_or: public x64_arith_base<0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 1>
+struct x64_or: public x64_arith_base<0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 1>
 { using x64_arith_base::x64_arith_base; };
 
-class x64_adc: public x64_arith_base<0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 2>
+struct x64_adc: public x64_arith_base<0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 2>
 { using x64_arith_base::x64_arith_base; };
 
-class x64_sbb: public x64_arith_base<0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 3>
+struct x64_sbb: public x64_arith_base<0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 3>
 { using x64_arith_base::x64_arith_base; };
 
-class x64_and: public x64_arith_base<0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 4>
+struct x64_and: public x64_arith_base<0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 4>
 { using x64_arith_base::x64_arith_base; };
 
-class x64_sub: public x64_arith_base<0x28, 0x29, 0x2a, 0x2b, 0x2c, 0x2d, 5>
+struct x64_sub: public x64_arith_base<0x28, 0x29, 0x2a, 0x2b, 0x2c, 0x2d, 5>
 { using x64_arith_base::x64_arith_base; };
 
-class x64_xor: public x64_arith_base<0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 6>
+struct x64_xor: public x64_arith_base<0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 6>
 { using x64_arith_base::x64_arith_base; };
 
-class x64_cmp: public x64_arith_base<0x38, 0x39, 0x3a, 0x3b, 0x3c, 0x3d, 7>
+struct x64_cmp: public x64_arith_base<0x38, 0x39, 0x3a, 0x3b, 0x3c, 0x3d, 7>
 { using x64_arith_base::x64_arith_base; };
 
 
 template<uint8_t A, uint8_t B, uint8_t C>
-class x64_jmpcall_base : public x64_instruction
+struct x64_jmpcall_base : public x64_instruction
 {
-public:
 	using x64_instruction::x64_instruction;
 
 	x64_jmpcall_base(int32_t off) : x64_instruction(std::array<uint8_t, 1> { B }, off) { }
-	x64_jmpcall_base(x64_reg64 reg) { single_reg(reg, C, A, 3); }
+	x64_jmpcall_base(x64_reg64 reg) { single_regptr(x64_reg_addr(reg), C, A, 3); }
+	//x64_jmpcall_base(x64_reg64 reg)
+	//void single_regptr(const T& reg, uint8_t b, uint8_t oc, uint8_t mod)
+	//{
+	//	x64_add_rex(reg, x64_reg32(0));
+	//	reg_reg_oc_mod(reg, x64_reg32(C), A, 3);
+	//}
 
 	x64_jmpcall_base(x64_reg_ptr64 addr) { reg_reg_ptr(x64_reg32(C), addr, A); }
 	x64_jmpcall_base(x64_reg_ptr32 addr) { reg_reg_ptr(x64_reg32(C), addr, A); }
@@ -926,8 +938,8 @@ public:
 	x64_jmpcall_base(x64_reg_ptr32 addr, x64_reg32 index, sib_scale scale, int8_t off) { reg_reg_ptr_idx_off(x64_reg32(C), addr, index, scale, off, A, 1); }
 };
 
-class x64_call : public x64_jmpcall_base<0xff, 0xe8, 2> { using x64_jmpcall_base::x64_jmpcall_base; };
-class x64_jmp : public x64_jmpcall_base<0xff, 0xe9, 4> { using x64_jmpcall_base::x64_jmpcall_base; };
+struct x64_call : public x64_jmpcall_base<0xff, 0xe8, 2> { using x64_jmpcall_base::x64_jmpcall_base; };
+struct x64_jmp : public x64_jmpcall_base<0xff, 0xe9, 4> { using x64_jmpcall_base::x64_jmpcall_base; };
 
 struct x64_jecxz : public x64_instruction{x64_jecxz(int8_t off) : x64_instruction(std::array<uint8_t, 1> { 0xe3 }, off) {} };
 
@@ -965,9 +977,35 @@ enum class x64_cond
 	not_less_or_equal		= 0xf,
 };
 
+
 struct x64_jmp_cond : public x64_instruction
 {
 	x64_jmp_cond(x64_cond cond, int8_t off) : x64_instruction(std::array<uint8_t, 1> { static_cast<uint8_t>(0x70 | static_cast<uint8_t>(cond)) }, off) {};
+
+	static x64_cond invert(x64_cond cond)
+	{
+		switch(cond)
+		{
+		case x64_cond::overflow: 			 return x64_cond::not_overflow; // 0x0,
+		case x64_cond::not_overflow: 		 return x64_cond::overflow; // 0x1,
+		case x64_cond::below: 				 return x64_cond::not_below; // 0x2,
+		case x64_cond::not_below: 			 return x64_cond::below; // 0x3,
+		case x64_cond::equal: 				 return x64_cond::not_equal; // 0x4,
+		case x64_cond::not_equal: 			 return x64_cond::equal; // 0x5,
+		case x64_cond::below_or_equal:		 return x64_cond::above; // 0x6,
+		case x64_cond::above:			 	 return x64_cond::not_above; // 0x7,
+		case x64_cond::sign: 				 return x64_cond::not_sign; // 0x8,
+		case x64_cond::not_sign: 			 return x64_cond::sign; // 0x9,
+		case x64_cond::parity:		 		 return x64_cond::not_parity; // 0xa,
+		case x64_cond::not_parity: 			 return x64_cond::parity; // 0xb,
+		case x64_cond::less:				 return x64_cond::not_less; // 0xc,
+		case x64_cond::not_less: 			 return x64_cond::less; // 0xd,
+		case x64_cond::not_greater: 		 return x64_cond::greater; // 0xe,
+		case x64_cond::greater:			 	 return x64_cond::not_greater; // 0xf,
+		default:
+			throw std::invalid_argument("Invalid condition");
+		}
+	}
 };
 
 struct x64_jo : x64_jmp_cond   { x64_jo(int8_t off)   : x64_jmp_cond(x64_cond::overflow, off) { } };
@@ -1000,5 +1038,23 @@ struct x64_jp : x64_jmp_cond   { x64_jp(int8_t off)   : x64_jmp_cond(x64_cond::p
 struct x64_jpe : x64_jmp_cond  { x64_jpe(int8_t off)  : x64_jmp_cond(x64_cond::parity_even, off) { } };
 struct x64_jnp : x64_jmp_cond  { x64_jnp(int8_t off)  : x64_jmp_cond(x64_cond::not_parity, off) { } };
 struct x64_jpo : x64_jmp_cond  { x64_jpo(int8_t off)  : x64_jmp_cond(x64_cond::parity_odd, off) { } };
+
+template<uint8_t A, uint8_t B, uint8_t C>
+struct x64_single_op_base : x64_instruction
+{
+	x64_single_op_base(x64_reg8 reg) { single_reg(reg, C, A, 3); }
+	x64_single_op_base(x64_reg16 reg) { single_reg(reg, C, B, 3); }
+	x64_single_op_base(x64_reg32 reg) { single_reg(reg, C, B, 3); }
+	x64_single_op_base(x64_reg64 reg) { single_reg(reg, C, B, 3); }
+};
+
+struct x64_mul : public x64_single_op_base<0xf6, 0xf7, 4> { using x64_single_op_base::x64_single_op_base; };
+struct x64_imul : public x64_single_op_base<0xf6, 0xf7, 5> { using x64_single_op_base::x64_single_op_base; };
+struct x64_div : public x64_single_op_base<0xf6, 0xf7, 6> { using x64_single_op_base::x64_single_op_base; };
+struct x64_idiv : public x64_single_op_base<0xf6, 0xf7, 7> { using x64_single_op_base::x64_single_op_base; };
+
+struct x64_inc : public x64_single_op_base<0xfe, 0xff, 0> { using x64_single_op_base::x64_single_op_base; };
+struct x64_dec : public x64_single_op_base<0xfe, 0xff, 1> { using x64_single_op_base::x64_single_op_base; };
+struct x64_neg : public x64_single_op_base<0xf6, 0xf7, 3> { using x64_single_op_base::x64_single_op_base; };
 
 #endif /* X64INSTRUCTION_H_ */

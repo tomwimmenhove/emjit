@@ -767,6 +767,14 @@ void x64_testing::mov_unit_tests()
 
 	s << x64_jo((int8_t) -12);
 
+	s << x64_neg(x64_regs::bl);
+	s << x64_neg(x64_regs::bh);
+	s << x64_neg(x64_regs::bx);
+	s << x64_neg(x64_regs::ebx);
+	s << x64_neg(x64_regs::rax);
+	s << x64_neg(x64_regs::r12);
+
+
 	fn();
 
 
@@ -778,29 +786,29 @@ void x64_testing::mov_unit_tests()
 	vector<string> expected_lines;
 
 //	/* 64-bit only move shit */
-	reg_imm<x64_mov, x64_reg64, uint64_t>("movabs", s, expected_lines, 16);
-
-	/* 64 bit pointers only support the first register (al, ax, eax, rax) */
-	reg_ptr64<x64_reg64_0, uint64_t>(s, expected_lines, x64_regs::rax);
-	reg_ptr64<x64_reg32_0, uint32_t>(s, expected_lines, x64_regs::eax);
-	reg_ptr64<x64_reg16_0, uint16_t>(s, expected_lines, x64_regs::ax);
-	reg_ptr64<x64_reg8l_0, uint8_t>(s, expected_lines, x64_regs::al);
-
-	ptr64_reg<uint64_t, x64_reg64_0>(s, expected_lines, x64_regs::rax);
-	ptr64_reg<uint32_t, x64_reg32_0>(s, expected_lines, x64_regs::eax);
-	ptr64_reg<uint16_t, x64_reg16_0>(s, expected_lines, x64_regs::ax);
-	ptr64_reg<uint8_t, x64_reg8l_0>(s, expected_lines, x64_regs::al);
-
-	/* General stuff */
-	test_srcdst_oper_base<x64_mov>("mov", s, expected_lines);
-	test_srcdst_oper_base<x64_add>("add", s, expected_lines);
-	test_srcdst_oper_base<x64_sub>("sub", s, expected_lines);
-	test_srcdst_oper_base<x64_sbb>("sbb", s, expected_lines);
-	test_srcdst_oper_base<x64_adc>("adc", s, expected_lines);
-	test_srcdst_oper_base<x64_and>("and", s, expected_lines);
-	test_srcdst_oper_base<x64_or>("or", s, expected_lines);
-	test_srcdst_oper_base<x64_cmp>("cmp", s, expected_lines);
-	test_srcdst_oper_base<x64_xor>("xor", s, expected_lines);
+//	reg_imm<x64_mov, x64_reg64, uint64_t>("movabs", s, expected_lines, 16);
+//
+//	/* 64 bit pointers only support the first register (al, ax, eax, rax) */
+//	reg_ptr64<x64_reg64_0, uint64_t>(s, expected_lines, x64_regs::rax);
+//	reg_ptr64<x64_reg32_0, uint32_t>(s, expected_lines, x64_regs::eax);
+//	reg_ptr64<x64_reg16_0, uint16_t>(s, expected_lines, x64_regs::ax);
+//	reg_ptr64<x64_reg8l_0, uint8_t>(s, expected_lines, x64_regs::al);
+//
+//	ptr64_reg<uint64_t, x64_reg64_0>(s, expected_lines, x64_regs::rax);
+//	ptr64_reg<uint32_t, x64_reg32_0>(s, expected_lines, x64_regs::eax);
+//	ptr64_reg<uint16_t, x64_reg16_0>(s, expected_lines, x64_regs::ax);
+//	ptr64_reg<uint8_t, x64_reg8l_0>(s, expected_lines, x64_regs::al);
+//
+//	/* General stuff */
+//	test_srcdst_oper_base<x64_mov>("mov", s, expected_lines);
+//	test_srcdst_oper_base<x64_add>("add", s, expected_lines);
+//	test_srcdst_oper_base<x64_sub>("sub", s, expected_lines);
+//	test_srcdst_oper_base<x64_sbb>("sbb", s, expected_lines);
+//	test_srcdst_oper_base<x64_adc>("adc", s, expected_lines);
+//	test_srcdst_oper_base<x64_and>("and", s, expected_lines);
+//	test_srcdst_oper_base<x64_or>("or", s, expected_lines);
+//	test_srcdst_oper_base<x64_cmp>("cmp", s, expected_lines);
+//	test_srcdst_oper_base<x64_xor>("xor", s, expected_lines);
 
 	test_x64_jmpcall_base<x64_jmp>("jmp", s, expected_lines);
 	test_x64_jmpcall_base<x64_call>("call", s, expected_lines);
