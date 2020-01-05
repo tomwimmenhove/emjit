@@ -740,7 +740,7 @@ void x64_testing::mov_unit_tests()
 {
 	instruction_stream s(allocator);
 
-#if 0
+#if 1
 	auto fn = s.entry_point<void()>();
 
 	uint64_t p = (uint64_t) &say_hello;
@@ -762,61 +762,10 @@ void x64_testing::mov_unit_tests()
 
 	s << x64_jmp((int32_t) 0x12);
 
-	s << x64_jmp(x64_regs::rax);
-	s << x64_jmp(x64_regs::r12);
-	s << x64_jmp(x64_regs::r13);
-//
-	s << x64_jmp(x64_reg_addr(x64_regs::rax));
-	s << x64_jmp(x64_reg_addr(x64_regs::r12));
-	s << x64_jmp(x64_reg_addr(x64_regs::r13));
 
-	s << x64_jmp(x64_reg_addr(x64_regs::eax));
-	s << x64_jmp(x64_reg_addr(x64_regs::esp));
-	s << x64_jmp(x64_reg_addr(x64_regs::ebp));
+	s << x64_jecxz(0x7f);
 
-
-	s << x64_jmp(x64_reg_addr(x64_regs::rax), (int8_t) 0x12);
-	s << x64_jmp(x64_reg_addr(x64_regs::r12), (int8_t) 0x12);
-	s << x64_jmp(x64_reg_addr(x64_regs::r13), (int8_t) 0x12);
-
-	s << x64_jmp(x64_reg_addr(x64_regs::eax), (int8_t) 0x12);
-	s << x64_jmp(x64_reg_addr(x64_regs::esp), (int8_t) 0x12);
-	s << x64_jmp(x64_reg_addr(x64_regs::ebp), (int8_t) 0x12);
-
-	s << x64_jmp(x64_reg_addr(x64_regs::rax), (int32_t) 0x12);
-	s << x64_jmp(x64_reg_addr(x64_regs::r12), (int32_t) 0x12);
-	s << x64_jmp(x64_reg_addr(x64_regs::r13), (int32_t) 0x12);
-
-	s << x64_jmp(x64_reg_addr(x64_regs::eax), (int32_t) 0x12);
-	s << x64_jmp(x64_reg_addr(x64_regs::esp), (int32_t) 0x12);
-	s << x64_jmp(x64_reg_addr(x64_regs::ebp), (int32_t) 0x12);
-
-	s << x64_nop1();
-
-	s << x64_jmp(x64_reg_addr(x64_regs::rbx), x64_regs::rax, sib_scale::s4);
-
-//	s << x64_jmp(x64_reg_addr(x64_regs::rax), x64_regs::rbx, sib_scale::s4, (int8_t) 0x12345678);
-//	s << x64_jmp(x64_reg_addr(x64_regs::rax), x64_regs::r12, sib_scale::s4, (int8_t) 0x12345678);
-//	s << x64_jmp(x64_reg_addr(x64_regs::rax), x64_regs::r13, sib_scale::s4, (int8_t) 0x12345678);
-//
-//	s << x64_jmp(x64_reg_addr(x64_regs::rbx), x64_regs::rbx, sib_scale::s4, (int8_t) 0x12345678);
-//	s << x64_jmp(x64_reg_addr(x64_regs::rbx), x64_regs::r12, sib_scale::s4, (int8_t) 0x12345678);
-//	s << x64_jmp(x64_reg_addr(x64_regs::rbx), x64_regs::r13, sib_scale::s4, (int8_t) 0x12345678);
-//
-//	s << x64_jmp(x64_reg_addr(x64_regs::rsp), x64_regs::rbx, sib_scale::s4, (int8_t) 0x12345678);
-//	s << x64_jmp(x64_reg_addr(x64_regs::rsp), x64_regs::r12, sib_scale::s4, (int8_t) 0x12345678);
-//	s << x64_jmp(x64_reg_addr(x64_regs::rsp), x64_regs::r13, sib_scale::s4, (int8_t) 0x12345678);
-//
-//	s << x64_jmp(x64_reg_addr(x64_regs::r12), x64_regs::rbx, sib_scale::s4, (int8_t) 0x12345678);
-//	s << x64_jmp(x64_reg_addr(x64_regs::r12), x64_regs::r12, sib_scale::s4, (int8_t) 0x12345678);
-//	s << x64_jmp(x64_reg_addr(x64_regs::r12), x64_regs::r13, sib_scale::s4, (int8_t) 0x12345678);
-//
-//	s << x64_jmp(x64_reg_addr(x64_regs::r13), x64_regs::rbx, sib_scale::s4, (int8_t) 0x12345678);
-//	s << x64_jmp(x64_reg_addr(x64_regs::r13), x64_regs::r12, sib_scale::s4, (int8_t) 0x12345678);
-//	s << x64_jmp(x64_reg_addr(x64_regs::r13), x64_regs::r13, sib_scale::s4, (int8_t) 0x12345678);
-
-
-
+	s << x64_jo((int8_t) -12);
 
 	fn();
 
