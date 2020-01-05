@@ -423,6 +423,34 @@ public:
 
 protected:
 	template<typename T, typename U>
+	inline void x64_add_rex(const T& a, const T& c, const U& b, size_t oper_size)
+	{
+		uint8_t rex = 0;
+
+		if (a.is_extended())
+			rex |= x64_rex::b;
+		if (b.is_extended())
+			rex |= x64_rex::r;
+		if (c.is_extended())
+			rex |= x64_rex::x;
+		if (oper_size == sizeof(uint64_t))
+			rex |= x64_rex::w;
+
+		if (rex)
+			add_opcode(rex);
+	}
+	template<typename T, typename U>
+	inline void x64_add_rex(const T& a, const U& b, size_t oper_size = sizeof(int32_t))
+	{ x64_add_rex(a, T(0), b, oper_size); }
+
+	template<typename T>
+	void single_reg(const T& reg, uint8_t b, uint8_t oc, uint8_t mod)
+	{
+		x64_add_rex(reg, x64_reg32(0));
+		reg_reg_oc_mod(reg, x64_reg32(b), oc, mod);
+	}
+
+	template<typename T, typename U>
 	void reg_reg_ptr(const T& a, const x64_addr_ptr<U>& b, uint8_t oc)
 	{
 		/*
@@ -568,28 +596,6 @@ protected:
 #endif
 
 private:
-	template<typename T, typename U>
-	inline void x64_add_rex(const T& a, const T& c, const U& b, size_t oper_size)
-	{
-		uint8_t rex = 0;
-
-		if (a.is_extended())
-			rex |= x64_rex::b;
-		if (b.is_extended())
-			rex |= x64_rex::r;
-		if (c.is_extended())
-			rex |= x64_rex::x;
-		if (oper_size == sizeof(uint64_t))
-			rex |= x64_rex::w;
-
-		if (rex)
-			add_opcode(rex);
-	}
-
-	template<typename T, typename U>
-	inline void x64_add_rex(const T& a, const U& b, size_t oper_size)
-	{ x64_add_rex(a, T(0), b, oper_size); }
-
 	size_t opcode_size = 0;
 	uint8_t opcode[15]; // 15 is the maximum instruction size on x64
 
@@ -624,177 +630,177 @@ struct x64_lret	: public x64_instruction{x64_lret()	: x64_instruction(std::array
 struct x64_ud2	: public x64_instruction{x64_ud2()	: x64_instruction(std::array<uint8_t, 2> { 0x0f, 0x0b }) {} };
 
 template<uint8_t A, uint8_t B, uint8_t C, uint8_t D>
-class x64_xxx : public x64_instruction
+class x64_srcdst_oper_base : public x64_instruction
 {
 public:
 	using x64_instruction::x64_instruction;
 
 	/* register into register */
-	x64_xxx(x64_reg64 dst, x64_reg64 src) { reg_reg(dst, src, B); }
-	x64_xxx(x64_reg32 dst, x64_reg32 src) { reg_reg(dst, src, B); }
-	x64_xxx(x64_reg16 dst, x64_reg16 src) { reg_reg(dst, src, B); }
-	x64_xxx(x64_reg8  dst, x64_reg8  src) { reg_reg(dst, src, A); }
+	x64_srcdst_oper_base(x64_reg64 dst, x64_reg64 src) { reg_reg(dst, src, B); }
+	x64_srcdst_oper_base(x64_reg32 dst, x64_reg32 src) { reg_reg(dst, src, B); }
+	x64_srcdst_oper_base(x64_reg16 dst, x64_reg16 src) { reg_reg(dst, src, B); }
+	x64_srcdst_oper_base(x64_reg8  dst, x64_reg8  src) { reg_reg(dst, src, A); }
 
 	/* register into register pointer */
-	x64_xxx(x64_reg_ptr64 addr, x64_reg64 reg) { reg_reg_ptr(reg, addr, B); }
-	x64_xxx(x64_reg_ptr64 addr, x64_reg32 reg) { reg_reg_ptr(reg, addr, B); }
-	x64_xxx(x64_reg_ptr64 addr, x64_reg16 reg) { reg_reg_ptr(reg, addr, B); }
-	x64_xxx(x64_reg_ptr64 addr, x64_reg8l reg) { reg_reg_ptr(reg, addr, A); }
+	x64_srcdst_oper_base(x64_reg_ptr64 addr, x64_reg64 reg) { reg_reg_ptr(reg, addr, B); }
+	x64_srcdst_oper_base(x64_reg_ptr64 addr, x64_reg32 reg) { reg_reg_ptr(reg, addr, B); }
+	x64_srcdst_oper_base(x64_reg_ptr64 addr, x64_reg16 reg) { reg_reg_ptr(reg, addr, B); }
+	x64_srcdst_oper_base(x64_reg_ptr64 addr, x64_reg8l reg) { reg_reg_ptr(reg, addr, A); }
 
-	x64_xxx(x64_reg_ptr32 addr, x64_reg64 reg) { reg_reg_ptr(reg, addr, B); }
-	x64_xxx(x64_reg_ptr32 addr, x64_reg32 reg) { reg_reg_ptr(reg, addr, B); }
-	x64_xxx(x64_reg_ptr32 addr, x64_reg16 reg) { reg_reg_ptr(reg, addr, B); }
-	x64_xxx(x64_reg_ptr32 addr, x64_reg8l reg) { reg_reg_ptr(reg, addr, A); }
+	x64_srcdst_oper_base(x64_reg_ptr32 addr, x64_reg64 reg) { reg_reg_ptr(reg, addr, B); }
+	x64_srcdst_oper_base(x64_reg_ptr32 addr, x64_reg32 reg) { reg_reg_ptr(reg, addr, B); }
+	x64_srcdst_oper_base(x64_reg_ptr32 addr, x64_reg16 reg) { reg_reg_ptr(reg, addr, B); }
+	x64_srcdst_oper_base(x64_reg_ptr32 addr, x64_reg8l reg) { reg_reg_ptr(reg, addr, A); }
 
 	/* register pointer into register */
-	x64_xxx(x64_reg64 reg, x64_reg_ptr64 addr) { reg_reg_ptr(reg, addr, D); }
-	x64_xxx(x64_reg32 reg, x64_reg_ptr64 addr) { reg_reg_ptr(reg, addr, D); }
-	x64_xxx(x64_reg16 reg, x64_reg_ptr64 addr) { reg_reg_ptr(reg, addr, D); }
-	x64_xxx(x64_reg8l reg, x64_reg_ptr64 addr) { reg_reg_ptr(reg, addr, C); }
+	x64_srcdst_oper_base(x64_reg64 reg, x64_reg_ptr64 addr) { reg_reg_ptr(reg, addr, D); }
+	x64_srcdst_oper_base(x64_reg32 reg, x64_reg_ptr64 addr) { reg_reg_ptr(reg, addr, D); }
+	x64_srcdst_oper_base(x64_reg16 reg, x64_reg_ptr64 addr) { reg_reg_ptr(reg, addr, D); }
+	x64_srcdst_oper_base(x64_reg8l reg, x64_reg_ptr64 addr) { reg_reg_ptr(reg, addr, C); }
 
-	x64_xxx(x64_reg64 reg, x64_reg_ptr32 addr) { reg_reg_ptr(reg, addr, D); }
-	x64_xxx(x64_reg32 reg, x64_reg_ptr32 addr) { reg_reg_ptr(reg, addr, D); }
-	x64_xxx(x64_reg16 reg, x64_reg_ptr32 addr) { reg_reg_ptr(reg, addr, D); }
-	x64_xxx(x64_reg8l reg, x64_reg_ptr32 addr) { reg_reg_ptr(reg, addr, C); }
+	x64_srcdst_oper_base(x64_reg64 reg, x64_reg_ptr32 addr) { reg_reg_ptr(reg, addr, D); }
+	x64_srcdst_oper_base(x64_reg32 reg, x64_reg_ptr32 addr) { reg_reg_ptr(reg, addr, D); }
+	x64_srcdst_oper_base(x64_reg16 reg, x64_reg_ptr32 addr) { reg_reg_ptr(reg, addr, D); }
+	x64_srcdst_oper_base(x64_reg8l reg, x64_reg_ptr32 addr) { reg_reg_ptr(reg, addr, C); }
 
 	/* register into register pointer + 8 bit offset */
-	x64_xxx(x64_reg_ptr64 addr, int8_t off, x64_reg64 reg) { reg_reg_ptr_off(reg, addr, B, 1, off); }
-	x64_xxx(x64_reg_ptr64 addr, int8_t off, x64_reg32 reg) { reg_reg_ptr_off(reg, addr, B, 1, off); }
-	x64_xxx(x64_reg_ptr64 addr, int8_t off, x64_reg16 reg) { reg_reg_ptr_off(reg, addr, B, 1, off); }
-	x64_xxx(x64_reg_ptr64 addr, int8_t off, x64_reg8l reg) { reg_reg_ptr_off(reg, addr, A, 1, off); }
+	x64_srcdst_oper_base(x64_reg_ptr64 addr, int8_t off, x64_reg64 reg) { reg_reg_ptr_off(reg, addr, B, 1, off); }
+	x64_srcdst_oper_base(x64_reg_ptr64 addr, int8_t off, x64_reg32 reg) { reg_reg_ptr_off(reg, addr, B, 1, off); }
+	x64_srcdst_oper_base(x64_reg_ptr64 addr, int8_t off, x64_reg16 reg) { reg_reg_ptr_off(reg, addr, B, 1, off); }
+	x64_srcdst_oper_base(x64_reg_ptr64 addr, int8_t off, x64_reg8l reg) { reg_reg_ptr_off(reg, addr, A, 1, off); }
 
-	x64_xxx(x64_reg_ptr32 addr, int8_t off, x64_reg64 reg) { reg_reg_ptr_off(reg, addr, B, 1, off); }
-	x64_xxx(x64_reg_ptr32 addr, int8_t off, x64_reg32 reg) { reg_reg_ptr_off(reg, addr, B, 1, off); }
-	x64_xxx(x64_reg_ptr32 addr, int8_t off, x64_reg16 reg) { reg_reg_ptr_off(reg, addr, B, 1, off); }
-	x64_xxx(x64_reg_ptr32 addr, int8_t off, x64_reg8l reg) { reg_reg_ptr_off(reg, addr, A, 1, off); }
+	x64_srcdst_oper_base(x64_reg_ptr32 addr, int8_t off, x64_reg64 reg) { reg_reg_ptr_off(reg, addr, B, 1, off); }
+	x64_srcdst_oper_base(x64_reg_ptr32 addr, int8_t off, x64_reg32 reg) { reg_reg_ptr_off(reg, addr, B, 1, off); }
+	x64_srcdst_oper_base(x64_reg_ptr32 addr, int8_t off, x64_reg16 reg) { reg_reg_ptr_off(reg, addr, B, 1, off); }
+	x64_srcdst_oper_base(x64_reg_ptr32 addr, int8_t off, x64_reg8l reg) { reg_reg_ptr_off(reg, addr, A, 1, off); }
 
 	/* register pointer + 8 bit offset into register */
-	x64_xxx(x64_reg64 reg, x64_reg_ptr64 addr, int8_t off) { reg_reg_ptr_off(reg, addr, D, 1, off); }
-	x64_xxx(x64_reg32 reg, x64_reg_ptr64 addr, int8_t off) { reg_reg_ptr_off(reg, addr, D, 1, off); }
-	x64_xxx(x64_reg16 reg, x64_reg_ptr64 addr, int8_t off) { reg_reg_ptr_off(reg, addr, D, 1, off); }
-	x64_xxx(x64_reg8l reg, x64_reg_ptr64 addr, int8_t off) { reg_reg_ptr_off(reg, addr, C, 1, off); }
+	x64_srcdst_oper_base(x64_reg64 reg, x64_reg_ptr64 addr, int8_t off) { reg_reg_ptr_off(reg, addr, D, 1, off); }
+	x64_srcdst_oper_base(x64_reg32 reg, x64_reg_ptr64 addr, int8_t off) { reg_reg_ptr_off(reg, addr, D, 1, off); }
+	x64_srcdst_oper_base(x64_reg16 reg, x64_reg_ptr64 addr, int8_t off) { reg_reg_ptr_off(reg, addr, D, 1, off); }
+	x64_srcdst_oper_base(x64_reg8l reg, x64_reg_ptr64 addr, int8_t off) { reg_reg_ptr_off(reg, addr, C, 1, off); }
 
-	x64_xxx(x64_reg64 reg, x64_reg_ptr32 addr, int8_t off) { reg_reg_ptr_off(reg, addr, D, 1, off); }
-	x64_xxx(x64_reg32 reg, x64_reg_ptr32 addr, int8_t off) { reg_reg_ptr_off(reg, addr, D, 1, off); }
-	x64_xxx(x64_reg16 reg, x64_reg_ptr32 addr, int8_t off) { reg_reg_ptr_off(reg, addr, D, 1, off); }
-	x64_xxx(x64_reg8l reg, x64_reg_ptr32 addr, int8_t off) { reg_reg_ptr_off(reg, addr, C, 1, off); }
+	x64_srcdst_oper_base(x64_reg64 reg, x64_reg_ptr32 addr, int8_t off) { reg_reg_ptr_off(reg, addr, D, 1, off); }
+	x64_srcdst_oper_base(x64_reg32 reg, x64_reg_ptr32 addr, int8_t off) { reg_reg_ptr_off(reg, addr, D, 1, off); }
+	x64_srcdst_oper_base(x64_reg16 reg, x64_reg_ptr32 addr, int8_t off) { reg_reg_ptr_off(reg, addr, D, 1, off); }
+	x64_srcdst_oper_base(x64_reg8l reg, x64_reg_ptr32 addr, int8_t off) { reg_reg_ptr_off(reg, addr, C, 1, off); }
 
 	/* register into register pointer + 32 bit offset */
-	x64_xxx(x64_reg_ptr64 addr, int32_t off, x64_reg64 reg) { reg_reg_ptr_off(reg, addr, B, 2, off); }
-	x64_xxx(x64_reg_ptr64 addr, int32_t off, x64_reg32 reg) { reg_reg_ptr_off(reg, addr, B, 2, off); }
-	x64_xxx(x64_reg_ptr64 addr, int32_t off, x64_reg16 reg) { reg_reg_ptr_off(reg, addr, B, 2, off); }
-	x64_xxx(x64_reg_ptr64 addr, int32_t off, x64_reg8l reg) { reg_reg_ptr_off(reg, addr, A, 2, off); }
+	x64_srcdst_oper_base(x64_reg_ptr64 addr, int32_t off, x64_reg64 reg) { reg_reg_ptr_off(reg, addr, B, 2, off); }
+	x64_srcdst_oper_base(x64_reg_ptr64 addr, int32_t off, x64_reg32 reg) { reg_reg_ptr_off(reg, addr, B, 2, off); }
+	x64_srcdst_oper_base(x64_reg_ptr64 addr, int32_t off, x64_reg16 reg) { reg_reg_ptr_off(reg, addr, B, 2, off); }
+	x64_srcdst_oper_base(x64_reg_ptr64 addr, int32_t off, x64_reg8l reg) { reg_reg_ptr_off(reg, addr, A, 2, off); }
 
-	x64_xxx(x64_reg_ptr32 addr, int32_t off, x64_reg64 reg) { reg_reg_ptr_off(reg, addr, B, 2, off); }
-	x64_xxx(x64_reg_ptr32 addr, int32_t off, x64_reg32 reg) { reg_reg_ptr_off(reg, addr, B, 2, off); }
-	x64_xxx(x64_reg_ptr32 addr, int32_t off, x64_reg16 reg) { reg_reg_ptr_off(reg, addr, B, 2, off); }
-	x64_xxx(x64_reg_ptr32 addr, int32_t off, x64_reg8l reg) { reg_reg_ptr_off(reg, addr, A, 2, off); }
+	x64_srcdst_oper_base(x64_reg_ptr32 addr, int32_t off, x64_reg64 reg) { reg_reg_ptr_off(reg, addr, B, 2, off); }
+	x64_srcdst_oper_base(x64_reg_ptr32 addr, int32_t off, x64_reg32 reg) { reg_reg_ptr_off(reg, addr, B, 2, off); }
+	x64_srcdst_oper_base(x64_reg_ptr32 addr, int32_t off, x64_reg16 reg) { reg_reg_ptr_off(reg, addr, B, 2, off); }
+	x64_srcdst_oper_base(x64_reg_ptr32 addr, int32_t off, x64_reg8l reg) { reg_reg_ptr_off(reg, addr, A, 2, off); }
 
 	/* register pointer + 32 bit offset into register */
-	x64_xxx(x64_reg64 reg, x64_reg_ptr64 addr, int32_t off) { reg_reg_ptr_off(reg, addr, D, 2, off); }
-	x64_xxx(x64_reg32 reg, x64_reg_ptr64 addr, int32_t off) { reg_reg_ptr_off(reg, addr, D, 2, off); }
-	x64_xxx(x64_reg16 reg, x64_reg_ptr64 addr, int32_t off) { reg_reg_ptr_off(reg, addr, D, 2, off); }
-	x64_xxx(x64_reg8l reg, x64_reg_ptr64 addr, int32_t off) { reg_reg_ptr_off(reg, addr, C, 2, off); }
+	x64_srcdst_oper_base(x64_reg64 reg, x64_reg_ptr64 addr, int32_t off) { reg_reg_ptr_off(reg, addr, D, 2, off); }
+	x64_srcdst_oper_base(x64_reg32 reg, x64_reg_ptr64 addr, int32_t off) { reg_reg_ptr_off(reg, addr, D, 2, off); }
+	x64_srcdst_oper_base(x64_reg16 reg, x64_reg_ptr64 addr, int32_t off) { reg_reg_ptr_off(reg, addr, D, 2, off); }
+	x64_srcdst_oper_base(x64_reg8l reg, x64_reg_ptr64 addr, int32_t off) { reg_reg_ptr_off(reg, addr, C, 2, off); }
 
-	x64_xxx(x64_reg64 reg, x64_reg_ptr32 addr, int32_t off) { reg_reg_ptr_off(reg, addr, D, 2, off); }
-	x64_xxx(x64_reg32 reg, x64_reg_ptr32 addr, int32_t off) { reg_reg_ptr_off(reg, addr, D, 2, off); }
-	x64_xxx(x64_reg16 reg, x64_reg_ptr32 addr, int32_t off) { reg_reg_ptr_off(reg, addr, D, 2, off); }
-	x64_xxx(x64_reg8l reg, x64_reg_ptr32 addr, int32_t off) { reg_reg_ptr_off(reg, addr, C, 2, off); }
+	x64_srcdst_oper_base(x64_reg64 reg, x64_reg_ptr32 addr, int32_t off) { reg_reg_ptr_off(reg, addr, D, 2, off); }
+	x64_srcdst_oper_base(x64_reg32 reg, x64_reg_ptr32 addr, int32_t off) { reg_reg_ptr_off(reg, addr, D, 2, off); }
+	x64_srcdst_oper_base(x64_reg16 reg, x64_reg_ptr32 addr, int32_t off) { reg_reg_ptr_off(reg, addr, D, 2, off); }
+	x64_srcdst_oper_base(x64_reg8l reg, x64_reg_ptr32 addr, int32_t off) { reg_reg_ptr_off(reg, addr, C, 2, off); }
 
 	/* immediate address into register */
 	/* 32 bit pointers */
-	x64_xxx(x64_reg64 reg, x64_addr_ptr<int32_t> addr) { reg_imm_addr(reg, addr, D); }
-	x64_xxx(x64_reg32 reg, x64_addr_ptr<int32_t> addr) { reg_imm_addr(reg, addr, D); }
-	x64_xxx(x64_reg16 reg, x64_addr_ptr<int32_t> addr) { reg_imm_addr(reg, addr, D); }
-	x64_xxx(x64_reg8  reg, x64_addr_ptr<int32_t> addr) { reg_imm_addr(reg, addr, C); }
+	x64_srcdst_oper_base(x64_reg64 reg, x64_addr_ptr<int32_t> addr) { reg_imm_addr(reg, addr, D); }
+	x64_srcdst_oper_base(x64_reg32 reg, x64_addr_ptr<int32_t> addr) { reg_imm_addr(reg, addr, D); }
+	x64_srcdst_oper_base(x64_reg16 reg, x64_addr_ptr<int32_t> addr) { reg_imm_addr(reg, addr, D); }
+	x64_srcdst_oper_base(x64_reg8  reg, x64_addr_ptr<int32_t> addr) { reg_imm_addr(reg, addr, C); }
 
 	/* register into immediate address */
 	/* 32 bit pointers */
-	x64_xxx(x64_addr_ptr<int32_t> addr, x64_reg64 reg) { reg_imm_addr(reg, addr, B); }
-	x64_xxx(x64_addr_ptr<int32_t> addr, x64_reg32 reg) { reg_imm_addr(reg, addr, B); }
-	x64_xxx(x64_addr_ptr<int32_t> addr, x64_reg16 reg) { reg_imm_addr(reg, addr, B); }
-	x64_xxx(x64_addr_ptr<int32_t> addr, x64_reg8  reg) { reg_imm_addr(reg, addr, A); }
+	x64_srcdst_oper_base(x64_addr_ptr<int32_t> addr, x64_reg64 reg) { reg_imm_addr(reg, addr, B); }
+	x64_srcdst_oper_base(x64_addr_ptr<int32_t> addr, x64_reg32 reg) { reg_imm_addr(reg, addr, B); }
+	x64_srcdst_oper_base(x64_addr_ptr<int32_t> addr, x64_reg16 reg) { reg_imm_addr(reg, addr, B); }
+	x64_srcdst_oper_base(x64_addr_ptr<int32_t> addr, x64_reg8  reg) { reg_imm_addr(reg, addr, A); }
 
 
 	/* 64 bit base address + index * scale into reg */
-	x64_xxx(x64_reg64 reg, x64_reg_ptr64 addr, x64_reg64 index, sib_scale scale) { reg_reg_ptr_idx(reg, addr, index, scale, D); }
-	x64_xxx(x64_reg32 reg, x64_reg_ptr64 addr, x64_reg64 index, sib_scale scale) { reg_reg_ptr_idx(reg, addr, index, scale, D); }
-	x64_xxx(x64_reg16 reg, x64_reg_ptr64 addr, x64_reg64 index, sib_scale scale) { reg_reg_ptr_idx(reg, addr, index, scale, D); }
-	x64_xxx(x64_reg8l reg, x64_reg_ptr64 addr, x64_reg64 index, sib_scale scale) { reg_reg_ptr_idx(reg, addr, index, scale, C); }
+	x64_srcdst_oper_base(x64_reg64 reg, x64_reg_ptr64 addr, x64_reg64 index, sib_scale scale) { reg_reg_ptr_idx(reg, addr, index, scale, D); }
+	x64_srcdst_oper_base(x64_reg32 reg, x64_reg_ptr64 addr, x64_reg64 index, sib_scale scale) { reg_reg_ptr_idx(reg, addr, index, scale, D); }
+	x64_srcdst_oper_base(x64_reg16 reg, x64_reg_ptr64 addr, x64_reg64 index, sib_scale scale) { reg_reg_ptr_idx(reg, addr, index, scale, D); }
+	x64_srcdst_oper_base(x64_reg8l reg, x64_reg_ptr64 addr, x64_reg64 index, sib_scale scale) { reg_reg_ptr_idx(reg, addr, index, scale, C); }
 
 	/* 32 bit base address + index * scale into reg */
-	x64_xxx(x64_reg64 reg, x64_reg_ptr32 addr, x64_reg32 index, sib_scale scale) { reg_reg_ptr_idx(reg, addr, index, scale, D); }
-	x64_xxx(x64_reg32 reg, x64_reg_ptr32 addr, x64_reg32 index, sib_scale scale) { reg_reg_ptr_idx(reg, addr, index, scale, D); }
-	x64_xxx(x64_reg16 reg, x64_reg_ptr32 addr, x64_reg32 index, sib_scale scale) { reg_reg_ptr_idx(reg, addr, index, scale, D); }
-	x64_xxx(x64_reg8l reg, x64_reg_ptr32 addr, x64_reg32 index, sib_scale scale) { reg_reg_ptr_idx(reg, addr, index, scale, C); }
+	x64_srcdst_oper_base(x64_reg64 reg, x64_reg_ptr32 addr, x64_reg32 index, sib_scale scale) { reg_reg_ptr_idx(reg, addr, index, scale, D); }
+	x64_srcdst_oper_base(x64_reg32 reg, x64_reg_ptr32 addr, x64_reg32 index, sib_scale scale) { reg_reg_ptr_idx(reg, addr, index, scale, D); }
+	x64_srcdst_oper_base(x64_reg16 reg, x64_reg_ptr32 addr, x64_reg32 index, sib_scale scale) { reg_reg_ptr_idx(reg, addr, index, scale, D); }
+	x64_srcdst_oper_base(x64_reg8l reg, x64_reg_ptr32 addr, x64_reg32 index, sib_scale scale) { reg_reg_ptr_idx(reg, addr, index, scale, C); }
 
 	/* reg into 64 bit base address + index * scale */
-	x64_xxx(x64_reg_ptr64 addr, x64_reg64 index, sib_scale scale, x64_reg64 reg) { reg_reg_ptr_idx(reg, addr, index, scale, B); }
-	x64_xxx(x64_reg_ptr64 addr, x64_reg64 index, sib_scale scale, x64_reg32 reg) { reg_reg_ptr_idx(reg, addr, index, scale, B); }
-	x64_xxx(x64_reg_ptr64 addr, x64_reg64 index, sib_scale scale, x64_reg16 reg) { reg_reg_ptr_idx(reg, addr, index, scale, B); }
-	x64_xxx(x64_reg_ptr64 addr, x64_reg64 index, sib_scale scale, x64_reg8l reg) { reg_reg_ptr_idx(reg, addr, index, scale, A); }
+	x64_srcdst_oper_base(x64_reg_ptr64 addr, x64_reg64 index, sib_scale scale, x64_reg64 reg) { reg_reg_ptr_idx(reg, addr, index, scale, B); }
+	x64_srcdst_oper_base(x64_reg_ptr64 addr, x64_reg64 index, sib_scale scale, x64_reg32 reg) { reg_reg_ptr_idx(reg, addr, index, scale, B); }
+	x64_srcdst_oper_base(x64_reg_ptr64 addr, x64_reg64 index, sib_scale scale, x64_reg16 reg) { reg_reg_ptr_idx(reg, addr, index, scale, B); }
+	x64_srcdst_oper_base(x64_reg_ptr64 addr, x64_reg64 index, sib_scale scale, x64_reg8l reg) { reg_reg_ptr_idx(reg, addr, index, scale, A); }
 
 	/* reg into 32 bit base address + index * scale */
-	x64_xxx(x64_reg_ptr32 addr, x64_reg32 index, sib_scale scale, x64_reg64 reg) { reg_reg_ptr_idx(reg, addr, index, scale, B); }
-	x64_xxx(x64_reg_ptr32 addr, x64_reg32 index, sib_scale scale, x64_reg32 reg) { reg_reg_ptr_idx(reg, addr, index, scale, B); }
-	x64_xxx(x64_reg_ptr32 addr, x64_reg32 index, sib_scale scale, x64_reg16 reg) { reg_reg_ptr_idx(reg, addr, index, scale, B); }
-	x64_xxx(x64_reg_ptr32 addr, x64_reg32 index, sib_scale scale, x64_reg8l reg) { reg_reg_ptr_idx(reg, addr, index, scale, A); }
+	x64_srcdst_oper_base(x64_reg_ptr32 addr, x64_reg32 index, sib_scale scale, x64_reg64 reg) { reg_reg_ptr_idx(reg, addr, index, scale, B); }
+	x64_srcdst_oper_base(x64_reg_ptr32 addr, x64_reg32 index, sib_scale scale, x64_reg32 reg) { reg_reg_ptr_idx(reg, addr, index, scale, B); }
+	x64_srcdst_oper_base(x64_reg_ptr32 addr, x64_reg32 index, sib_scale scale, x64_reg16 reg) { reg_reg_ptr_idx(reg, addr, index, scale, B); }
+	x64_srcdst_oper_base(x64_reg_ptr32 addr, x64_reg32 index, sib_scale scale, x64_reg8l reg) { reg_reg_ptr_idx(reg, addr, index, scale, A); }
 
 
 	/* 64 bit base address + index * scale + 8 bit offset into reg */
-	x64_xxx(x64_reg64 reg, x64_reg_ptr64 addr, x64_reg64 index, sib_scale scale, int8_t off) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, D, 1); }
-	x64_xxx(x64_reg32 reg, x64_reg_ptr64 addr, x64_reg64 index, sib_scale scale, int8_t off) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, D, 1); }
-	x64_xxx(x64_reg16 reg, x64_reg_ptr64 addr, x64_reg64 index, sib_scale scale, int8_t off) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, D, 1); }
-	x64_xxx(x64_reg8l reg, x64_reg_ptr64 addr, x64_reg64 index, sib_scale scale, int8_t off) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, C, 1); }
+	x64_srcdst_oper_base(x64_reg64 reg, x64_reg_ptr64 addr, x64_reg64 index, sib_scale scale, int8_t off) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, D, 1); }
+	x64_srcdst_oper_base(x64_reg32 reg, x64_reg_ptr64 addr, x64_reg64 index, sib_scale scale, int8_t off) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, D, 1); }
+	x64_srcdst_oper_base(x64_reg16 reg, x64_reg_ptr64 addr, x64_reg64 index, sib_scale scale, int8_t off) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, D, 1); }
+	x64_srcdst_oper_base(x64_reg8l reg, x64_reg_ptr64 addr, x64_reg64 index, sib_scale scale, int8_t off) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, C, 1); }
 
 	/* 32 bit base address + index * scale + 8 bit offset  into reg */
-	x64_xxx(x64_reg64 reg, x64_reg_ptr32 addr, x64_reg32 index, sib_scale scale, int8_t off) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, D, 1); }
-	x64_xxx(x64_reg32 reg, x64_reg_ptr32 addr, x64_reg32 index, sib_scale scale, int8_t off) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, D, 1); }
-	x64_xxx(x64_reg16 reg, x64_reg_ptr32 addr, x64_reg32 index, sib_scale scale, int8_t off) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, D, 1); }
-	x64_xxx(x64_reg8l reg, x64_reg_ptr32 addr, x64_reg32 index, sib_scale scale, int8_t off) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, C, 1); }
+	x64_srcdst_oper_base(x64_reg64 reg, x64_reg_ptr32 addr, x64_reg32 index, sib_scale scale, int8_t off) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, D, 1); }
+	x64_srcdst_oper_base(x64_reg32 reg, x64_reg_ptr32 addr, x64_reg32 index, sib_scale scale, int8_t off) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, D, 1); }
+	x64_srcdst_oper_base(x64_reg16 reg, x64_reg_ptr32 addr, x64_reg32 index, sib_scale scale, int8_t off) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, D, 1); }
+	x64_srcdst_oper_base(x64_reg8l reg, x64_reg_ptr32 addr, x64_reg32 index, sib_scale scale, int8_t off) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, C, 1); }
 
 	/* reg into 64 bit base address + index + 8 bit offset  * scale */
-	x64_xxx(x64_reg_ptr64 addr, x64_reg64 index, sib_scale scale, int8_t off, x64_reg64 reg) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, B, 1); }
-	x64_xxx(x64_reg_ptr64 addr, x64_reg64 index, sib_scale scale, int8_t off, x64_reg32 reg) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, B, 1); }
-	x64_xxx(x64_reg_ptr64 addr, x64_reg64 index, sib_scale scale, int8_t off, x64_reg16 reg) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, B, 1); }
-	x64_xxx(x64_reg_ptr64 addr, x64_reg64 index, sib_scale scale, int8_t off, x64_reg8l reg) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, A, 1); }
+	x64_srcdst_oper_base(x64_reg_ptr64 addr, x64_reg64 index, sib_scale scale, int8_t off, x64_reg64 reg) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, B, 1); }
+	x64_srcdst_oper_base(x64_reg_ptr64 addr, x64_reg64 index, sib_scale scale, int8_t off, x64_reg32 reg) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, B, 1); }
+	x64_srcdst_oper_base(x64_reg_ptr64 addr, x64_reg64 index, sib_scale scale, int8_t off, x64_reg16 reg) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, B, 1); }
+	x64_srcdst_oper_base(x64_reg_ptr64 addr, x64_reg64 index, sib_scale scale, int8_t off, x64_reg8l reg) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, A, 1); }
 
 	/* reg into 32 bit base address + index + 8 bit offset  * scale */
-	x64_xxx(x64_reg_ptr32 addr, x64_reg32 index, sib_scale scale, int8_t off, x64_reg64 reg) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, B, 1); }
-	x64_xxx(x64_reg_ptr32 addr, x64_reg32 index, sib_scale scale, int8_t off, x64_reg32 reg) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, B, 1); }
-	x64_xxx(x64_reg_ptr32 addr, x64_reg32 index, sib_scale scale, int8_t off, x64_reg16 reg) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, B, 1); }
-	x64_xxx(x64_reg_ptr32 addr, x64_reg32 index, sib_scale scale, int8_t off, x64_reg8l reg) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, A, 1); }
+	x64_srcdst_oper_base(x64_reg_ptr32 addr, x64_reg32 index, sib_scale scale, int8_t off, x64_reg64 reg) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, B, 1); }
+	x64_srcdst_oper_base(x64_reg_ptr32 addr, x64_reg32 index, sib_scale scale, int8_t off, x64_reg32 reg) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, B, 1); }
+	x64_srcdst_oper_base(x64_reg_ptr32 addr, x64_reg32 index, sib_scale scale, int8_t off, x64_reg16 reg) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, B, 1); }
+	x64_srcdst_oper_base(x64_reg_ptr32 addr, x64_reg32 index, sib_scale scale, int8_t off, x64_reg8l reg) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, A, 1); }
 
 
 	/* 64 bit base address + index * scale + 32 bit offset into reg */
-	x64_xxx(x64_reg64 reg, x64_reg_ptr64 addr, x64_reg64 index, sib_scale scale, int32_t off) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, D, 2); }
-	x64_xxx(x64_reg32 reg, x64_reg_ptr64 addr, x64_reg64 index, sib_scale scale, int32_t off) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, D, 2); }
-	x64_xxx(x64_reg16 reg, x64_reg_ptr64 addr, x64_reg64 index, sib_scale scale, int32_t off) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, D, 2); }
-	x64_xxx(x64_reg8l reg, x64_reg_ptr64 addr, x64_reg64 index, sib_scale scale, int32_t off) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, C, 2); }
+	x64_srcdst_oper_base(x64_reg64 reg, x64_reg_ptr64 addr, x64_reg64 index, sib_scale scale, int32_t off) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, D, 2); }
+	x64_srcdst_oper_base(x64_reg32 reg, x64_reg_ptr64 addr, x64_reg64 index, sib_scale scale, int32_t off) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, D, 2); }
+	x64_srcdst_oper_base(x64_reg16 reg, x64_reg_ptr64 addr, x64_reg64 index, sib_scale scale, int32_t off) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, D, 2); }
+	x64_srcdst_oper_base(x64_reg8l reg, x64_reg_ptr64 addr, x64_reg64 index, sib_scale scale, int32_t off) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, C, 2); }
 
 	/* 32 bit base address + index * scale + 32 bit offset  into reg */
-	x64_xxx(x64_reg64 reg, x64_reg_ptr32 addr, x64_reg32 index, sib_scale scale, int32_t off) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, D, 2); }
-	x64_xxx(x64_reg32 reg, x64_reg_ptr32 addr, x64_reg32 index, sib_scale scale, int32_t off) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, D, 2); }
-	x64_xxx(x64_reg16 reg, x64_reg_ptr32 addr, x64_reg32 index, sib_scale scale, int32_t off) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, D, 2); }
-	x64_xxx(x64_reg8l reg, x64_reg_ptr32 addr, x64_reg32 index, sib_scale scale, int32_t off) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, C, 2); }
+	x64_srcdst_oper_base(x64_reg64 reg, x64_reg_ptr32 addr, x64_reg32 index, sib_scale scale, int32_t off) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, D, 2); }
+	x64_srcdst_oper_base(x64_reg32 reg, x64_reg_ptr32 addr, x64_reg32 index, sib_scale scale, int32_t off) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, D, 2); }
+	x64_srcdst_oper_base(x64_reg16 reg, x64_reg_ptr32 addr, x64_reg32 index, sib_scale scale, int32_t off) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, D, 2); }
+	x64_srcdst_oper_base(x64_reg8l reg, x64_reg_ptr32 addr, x64_reg32 index, sib_scale scale, int32_t off) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, C, 2); }
 
 	/* reg into 64 bit base address + index + 32 bit offset  * scale */
-	x64_xxx(x64_reg_ptr64 addr, x64_reg64 index, sib_scale scale, int32_t off, x64_reg64 reg) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, B, 2); }
-	x64_xxx(x64_reg_ptr64 addr, x64_reg64 index, sib_scale scale, int32_t off, x64_reg32 reg) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, B, 2); }
-	x64_xxx(x64_reg_ptr64 addr, x64_reg64 index, sib_scale scale, int32_t off, x64_reg16 reg) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, B, 2); }
-	x64_xxx(x64_reg_ptr64 addr, x64_reg64 index, sib_scale scale, int32_t off, x64_reg8l reg) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, A, 2); }
+	x64_srcdst_oper_base(x64_reg_ptr64 addr, x64_reg64 index, sib_scale scale, int32_t off, x64_reg64 reg) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, B, 2); }
+	x64_srcdst_oper_base(x64_reg_ptr64 addr, x64_reg64 index, sib_scale scale, int32_t off, x64_reg32 reg) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, B, 2); }
+	x64_srcdst_oper_base(x64_reg_ptr64 addr, x64_reg64 index, sib_scale scale, int32_t off, x64_reg16 reg) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, B, 2); }
+	x64_srcdst_oper_base(x64_reg_ptr64 addr, x64_reg64 index, sib_scale scale, int32_t off, x64_reg8l reg) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, A, 2); }
 
 	/* reg into 32 bit base address + index + 32 bit offset  * scale */
-	x64_xxx(x64_reg_ptr32 addr, x64_reg32 index, sib_scale scale, int32_t off, x64_reg64 reg) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, B, 2); }
-	x64_xxx(x64_reg_ptr32 addr, x64_reg32 index, sib_scale scale, int32_t off, x64_reg32 reg) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, B, 2); }
-	x64_xxx(x64_reg_ptr32 addr, x64_reg32 index, sib_scale scale, int32_t off, x64_reg16 reg) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, B, 2); }
-	x64_xxx(x64_reg_ptr32 addr, x64_reg32 index, sib_scale scale, int32_t off, x64_reg8l reg) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, A, 2); }
+	x64_srcdst_oper_base(x64_reg_ptr32 addr, x64_reg32 index, sib_scale scale, int32_t off, x64_reg64 reg) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, B, 2); }
+	x64_srcdst_oper_base(x64_reg_ptr32 addr, x64_reg32 index, sib_scale scale, int32_t off, x64_reg32 reg) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, B, 2); }
+	x64_srcdst_oper_base(x64_reg_ptr32 addr, x64_reg32 index, sib_scale scale, int32_t off, x64_reg16 reg) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, B, 2); }
+	x64_srcdst_oper_base(x64_reg_ptr32 addr, x64_reg32 index, sib_scale scale, int32_t off, x64_reg8l reg) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, A, 2); }
 };
 
-class x64_mov : public x64_xxx<0x88, 0x89, 0x8a, 0x8b>
+class x64_mov : public x64_srcdst_oper_base<0x88, 0x89, 0x8a, 0x8b>
 {
 public:
-	using x64_xxx::x64_xxx;
+	using x64_srcdst_oper_base::x64_srcdst_oper_base;
 
 	/* Move immediate into register */
 	x64_mov(x64_reg64 reg, uint64_t imm) { orred_oc_reg_imm(reg, imm, 0xb8); }
@@ -817,7 +823,6 @@ public:
 	x64_mov(x64_reg8l_0 reg, x64_addr_ptr<uint8_t*>  addr) { eax_imm(reg, reinterpret_cast<uint64_t>(addr.ptr), 0xa0); }
 
 	/* Move register into immediate address */
-	/* 32 bit pointers */
 	/* 64 bit pointers */
 	x64_mov(x64_addr_ptr<uint64_t*> addr, x64_reg64_0 reg) { eax_imm(reg, reinterpret_cast<uint64_t>(addr.ptr), 0xa3); }
 	x64_mov(x64_addr_ptr<uint32_t*> addr, x64_reg32_0 reg) { eax_imm(reg, reinterpret_cast<uint64_t>(addr.ptr), 0xa3); }
@@ -828,10 +833,10 @@ public:
 };
 
 template<uint8_t A, uint8_t B, uint8_t C, uint8_t D, uint8_t E, uint8_t F, uint8_t MOD>
-class x64_arith_base : public x64_xxx<A, B, C, D>
+class x64_arith_base : public x64_srcdst_oper_base<A, B, C, D>
 {
 public:
-	using x64_xxx<A, B, C, D>::x64_xxx;
+	using x64_srcdst_oper_base<A, B, C, D>::x64_srcdst_oper_base;
 
 	/* Add immediate into register */
 	x64_arith_base(x64_reg64 reg, uint8_t imm) { reg_imm(reg, imm, 0x83); }
@@ -842,7 +847,6 @@ public:
 
 	x64_arith_base(x64_reg16 reg, uint8_t imm) { reg_imm(reg, imm, 0x83); }
 	x64_arith_base(x64_reg16 reg, uint16_t imm) { reg_imm_oroc(reg, imm, F, 0x81); }
-
 	x64_arith_base(x64_reg8  reg, uint8_t  imm) { reg_imm_oroc(reg, imm, E, 0x80); }
 
 	virtual ~x64_arith_base() { }
@@ -895,5 +899,26 @@ class x64_xor: public x64_arith_base<0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 6>
 
 class x64_cmp: public x64_arith_base<0x38, 0x39, 0x3a, 0x3b, 0x3c, 0x3d, 7>
 { using x64_arith_base::x64_arith_base; };
+
+
+template<uint8_t A, uint8_t B, uint8_t C>
+class x64_jmpcall_base : public x64_instruction
+{
+public:
+	using x64_instruction::x64_instruction;
+
+	x64_jmpcall_base(int32_t off) : x64_instruction(std::array<uint8_t, 1> { B }, off) { }
+	x64_jmpcall_base(x64_reg64 reg) { single_reg(reg, C, A, 3); }
+
+	x64_jmpcall_base(x64_reg_ptr64 addr) { reg_reg_ptr(x64_reg32(C), addr, A); }
+	x64_jmpcall_base(x64_reg_ptr32 addr) { reg_reg_ptr(x64_reg32(C), addr, A); }
+	x64_jmpcall_base(x64_reg_ptr64 addr, int8_t off) { reg_reg_ptr_off(x64_reg32(C), addr, A, 1, off); }
+	x64_jmpcall_base(x64_reg_ptr32 addr, int8_t off) { reg_reg_ptr_off(x64_reg32(C), addr, A, 1, off); }
+	x64_jmpcall_base(x64_reg_ptr64 addr, int32_t off) { reg_reg_ptr_off(x64_reg32(C), addr, A, 2, off); }
+	x64_jmpcall_base(x64_reg_ptr32 addr, int32_t off) { reg_reg_ptr_off(x64_reg32(C), addr, A, 2, off); }
+};
+
+class x64_call : public x64_jmpcall_base<0xff, 0xe8, 2> { using x64_jmpcall_base::x64_jmpcall_base; };
+class x64_jmp : public x64_jmpcall_base<0xff, 0xe9, 4> { using x64_jmpcall_base::x64_jmpcall_base; };
 
 #endif /* X64INSTRUCTION_H_ */

@@ -421,6 +421,45 @@ void x64_testing::reg_ptr_idx_off_reg(string inst_name, instruction_stream& s, s
 }
 
 template<typename C>
+void x64_testing::jmpcall_reg(std::string inst_name, instruction_stream& s, std::vector<std::string>& expected_lines)
+{
+	for (auto i = 0; i < 16; i++)
+	{
+		auto inst = C(x64_reg64(i));
+		stringstream stream;
+
+		add_to_strinstream(stream, s, inst);
+		stream << "\t" << inst_name << " " << x64_reg64::names[i];
+		stream.flush();
+
+		expected_lines.push_back(stream.str());
+
+		s << inst;
+	}
+}
+
+template<typename C>
+void x64_testing::jmpcall_regptr(std::string inst_name, instruction_stream& s, std::vector<std::string>& expected_lines)
+{
+	for (auto i = 0; i < 16; i++)
+	{
+		auto inst = C(x64_reg_addr(x64_reg64(i)));
+		stringstream stream;
+
+		add_to_strinstream(stream, s, inst);
+		string name = x64_reg64::names[i];
+		if (x64_reg64(i).is_bp() || x64_reg64(i).is_r13())
+			name += "+0x0";
+		stream << "\t" << inst_name << " QWORD PTR [" << name << ']';
+		stream.flush();
+
+		expected_lines.push_back(stream.str());
+
+		s << inst;
+	}
+}
+
+template<typename C>
 void x64_testing::test_inst(std::string inst_name, instruction_stream& s, std::vector<std::string>& expected_lines)
 {
 	direct_reg_reg<C, x64_reg64>(inst_name, s, expected_lines, 16);
@@ -571,146 +610,75 @@ void x64_testing::test_inst(std::string inst_name, instruction_stream& s, std::v
 	reg_ptr_idx_off_reg<C, x64_reg_ptr32, x64_reg32, int32_t, x64_reg8l>(inst_name, s, expected_lines, "BYTE", 8, 4);
 }
 
+void say_hello()
+{
+	cout << "Hello world\n";
+}
+
 //x64_mov(x64_reg_ptr64 addr, x64_reg64 reg)
 void x64_testing::mov_unit_tests()
 {
 	instruction_stream s(allocator);
 
 #if 0
-	s << x64_sub(x64_regs::rax, x64_regs::rax);
-	s << x64_sub(x64_regs::eax, x64_regs::eax);
-	s << x64_sub(x64_regs::ax, x64_regs::ax);
-	s << x64_sub(x64_regs::ah, x64_regs::ah);
-	s << x64_sub(x64_reg_ptr64(x64_regs::rax), x64_regs::rax);
-	s << x64_sub(x64_reg_ptr64(x64_regs::rax), x64_regs::eax);
-	s << x64_sub(x64_reg_ptr64(x64_regs::rax), x64_regs::ax);
-	s << x64_sub(x64_reg_ptr64(x64_regs::rax), x64_regs::al);
-	s << x64_sub(x64_reg_ptr32(x64_regs::eax), x64_regs::rax);
-	s << x64_sub(x64_reg_ptr32(x64_regs::eax), x64_regs::eax);
-	s << x64_sub(x64_reg_ptr32(x64_regs::eax), x64_regs::ax);
-	s << x64_sub(x64_reg_ptr32(x64_regs::eax), x64_regs::al);
-	s << x64_sub(x64_regs::rax, x64_reg_ptr64(x64_regs::rax));
-	s << x64_sub(x64_regs::eax, x64_reg_ptr64(x64_regs::rax));
-	s << x64_sub(x64_regs::ax, x64_reg_ptr64(x64_regs::rax));
-	s << x64_sub(x64_regs::al, x64_reg_ptr64(x64_regs::rax));
-	s << x64_sub(x64_regs::rax, x64_reg_ptr32(x64_regs::eax));
-	s << x64_sub(x64_regs::eax, x64_reg_ptr32(x64_regs::eax));
-	s << x64_sub(x64_regs::ax, x64_reg_ptr32(x64_regs::eax));
-	s << x64_sub(x64_regs::al, x64_reg_ptr32(x64_regs::eax));
-	s << x64_sub(x64_reg_ptr64(x64_regs::rax), (int8_t) 0x42, x64_regs::rax);
-	s << x64_sub(x64_reg_ptr64(x64_regs::rax), (int8_t) 0x42, x64_regs::eax);
-	s << x64_sub(x64_reg_ptr64(x64_regs::rax), (int8_t) 0x42, x64_regs::ax);
-	s << x64_sub(x64_reg_ptr64(x64_regs::rax), (int8_t) 0x42, x64_regs::al);
-	s << x64_sub(x64_reg_ptr32(x64_regs::eax), (int8_t) 0x42, x64_regs::rax);
-	s << x64_sub(x64_reg_ptr32(x64_regs::eax), (int8_t) 0x42, x64_regs::eax);
-	s << x64_sub(x64_reg_ptr32(x64_regs::eax), (int8_t) 0x42, x64_regs::ax);
-	s << x64_sub(x64_reg_ptr32(x64_regs::eax), (int8_t) 0x42, x64_regs::al);
-	s << x64_sub(x64_regs::rax, x64_reg_ptr64(x64_regs::rax), (int8_t) 0x42);
-	s << x64_sub(x64_regs::eax, x64_reg_ptr64(x64_regs::rax), (int8_t) 0x42);
-	s << x64_sub(x64_regs::ax, x64_reg_ptr64(x64_regs::rax), (int8_t) 0x42);
-	s << x64_sub(x64_regs::al, x64_reg_ptr64(x64_regs::rax), (int8_t) 0x42);
-	s << x64_sub(x64_regs::rax, x64_reg_ptr32(x64_regs::eax), (int8_t) 0x42);
-	s << x64_sub(x64_regs::eax, x64_reg_ptr32(x64_regs::eax), (int8_t) 0x42);
-	s << x64_sub(x64_regs::ax, x64_reg_ptr32(x64_regs::eax), (int8_t) 0x42);
-	s << x64_sub(x64_regs::al, x64_reg_ptr32(x64_regs::eax), (int8_t) 0x42);
-	s << x64_sub(x64_reg_ptr64(x64_regs::rax), (int32_t) 0x42, x64_regs::rax);
-	s << x64_sub(x64_reg_ptr64(x64_regs::rax), (int32_t) 0x42, x64_regs::eax);
-	s << x64_sub(x64_reg_ptr64(x64_regs::rax), (int32_t) 0x42, x64_regs::ax);
-	s << x64_sub(x64_reg_ptr64(x64_regs::rax), (int32_t) 0x42, x64_regs::al);
-	s << x64_sub(x64_reg_ptr32(x64_regs::eax), (int32_t) 0x42, x64_regs::rax);
-	s << x64_sub(x64_reg_ptr32(x64_regs::eax), (int32_t) 0x42, x64_regs::eax);
-	s << x64_sub(x64_reg_ptr32(x64_regs::eax), (int32_t) 0x42, x64_regs::ax);
-	s << x64_sub(x64_reg_ptr32(x64_regs::eax), (int32_t) 0x42, x64_regs::al);
-	s << x64_sub(x64_regs::rax, x64_reg_ptr64(x64_regs::rax), (int32_t) 0x42);
-	s << x64_sub(x64_regs::eax, x64_reg_ptr64(x64_regs::rax), (int32_t) 0x42);
-	s << x64_sub(x64_regs::ax, x64_reg_ptr64(x64_regs::rax), (int32_t) 0x42);
-	s << x64_sub(x64_regs::al, x64_reg_ptr64(x64_regs::rax), (int32_t) 0x42);
-	s << x64_sub(x64_regs::rax, x64_reg_ptr32(x64_regs::eax), (int32_t) 0x42);
-	s << x64_sub(x64_regs::eax, x64_reg_ptr32(x64_regs::eax), (int32_t) 0x42);
-	s << x64_sub(x64_regs::ax, x64_reg_ptr32(x64_regs::eax), (int32_t) 0x42);
-	s << x64_sub(x64_regs::al, x64_reg_ptr32(x64_regs::eax), (int32_t) 0x42);
-	s << x64_sub(x64_regs::rax, x64_addr_ptr<int32_t>(0x12345678));
-	s << x64_sub(x64_regs::eax, x64_addr_ptr<int32_t>(0x12345678));
-	s << x64_sub(x64_regs::ax, x64_addr_ptr<int32_t>(0x12345678));
-	s << x64_sub(x64_regs::ah, x64_addr_ptr<int32_t>(0x12345678));
-	s << x64_sub(x64_addr_ptr<int32_t>(0x12345678), x64_regs::rax);
-	s << x64_sub(x64_addr_ptr<int32_t>(0x12345678), x64_regs::eax);
-	s << x64_sub(x64_addr_ptr<int32_t>(0x12345678), x64_regs::ax);
-	s << x64_sub(x64_addr_ptr<int32_t>(0x12345678), x64_regs::ah);
-	s << x64_sub(x64_regs::rax, x64_reg_ptr64(x64_regs::rax), x64_regs::rax, sib_scale::s2);
-	s << x64_sub(x64_regs::eax, x64_reg_ptr64(x64_regs::rax), x64_regs::rax, sib_scale::s2);
-	s << x64_sub(x64_regs::ax, x64_reg_ptr64(x64_regs::rax), x64_regs::rax, sib_scale::s2);
-	s << x64_sub(x64_regs::al, x64_reg_ptr64(x64_regs::rax), x64_regs::rax, sib_scale::s2);
-	s << x64_sub(x64_regs::rax, x64_reg_ptr32(x64_regs::eax), x64_regs::eax, sib_scale::s2);
-	s << x64_sub(x64_regs::eax, x64_reg_ptr32(x64_regs::eax), x64_regs::eax, sib_scale::s2);
-	s << x64_sub(x64_regs::ax, x64_reg_ptr32(x64_regs::eax), x64_regs::eax, sib_scale::s2);
-	s << x64_sub(x64_regs::al, x64_reg_ptr32(x64_regs::eax), x64_regs::eax, sib_scale::s2);
-	s << x64_sub(x64_reg_ptr64(x64_regs::rax), x64_regs::rax, sib_scale::s2, x64_regs::rax);
-	s << x64_sub(x64_reg_ptr64(x64_regs::rax), x64_regs::rax, sib_scale::s2, x64_regs::eax);
-	s << x64_sub(x64_reg_ptr64(x64_regs::rax), x64_regs::rax, sib_scale::s2, x64_regs::ax);
-	s << x64_sub(x64_reg_ptr64(x64_regs::rax), x64_regs::rax, sib_scale::s2, x64_regs::al);
-	s << x64_sub(x64_reg_ptr32(x64_regs::eax), x64_regs::eax, sib_scale::s2, x64_regs::rax);
-	s << x64_sub(x64_reg_ptr32(x64_regs::eax), x64_regs::eax, sib_scale::s2, x64_regs::eax);
-	s << x64_sub(x64_reg_ptr32(x64_regs::eax), x64_regs::eax, sib_scale::s2, x64_regs::ax);
-	s << x64_sub(x64_reg_ptr32(x64_regs::eax), x64_regs::eax, sib_scale::s2, x64_regs::al);
-	s << x64_sub(x64_regs::rax, x64_reg_ptr64(x64_regs::rax), x64_regs::rax, sib_scale::s2, (int8_t) 0x42);
-	s << x64_sub(x64_regs::eax, x64_reg_ptr64(x64_regs::rax), x64_regs::rax, sib_scale::s2, (int8_t) 0x42);
-	s << x64_sub(x64_regs::ax, x64_reg_ptr64(x64_regs::rax), x64_regs::rax, sib_scale::s2, (int8_t) 0x42);
-	s << x64_sub(x64_regs::al, x64_reg_ptr64(x64_regs::rax), x64_regs::rax, sib_scale::s2, (int8_t) 0x42);
-	s << x64_sub(x64_regs::rax, x64_reg_ptr32(x64_regs::eax), x64_regs::eax, sib_scale::s2, (int8_t) 0x42);
-	s << x64_sub(x64_regs::eax, x64_reg_ptr32(x64_regs::eax), x64_regs::eax, sib_scale::s2, (int8_t) 0x42);
-	s << x64_sub(x64_regs::ax, x64_reg_ptr32(x64_regs::eax), x64_regs::eax, sib_scale::s2, (int8_t) 0x42);
-	s << x64_sub(x64_regs::al, x64_reg_ptr32(x64_regs::eax), x64_regs::eax, sib_scale::s2, (int8_t) 0x42);
-	s << x64_sub(x64_reg_ptr64(x64_regs::rax), x64_regs::rax, sib_scale::s2, (int8_t) 0x42, x64_regs::rax);
-	s << x64_sub(x64_reg_ptr64(x64_regs::rax), x64_regs::rax, sib_scale::s2, (int8_t) 0x42, x64_regs::eax);
-	s << x64_sub(x64_reg_ptr64(x64_regs::rax), x64_regs::rax, sib_scale::s2, (int8_t) 0x42, x64_regs::ax);
-	s << x64_sub(x64_reg_ptr64(x64_regs::rax), x64_regs::rax, sib_scale::s2, (int8_t) 0x42, x64_regs::al);
-	s << x64_sub(x64_reg_ptr32(x64_regs::eax), x64_regs::eax, sib_scale::s2, (int8_t) 0x42, x64_regs::rax);
-	s << x64_sub(x64_reg_ptr32(x64_regs::eax), x64_regs::eax, sib_scale::s2, (int8_t) 0x42, x64_regs::eax);
-	s << x64_sub(x64_reg_ptr32(x64_regs::eax), x64_regs::eax, sib_scale::s2, (int8_t) 0x42, x64_regs::ax);
-	s << x64_sub(x64_reg_ptr32(x64_regs::eax), x64_regs::eax, sib_scale::s2, (int8_t) 0x42, x64_regs::al);
-	s << x64_sub(x64_regs::rax, x64_reg_ptr64(x64_regs::rax), x64_regs::rax, sib_scale::s2, (int32_t) 0x42);
-	s << x64_sub(x64_regs::eax, x64_reg_ptr64(x64_regs::rax), x64_regs::rax, sib_scale::s2, (int32_t) 0x42);
-	s << x64_sub(x64_regs::ax, x64_reg_ptr64(x64_regs::rax), x64_regs::rax, sib_scale::s2, (int32_t) 0x42);
-	s << x64_sub(x64_regs::al, x64_reg_ptr64(x64_regs::rax), x64_regs::rax, sib_scale::s2, (int32_t) 0x42);
-	s << x64_sub(x64_regs::rax, x64_reg_ptr32(x64_regs::eax), x64_regs::eax, sib_scale::s2, (int32_t) 0x42);
-	s << x64_sub(x64_regs::eax, x64_reg_ptr32(x64_regs::eax), x64_regs::eax, sib_scale::s2, (int32_t) 0x42);
-	s << x64_sub(x64_regs::ax, x64_reg_ptr32(x64_regs::eax), x64_regs::eax, sib_scale::s2, (int32_t) 0x42);
-	s << x64_sub(x64_regs::al, x64_reg_ptr32(x64_regs::eax), x64_regs::eax, sib_scale::s2, (int32_t) 0x42);
-	s << x64_sub(x64_reg_ptr64(x64_regs::rax), x64_regs::rax, sib_scale::s2, (int32_t) 0x42, x64_regs::rax);
-	s << x64_sub(x64_reg_ptr64(x64_regs::rax), x64_regs::rax, sib_scale::s2, (int32_t) 0x42, x64_regs::eax);
-	s << x64_sub(x64_reg_ptr64(x64_regs::rax), x64_regs::rax, sib_scale::s2, (int32_t) 0x42, x64_regs::ax);
-	s << x64_sub(x64_reg_ptr64(x64_regs::rax), x64_regs::rax, sib_scale::s2, (int32_t) 0x42, x64_regs::al);
-	s << x64_sub(x64_reg_ptr32(x64_regs::eax), x64_regs::eax, sib_scale::s2, (int32_t) 0x42, x64_regs::rax);
-	s << x64_sub(x64_reg_ptr32(x64_regs::eax), x64_regs::eax, sib_scale::s2, (int32_t) 0x42, x64_regs::eax);
-	s << x64_sub(x64_reg_ptr32(x64_regs::eax), x64_regs::eax, sib_scale::s2, (int32_t) 0x42, x64_regs::ax);
-	s << x64_sub(x64_reg_ptr32(x64_regs::eax), x64_regs::eax, sib_scale::s2, (int32_t) 0x42, x64_regs::al);
+	auto fn = s.entry_point<void()>();
+
+	uint64_t p = (uint64_t) &say_hello;
+
+	s << x64_mov(x64_regs::rax, (uint64_t) &say_hello);
+	s << x64_instruction(array<uint8_t, 2> { 0xff, 0xd0 });
+
+	s << x64_mov(x64_regs::rax, (uint64_t) &p);
+	s << x64_instruction(array<uint8_t, 2> { 0xff, 0x10 });
+
+	s << x64_mov(x64_regs::rax, (uint64_t) &p);
+	s << x64_instruction(array<uint8_t, 2> { 0xff, 0xa0 }, (uint32_t) 0);
 
 
-	s << x64_nop1() << x64_nop1() << x64_nop1() << x64_nop1();
+	//s << x64_instruction(array<uint8_t, 1> { 0xe9 }, (int32_t) 0);
+	//s << x64_instruction(array<uint8_t, 2> { x64_override::oper_size, 0xe9 }, (uint16_t) 0x0);
+
+	s << x64_ret();
+
+	s << x64_jmp((int32_t) 0x12);
+
+	s << x64_jmp(x64_regs::rax);
+	s << x64_jmp(x64_regs::r12);
+	s << x64_jmp(x64_regs::r13);
+//
+	s << x64_jmp(x64_reg_addr(x64_regs::rax));
+	s << x64_jmp(x64_reg_addr(x64_regs::r12));
+	s << x64_jmp(x64_reg_addr(x64_regs::r13));
+
+	s << x64_jmp(x64_reg_addr(x64_regs::eax));
+	s << x64_jmp(x64_reg_addr(x64_regs::esp));
+	s << x64_jmp(x64_reg_addr(x64_regs::ebp));
 
 
-	s << x64_sub(x64_regs::rax, (uint8_t) 0x42);
+	s << x64_jmp(x64_reg_addr(x64_regs::rax), (int8_t) 0x12);
+	s << x64_jmp(x64_reg_addr(x64_regs::r12), (int8_t) 0x12);
+	s << x64_jmp(x64_reg_addr(x64_regs::r13), (int8_t) 0x12);
 
-	s << x64_sub(x64_regs::rax, (uint32_t) 0x12345678);
-	s << x64_sub(x64_regs::rdx, (uint32_t) 0x12345678);
+	s << x64_jmp(x64_reg_addr(x64_regs::eax), (int8_t) 0x12);
+	s << x64_jmp(x64_reg_addr(x64_regs::esp), (int8_t) 0x12);
+	s << x64_jmp(x64_reg_addr(x64_regs::ebp), (int8_t) 0x12);
 
-	s << x64_sub(x64_regs::eax, (uint8_t) 0x42);
+	s << x64_jmp(x64_reg_addr(x64_regs::rax), (int32_t) 0x12);
+	s << x64_jmp(x64_reg_addr(x64_regs::r12), (int32_t) 0x12);
+	s << x64_jmp(x64_reg_addr(x64_regs::r13), (int32_t) 0x12);
 
-	s << x64_sub(x64_regs::eax, (uint32_t) 0x12345678);
-	s << x64_sub(x64_regs::edx, (uint32_t) 0x12345678);
-
-	s << x64_sub(x64_regs::ax, (uint8_t) 0x42);
-
-	s << x64_sub(x64_regs::ax, (uint16_t) 0x1234);
-	s << x64_sub(x64_regs::dx, (uint16_t) 0x1234);
-
-	s << x64_sub(x64_regs::al, (uint8_t) 0x42);
-	s << x64_sub(x64_regs::dh, (uint8_t) 0x42);
+	s << x64_jmp(x64_reg_addr(x64_regs::eax), (int32_t) 0x12);
+	s << x64_jmp(x64_reg_addr(x64_regs::esp), (int32_t) 0x12);
+	s << x64_jmp(x64_reg_addr(x64_regs::ebp), (int32_t) 0x12);
 
 
 
-	cout << x64_disassembler::disassemble(s, "att", true);
+
+
+	fn();
+
+
+	cout << x64_disassembler::disassemble(s, "intel", true);
 
 	exit(0);
 #endif
@@ -741,7 +709,12 @@ void x64_testing::mov_unit_tests()
 //	test_inst<x64_or>("or", s, expected_lines);
 //	test_inst<x64_cmp>("cmp", s, expected_lines);
 //	test_inst<x64_xor>("xor", s, expected_lines);
-	test_inst<x64_plap>("pap", s, expected_lines);
+
+	jmpcall_reg<x64_jmp>("jmp", s, expected_lines);
+	jmpcall_reg<x64_call>("call", s, expected_lines);
+
+	jmpcall_regptr<x64_jmp>("jmp", s, expected_lines);
+	jmpcall_regptr<x64_call>("call", s, expected_lines);
 
 	compare_assembly(s, expected_lines);
 

@@ -79,6 +79,13 @@ private:
 	static void reg_ptr_idx_off_reg(std::string inst_name, instruction_stream& s, std::vector<std::string>& expected_lines, std::string width_name, int ni, int nj);
 
 	template<typename C>
+	static void jmpcall_reg(std::string inst_name, instruction_stream& s, std::vector<std::string>& expected_lines);
+
+	template<typename C>
+	static void jmpcall_regptr(std::string inst_name, instruction_stream& s, std::vector<std::string>& expected_lines);
+
+
+	template<typename C>
 	static void test_inst(std::string inst_name, instruction_stream& s, std::vector<std::string>& expected_lines);
 
 	//reg_reg_ptr_idx
