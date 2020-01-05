@@ -81,14 +81,25 @@ private:
 	template<typename C>
 	static void jmpcall_reg(std::string inst_name, instruction_stream& s, std::vector<std::string>& expected_lines);
 
-	template<typename C>
-	static void jmpcall_regptr(std::string inst_name, instruction_stream& s, std::vector<std::string>& expected_lines);
+	template<typename C, typename T, typename U>
+	static void jmpcall_regptr(std::string inst_name, instruction_stream& s, std::vector<std::string>& expected_lines, int ni);
+
+	template<typename C, typename T, typename U>
+	static void jmpcall_regptr_idx(std::string inst_name, instruction_stream& s, std::vector<std::string>& expected_lines, int ni);
+
+	template<typename C, typename T, typename U, typename V>
+	static void jmpcall_regptr_idx_off(std::string inst_name, instruction_stream& s, std::vector<std::string>& expected_lines, int ni);
+
+	template<typename C, typename T, typename U, typename V>
+	static void jmpcall_regptr_off(std::string inst_name, instruction_stream& s, std::vector<std::string>& expected_lines, int ni);
 
 
 	template<typename C>
-	static void test_inst(std::string inst_name, instruction_stream& s, std::vector<std::string>& expected_lines);
+	static void test_srcdst_oper_base(std::string inst_name, instruction_stream& s, std::vector<std::string>& expected_lines);
 
-	//reg_reg_ptr_idx
+	template<typename C>
+	static void test_x64_jmpcall_base(std::string inst_name, instruction_stream& s, std::vector<std::string>& expected_lines);
+
 
 	void mov_unit_tests();
 	static void compare_assembly(const instruction_stream& s, const std::vector<std::string>& expected_lines);

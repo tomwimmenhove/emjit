@@ -916,6 +916,16 @@ public:
 	x64_jmpcall_base(x64_reg_ptr32 addr, int8_t off) { reg_reg_ptr_off(x64_reg32(C), addr, A, 1, off); }
 	x64_jmpcall_base(x64_reg_ptr64 addr, int32_t off) { reg_reg_ptr_off(x64_reg32(C), addr, A, 2, off); }
 	x64_jmpcall_base(x64_reg_ptr32 addr, int32_t off) { reg_reg_ptr_off(x64_reg32(C), addr, A, 2, off); }
+
+	x64_jmpcall_base(x64_reg_ptr64 addr, x64_reg64 index, sib_scale scale) { reg_reg_ptr_idx(x64_reg32(C), addr, index, scale, A); }
+	x64_jmpcall_base(x64_reg_ptr32 addr, x64_reg32 index, sib_scale scale) { reg_reg_ptr_idx(x64_reg32(C), addr, index, scale, A); }
+
+	//reg_reg_ptr_idx
+
+	x64_jmpcall_base(x64_reg_ptr64 addr, x64_reg64 index, sib_scale scale, int32_t off) { reg_reg_ptr_idx_off(x64_reg32(C), addr, index, scale, off, A, 2); }
+	x64_jmpcall_base(x64_reg_ptr32 addr, x64_reg32 index, sib_scale scale, int32_t off) { reg_reg_ptr_idx_off(x64_reg32(C), addr, index, scale, off, A, 2); }
+	x64_jmpcall_base(x64_reg_ptr64 addr, x64_reg64 index, sib_scale scale, int8_t off) { reg_reg_ptr_idx_off(x64_reg32(C), addr, index, scale, off, A, 1); }
+	x64_jmpcall_base(x64_reg_ptr32 addr, x64_reg32 index, sib_scale scale, int8_t off) { reg_reg_ptr_idx_off(x64_reg32(C), addr, index, scale, off, A, 1); }
 };
 
 class x64_call : public x64_jmpcall_base<0xff, 0xe8, 2> { using x64_jmpcall_base::x64_jmpcall_base; };

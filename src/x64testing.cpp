@@ -438,17 +438,17 @@ void x64_testing::jmpcall_reg(std::string inst_name, instruction_stream& s, std:
 	}
 }
 
-template<typename C>
-void x64_testing::jmpcall_regptr(std::string inst_name, instruction_stream& s, std::vector<std::string>& expected_lines)
+template<typename C, typename T, typename U>
+void x64_testing::jmpcall_regptr(std::string inst_name, instruction_stream& s, std::vector<std::string>& expected_lines, int ni)
 {
-	for (auto i = 0; i < 16; i++)
+	for (auto i = 0; i < ni; i++)
 	{
-		auto inst = C(x64_reg_addr(x64_reg64(i)));
+		auto inst = C(T(U(i)));
 		stringstream stream;
 
 		add_to_strinstream(stream, s, inst);
-		string name = x64_reg64::names[i];
-		if (x64_reg64(i).is_bp() || x64_reg64(i).is_r13())
+		string name = U::names[i];
+		if (U(i).is_bp() || U(i).is_r13())
 			name += "+0x0";
 		stream << "\t" << inst_name << " QWORD PTR [" << name << ']';
 		stream.flush();
@@ -459,8 +459,102 @@ void x64_testing::jmpcall_regptr(std::string inst_name, instruction_stream& s, s
 	}
 }
 
+template<typename C, typename T, typename U>
+void x64_testing::jmpcall_regptr_idx(std::string inst_name, instruction_stream& s, std::vector<std::string>& expected_lines, int ni)
+{
+	for (auto i = 0; i < ni; i++)
+	{
+		for (auto j = 0; j < ni; j++)
+		{
+			if (U(j).is_sp() || U(j).is_r12())
+				continue;
+
+			auto shift = (i + j) & 3;
+			int scale_fact = 1 << shift;
+
+			auto inst = C(T(U(i)), U(j), (sib_scale) shift);
+			stringstream stream;
+
+			add_to_strinstream(stream, s, inst);
+			string name = U::names[i];
+			stream << "\t" << inst_name << " QWORD PTR [" << name << '+' << U::names[j] << '*';
+			stream << scale_fact;
+			if (U(i).is_bp() || U(i).is_r13())
+				stream << "+0x0";
+			stream << ']';
+			stream.flush();
+
+			expected_lines.push_back(stream.str());
+
+			s << inst;
+		}
+	}
+}
+
+template<typename C, typename T, typename U, typename V>
+void x64_testing::jmpcall_regptr_idx_off(std::string inst_name, instruction_stream& s, std::vector<std::string>& expected_lines, int ni)
+{
+	for (auto i = 0; i < ni; i++)
+	{
+		for (auto j = 0; j < ni; j++)
+		{
+			if (U(j).is_sp() || U(j).is_r12())
+				continue;
+
+			V off = i * 234;
+
+			auto shift = (i + j) & 3;
+			int scale_fact = 1 << shift;
+
+			auto inst = C(T(U(i)), U(j), (sib_scale) shift, off);
+			stringstream stream;
+
+			add_to_strinstream(stream, s, inst);
+			string name = U::names[i];
+			stream << "\t" << inst_name << " QWORD PTR [" << name << '+' << U::names[j] << '*';
+			stream << scale_fact;
+			if (off < 0)
+				stream  << "-0x" << hex << setw(0) << ((int) -off);
+			else
+				stream  << "+0x" << hex << setw(0) << ((int) off);
+			stream << ']';
+			stream.flush();
+
+			expected_lines.push_back(stream.str());
+
+			s << inst;
+		}
+	}
+}
+
+template<typename C, typename T, typename U, typename V>
+void x64_testing::jmpcall_regptr_off(std::string inst_name, instruction_stream& s, std::vector<std::string>& expected_lines, int ni)
+{
+	for (auto i = 0; i < ni; i++)
+	{
+		V off = i * 234;
+
+		auto inst = C(T(U(i)), off);
+		stringstream stream;
+
+		add_to_strinstream(stream, s, inst);
+		string name = U::names[i];
+		stream << "\t" << inst_name << " QWORD PTR [" << name;
+		if (off < 0)
+			stream  << "-0x" << hex << setw(0) << ((int) -off);
+		else
+			stream  << "+0x" << hex << setw(0) << ((int) off);
+		stream << ']';
+		stream.flush();
+
+		expected_lines.push_back(stream.str());
+
+		s << inst;
+	}
+}
+
 template<typename C>
-void x64_testing::test_inst(std::string inst_name, instruction_stream& s, std::vector<std::string>& expected_lines)
+void x64_testing::test_srcdst_oper_base(std::string inst_name, instruction_stream& s, std::vector<std::string>& expected_lines)
 {
 	direct_reg_reg<C, x64_reg64>(inst_name, s, expected_lines, 16);
 	direct_reg_reg<C, x64_reg32>(inst_name, s, expected_lines, 8);
@@ -610,6 +704,32 @@ void x64_testing::test_inst(std::string inst_name, instruction_stream& s, std::v
 	reg_ptr_idx_off_reg<C, x64_reg_ptr32, x64_reg32, int32_t, x64_reg8l>(inst_name, s, expected_lines, "BYTE", 8, 4);
 }
 
+template<typename C>
+void x64_testing::test_x64_jmpcall_base(std::string inst_name, instruction_stream& s, std::vector<std::string>& expected_lines)
+{
+	jmpcall_reg<C>(inst_name, s, expected_lines);
+	jmpcall_regptr<C, x64_reg_ptr64, x64_reg64>(inst_name, s, expected_lines, 16);
+	jmpcall_regptr<C, x64_reg_ptr32, x64_reg32>(inst_name, s, expected_lines, 8);
+	jmpcall_regptr_off<C, x64_reg_ptr64, x64_reg64, int8_t>(inst_name, s, expected_lines, 8);
+	jmpcall_regptr_off<C, x64_reg_ptr64, x64_reg64, int32_t>(inst_name, s, expected_lines, 8);
+	jmpcall_regptr_off<C, x64_reg_ptr32, x64_reg32, int8_t>(inst_name, s, expected_lines, 8);
+	jmpcall_regptr_off<C, x64_reg_ptr32, x64_reg32, int32_t>(inst_name, s, expected_lines, 8);
+	jmpcall_regptr_idx<C, x64_reg_ptr64, x64_reg64>(inst_name, s, expected_lines, 8);
+	jmpcall_regptr_idx<C, x64_reg_ptr32, x64_reg32>(inst_name, s, expected_lines, 8);
+	jmpcall_regptr_idx_off<C, x64_reg_ptr32, x64_reg32, int8_t>(inst_name, s, expected_lines, 8);
+	jmpcall_regptr_idx_off<C, x64_reg_ptr32, x64_reg32, int32_t>(inst_name, s, expected_lines, 8);
+
+	auto jmp_pos = s.pos();
+	int32_t off = 0x12345678;
+	auto inst = C(off);
+
+	stringstream stream;
+	add_to_strinstream(stream, s, inst);
+	stream << "\t" << inst_name << " 0x" << hex << setw(0) << (uint64_t(jmp_pos) + off + inst.size()) << flush;
+	expected_lines.push_back(stream.str());
+	s << inst;
+}
+
 void say_hello()
 {
 	cout << "Hello world\n";
@@ -671,6 +791,29 @@ void x64_testing::mov_unit_tests()
 	s << x64_jmp(x64_reg_addr(x64_regs::esp), (int32_t) 0x12);
 	s << x64_jmp(x64_reg_addr(x64_regs::ebp), (int32_t) 0x12);
 
+	s << x64_nop1();
+
+	s << x64_jmp(x64_reg_addr(x64_regs::rbx), x64_regs::rax, sib_scale::s4);
+
+//	s << x64_jmp(x64_reg_addr(x64_regs::rax), x64_regs::rbx, sib_scale::s4, (int8_t) 0x12345678);
+//	s << x64_jmp(x64_reg_addr(x64_regs::rax), x64_regs::r12, sib_scale::s4, (int8_t) 0x12345678);
+//	s << x64_jmp(x64_reg_addr(x64_regs::rax), x64_regs::r13, sib_scale::s4, (int8_t) 0x12345678);
+//
+//	s << x64_jmp(x64_reg_addr(x64_regs::rbx), x64_regs::rbx, sib_scale::s4, (int8_t) 0x12345678);
+//	s << x64_jmp(x64_reg_addr(x64_regs::rbx), x64_regs::r12, sib_scale::s4, (int8_t) 0x12345678);
+//	s << x64_jmp(x64_reg_addr(x64_regs::rbx), x64_regs::r13, sib_scale::s4, (int8_t) 0x12345678);
+//
+//	s << x64_jmp(x64_reg_addr(x64_regs::rsp), x64_regs::rbx, sib_scale::s4, (int8_t) 0x12345678);
+//	s << x64_jmp(x64_reg_addr(x64_regs::rsp), x64_regs::r12, sib_scale::s4, (int8_t) 0x12345678);
+//	s << x64_jmp(x64_reg_addr(x64_regs::rsp), x64_regs::r13, sib_scale::s4, (int8_t) 0x12345678);
+//
+//	s << x64_jmp(x64_reg_addr(x64_regs::r12), x64_regs::rbx, sib_scale::s4, (int8_t) 0x12345678);
+//	s << x64_jmp(x64_reg_addr(x64_regs::r12), x64_regs::r12, sib_scale::s4, (int8_t) 0x12345678);
+//	s << x64_jmp(x64_reg_addr(x64_regs::r12), x64_regs::r13, sib_scale::s4, (int8_t) 0x12345678);
+//
+//	s << x64_jmp(x64_reg_addr(x64_regs::r13), x64_regs::rbx, sib_scale::s4, (int8_t) 0x12345678);
+//	s << x64_jmp(x64_reg_addr(x64_regs::r13), x64_regs::r12, sib_scale::s4, (int8_t) 0x12345678);
+//	s << x64_jmp(x64_reg_addr(x64_regs::r13), x64_regs::r13, sib_scale::s4, (int8_t) 0x12345678);
 
 
 
@@ -685,36 +828,33 @@ void x64_testing::mov_unit_tests()
 
 	vector<string> expected_lines;
 
-//	/* 64-bit move-only shit */
-//	reg_imm<x64_mov, x64_reg64, uint64_t>("movabs", s, expected_lines, 16);
-//
-//	/* 64 bit pointers only support the first register (al, ax, eax, rax) */
-//	reg_ptr64<x64_reg64_0, uint64_t>(s, expected_lines, x64_regs::rax);
-//	reg_ptr64<x64_reg32_0, uint32_t>(s, expected_lines, x64_regs::eax);
-//	reg_ptr64<x64_reg16_0, uint16_t>(s, expected_lines, x64_regs::ax);
-//	reg_ptr64<x64_reg8l_0, uint8_t>(s, expected_lines, x64_regs::al);
-//
-//	ptr64_reg<uint64_t, x64_reg64_0>(s, expected_lines, x64_regs::rax);
-//	ptr64_reg<uint32_t, x64_reg32_0>(s, expected_lines, x64_regs::eax);
-//	ptr64_reg<uint16_t, x64_reg16_0>(s, expected_lines, x64_regs::ax);
-//	ptr64_reg<uint8_t, x64_reg8l_0>(s, expected_lines, x64_regs::al);
-//
-//	/* General stuff */
-//	test_inst<x64_mov>("mov", s, expected_lines);
-//	test_inst<x64_add>("add", s, expected_lines);
-//	test_inst<x64_sub>("sub", s, expected_lines);
-//	test_inst<x64_sbb>("sbb", s, expected_lines);
-//	test_inst<x64_adc>("adc", s, expected_lines);
-//	test_inst<x64_and>("and", s, expected_lines);
-//	test_inst<x64_or>("or", s, expected_lines);
-//	test_inst<x64_cmp>("cmp", s, expected_lines);
-//	test_inst<x64_xor>("xor", s, expected_lines);
+//	/* 64-bit only move shit */
+	reg_imm<x64_mov, x64_reg64, uint64_t>("movabs", s, expected_lines, 16);
 
-	jmpcall_reg<x64_jmp>("jmp", s, expected_lines);
-	jmpcall_reg<x64_call>("call", s, expected_lines);
+	/* 64 bit pointers only support the first register (al, ax, eax, rax) */
+	reg_ptr64<x64_reg64_0, uint64_t>(s, expected_lines, x64_regs::rax);
+	reg_ptr64<x64_reg32_0, uint32_t>(s, expected_lines, x64_regs::eax);
+	reg_ptr64<x64_reg16_0, uint16_t>(s, expected_lines, x64_regs::ax);
+	reg_ptr64<x64_reg8l_0, uint8_t>(s, expected_lines, x64_regs::al);
 
-	jmpcall_regptr<x64_jmp>("jmp", s, expected_lines);
-	jmpcall_regptr<x64_call>("call", s, expected_lines);
+	ptr64_reg<uint64_t, x64_reg64_0>(s, expected_lines, x64_regs::rax);
+	ptr64_reg<uint32_t, x64_reg32_0>(s, expected_lines, x64_regs::eax);
+	ptr64_reg<uint16_t, x64_reg16_0>(s, expected_lines, x64_regs::ax);
+	ptr64_reg<uint8_t, x64_reg8l_0>(s, expected_lines, x64_regs::al);
+
+	/* General stuff */
+	test_srcdst_oper_base<x64_mov>("mov", s, expected_lines);
+	test_srcdst_oper_base<x64_add>("add", s, expected_lines);
+	test_srcdst_oper_base<x64_sub>("sub", s, expected_lines);
+	test_srcdst_oper_base<x64_sbb>("sbb", s, expected_lines);
+	test_srcdst_oper_base<x64_adc>("adc", s, expected_lines);
+	test_srcdst_oper_base<x64_and>("and", s, expected_lines);
+	test_srcdst_oper_base<x64_or>("or", s, expected_lines);
+	test_srcdst_oper_base<x64_cmp>("cmp", s, expected_lines);
+	test_srcdst_oper_base<x64_xor>("xor", s, expected_lines);
+
+	test_x64_jmpcall_base<x64_jmp>("jmp", s, expected_lines);
+	test_x64_jmpcall_base<x64_call>("call", s, expected_lines);
 
 	compare_assembly(s, expected_lines);
 
