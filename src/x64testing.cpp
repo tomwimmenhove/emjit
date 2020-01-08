@@ -17,6 +17,8 @@
 #include "x64disassembler.h"
 #include "x64instruction.h"
 
+#include "parser/parsetest.h"
+
 using namespace std::chrono;
 using namespace std;
 
@@ -779,6 +781,8 @@ void x64_testing::mov_unit_tests()
 
 
 	cout << x64_disassembler::disassemble(s, "intel", true);
+
+	parse_test();
 
 	exit(0);
 #endif
