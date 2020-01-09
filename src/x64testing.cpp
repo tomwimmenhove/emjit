@@ -12,12 +12,16 @@
 #include <memory>
 #include <alloca.h>
 #include <chrono>
+#include <algorithm>
+#include <vector>
+#include <iterator>
+#include <cassert>
 
 #include "x64testing.h"
 #include "x64disassembler.h"
 #include "x64instruction.h"
 
-#include "parser/parsetest.h"
+#include "parser/driver.h"
 
 using namespace std::chrono;
 using namespace std;
@@ -737,52 +741,306 @@ void say_hello()
 	cout << "Hello world\n";
 }
 
+int eval(const expression& exp)
+{
+	switch(exp.type)
+	{
+		case expr_type::add: return eval(exp.expressions[0]) + eval(exp.expressions[1]);
+		case expr_type::sub: return eval(exp.expressions[0]) - eval(exp.expressions[1]);
+		case expr_type::mul: return eval(exp.expressions[0]) * eval(exp.expressions[1]);
+		case expr_type::div: return eval(exp.expressions[0]) / eval(exp.expressions[1]);
+		case expr_type::num: return exp.num;
+	}
+
+	return 0;
+}
+
+// XXX: Use some ref-counting mechanism to temporarily disable registers
+/* XXX: Improve so that we can RESERVE a register, and take note when it's
+ *      actually been written to. This way we don't have to save registers that
+ *      have been reserved, but not yet used.
+ */
+
+class dirty_register
+{
+public:
+	dirty_register(int n)
+	{
+		dirty.resize(n);
+	}
+
+	dirty_register(int n, std::initializer_list<int> dont_use)
+	 : dirty_register(n)
+	{
+		/* Mark the entries in the dont_use list as used, so we can't use them. */
+		for(int x: dont_use)
+			use(x);
+	}
+
+	inline void use(int reg) { dirty[reg] = true; }
+	inline void release(int reg) { dirty[reg] = false; }
+	inline bool is_used(int reg) { return dirty[reg]; }
+
+	int get()
+	{
+		vector<bool>::iterator location = find(dirty.begin(), dirty.end(), false);
+
+		if (location == dirty.end())
+			return -1;
+
+		int idx = location - dirty.begin();
+
+		use(idx);
+		return idx;
+	}
+
+private:
+	vector<bool> dirty;
+};
+
+dirty_register dr(x64_reg32::n, { x64_regs::eax.value, x64_regs::esp.value, x64_regs::ebp.value });
+
+class steal_register
+{
+public:
+	steal_register(instruction_stream& s, dirty_register& dr)
+	 : s(s), dr(dr)
+	{ }
+
+	steal_register(instruction_stream& s, dirty_register& dr, x64_reg32 reg)
+	 : s(s), dr(dr), reg(reg)
+	{
+		steal(reg);
+	}
+
+	void steal(x64_reg32 reg)
+	{
+		used = dr.is_used(reg.value);
+		if (used)
+		{
+			/* Can we temporarily store it somewhere else? */
+			tmp_reg = dr.get();
+			if (tmp_reg != -1)
+			{
+				/* Yes. Just store it in some temporary register */
+				s << x64_mov(x64_reg32(tmp_reg), reg);
+			}
+			else
+			{
+				/* Nope. We'll have to push it */
+				s << x64_push(x64_reg64(reg.value)); /* Can't push 32-bit registers on x64 */
+				pushed = true;
+			}
+		}
+		else
+		{
+			dr.use(reg.value);
+		}
+
+		stolen = 1;
+	}
+
+	~steal_register() { give_back(); }
+
+	void give_back()
+	{
+		if (!stolen)
+			return;
+
+		if (used)
+		{
+			if (pushed)
+			{
+				s << x64_pop(x64_reg64(reg.value));
+				pushed = false;
+			}
+			else
+			{
+				s << x64_mov(reg, x64_reg32(tmp_reg));
+			}
+
+			used = false;
+		}
+		else
+		{
+			dr.release(reg.value);
+		}
+	}
+
+private:
+	instruction_stream& s;
+	dirty_register& dr;
+	x64_reg32 reg = x64_reg32(0);
+
+	bool stolen = 0;
+	int tmp_reg = 0;
+	bool used = false;
+	bool pushed = false;
+};
+
+void compile(instruction_stream& s, const expression& exp, const x64_reg32& target = x64_regs::eax)
+{
+	cout << "Compiling expr type: ";
+	switch(exp.type)
+	{
+	case expr_type::add: cout << "add\n"; break;
+	case expr_type::sub: cout << "sub\n"; break;
+	case expr_type::mul: cout << "mul\n"; break;
+	case expr_type::div: cout << "div\n"; break;
+	case expr_type::num: cout << "num\n"; break;
+	}
+
+	if (exp.type == expr_type::num)
+	{
+		s << x64_mov(target, static_cast<uint32_t>(exp.num));
+		return;
+	}
+
+	auto reg_idx = dr.get();
+	if (reg_idx == -1)
+		throw exception();
+
+	auto tmp_reg = x64_reg32(reg_idx);
+
+	cout << "expressions into " << x64_reg32::names[tmp_reg.value] << " and " <<x64_reg32::names[target.value] << '\n';
+
+	compile(s, exp.expressions[0], tmp_reg);
+
+	s << x64_nop1();
+
+	switch(exp.type)
+	{
+		case expr_type::add:
+			compile(s, exp.expressions[1], target);
+			s << x64_add(target, tmp_reg);
+			break;
+		case expr_type::sub:
+			compile(s, exp.expressions[1], target);
+			s << x64_add(target, tmp_reg);
+			break;
+		case expr_type::mul:
+			compile(s, exp.expressions[1], target);
+			if (x64_regs::eax.value != target.value)
+				s << x64_mov(x64_regs::eax, target);
+			s << x64_mul(tmp_reg);
+			if (x64_regs::eax.value != target.value)
+				s << x64_mov(target, x64_regs::eax);
+			break;
+		case expr_type::div:
+		{
+			// Unsigned divide EDX:EAX by r/m32, with result stored in EAX = Quotient, EDX = Remainder.
+			if (x64_regs::eax.value != tmp_reg.value)
+				s << x64_mov(x64_regs::eax, tmp_reg);
+
+			/* We're altering EDX below, so make sure that, if it's used, it's restored after this scope */
+			steal_register thief(s, dr, x64_regs::edx);
+
+			auto reg_divider = dr.get();
+			if (reg_divider == -1)
+				throw exception();
+
+			compile(s, exp.expressions[1], reg_divider);
+
+			s << x64_mov(x64_regs::edx, 0);
+			s << x64_div(x64_reg32(reg_divider));
+
+			dr.release(reg_divider);
+			thief.give_back();
+
+			if (x64_regs::eax.value != target.value)
+				s << x64_mov(target, x64_regs::eax);
+			break;
+		}
+
+		case expr_type::num:
+			assert(exp.type != expr_type::num);
+			break;
+	}
+
+	s << x64_nop1();
+
+	dr.release(reg_idx);
+}
+
+__asm__(".global test_asm_fn\n"
+		"test_asm_fn:\n"
+		"mov    $0xc,%edx\n"
+		"mov    %edx,%ebx\n"
+		"mov    $0x0,%edx\n"
+		"div    %edx\n"
+		"retq\n");
+
+extern "C"
+{
+	int test_asm_fn();
+}
+
+
 //x64_mov(x64_reg_ptr64 addr, x64_reg64 reg)
 void x64_testing::mov_unit_tests()
 {
 	instruction_stream s(allocator);
 
+//	for (int i = 0; i < 1024; i++)
+//		s << x64_nop1();
+
 #if 1
-	auto fn = s.entry_point<void()>();
+//	auto fn = s.entry_point<void()>();
+//
+//	uint64_t p = (uint64_t) &say_hello;
+//
+//	s << x64_mov(x64_regs::rax, (uint64_t) &say_hello);
+//	s << x64_instruction(array<uint8_t, 2> { 0xff, 0xd0 });
+//
+//	s << x64_mov(x64_regs::rax, (uint64_t) &p);
+//	s << x64_instruction(array<uint8_t, 2> { 0xff, 0x10 });
+//
+//	s << x64_mov(x64_regs::rax, (uint64_t) &p);
+//	s << x64_instruction(array<uint8_t, 2> { 0xff, 0xa0 }, (uint32_t) 0);
+//
+//
+//	//s << x64_instruction(array<uint8_t, 1> { 0xe9 }, (int32_t) 0);
+//	//s << x64_instruction(array<uint8_t, 2> { x64_override::oper_size, 0xe9 }, (uint16_t) 0x0);
 
-	uint64_t p = (uint64_t) &say_hello;
+//	s << x64_ret();
+//
+//	s << x64_jmp((int32_t) 0x12);
+//
+//
+//	s << x64_jecxz(0x7f);
+//
+//	s << x64_jo((int8_t) -12);
+//
+//	s << x64_neg(x64_regs::bl);
+//	s << x64_neg(x64_regs::bh);
+//	s << x64_neg(x64_regs::bx);
+//	s << x64_neg(x64_regs::ebx);
+//	s << x64_neg(x64_regs::rax);
+//	s << x64_neg(x64_regs::r12);
+//
+//
+//	fn();
 
-	s << x64_mov(x64_regs::rax, (uint64_t) &say_hello);
-	s << x64_instruction(array<uint8_t, 2> { 0xff, 0xd0 });
-
-	s << x64_mov(x64_regs::rax, (uint64_t) &p);
-	s << x64_instruction(array<uint8_t, 2> { 0xff, 0x10 });
-
-	s << x64_mov(x64_regs::rax, (uint64_t) &p);
-	s << x64_instruction(array<uint8_t, 2> { 0xff, 0xa0 }, (uint32_t) 0);
 
 
-	//s << x64_instruction(array<uint8_t, 1> { 0xe9 }, (int32_t) 0);
-	//s << x64_instruction(array<uint8_t, 2> { x64_override::oper_size, 0xe9 }, (uint16_t) 0x0);
+	driver drv;
+	//drv.trace_parsing = true;
+	//drv.trace_scanning = true;
+	drv.parse ("src/parser/parseme.txt");
+
+	auto program = s.entry_point<int()>();
+	compile(s, drv.expression_result);
 
 	s << x64_ret();
 
-	s << x64_jmp((int32_t) 0x12);
-
-
-	s << x64_jecxz(0x7f);
-
-	s << x64_jo((int8_t) -12);
-
-	s << x64_neg(x64_regs::bl);
-	s << x64_neg(x64_regs::bh);
-	s << x64_neg(x64_regs::bx);
-	s << x64_neg(x64_regs::ebx);
-	s << x64_neg(x64_regs::rax);
-	s << x64_neg(x64_regs::r12);
-
-
-	fn();
-
-
 	cout << x64_disassembler::disassemble(s, "intel", true);
 
-	parse_test();
+	auto res = program();
+	//auto res = test_asm_fn();
+
+	std::cout << "expression.eval() : " << drv.expression_result.eval() << '\n';
+	std::cout << "eval(expression)  : " << eval(drv.expression_result) << '\n';
+	std::cout << "machine code      : " << res << '\n';
 
 	exit(0);
 #endif

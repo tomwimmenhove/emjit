@@ -33,7 +33,7 @@ struct expression
 	int eval() const;
 
 	std::vector<expression> expressions;
-	int num;
+	int num = 0;
 };
 
 

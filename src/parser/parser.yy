@@ -21,7 +21,7 @@
 %define parse.error verbose
 
 %code {
-# include "driver.hh"
+# include "driver.h"
 }
 
 %define api.token.prefix {TOK_}
@@ -45,7 +45,7 @@
 
 %%
 %start unit;
-unit:  exp  { drv.done($1); };
+unit:  exp  { drv.expression_result = $1; };
 
 %left "+" "-";
 %left "*" "/";

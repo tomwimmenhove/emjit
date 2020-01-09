@@ -1,10 +1,10 @@
 %{ /* -*- C++ -*- */
-# include <cerrno>
-# include <climits>
-# include <cstdlib>
-# include <string>
-# include "driver.hh"
-# include "parser.hh"
+#include <cerrno>
+#include <climits>
+#include <cstdlib>
+#include <string>
+#include "driver.h"
+#include "parser.h"
 
 // Work around an incompatibility in flex (at least versions
 // 2.5.31 through 2.5.33): it generates code that does

@@ -46,7 +46,8 @@ struct x64_reg64    : public x64_reg_base_normal
 {
 	using x64_reg_base_normal::x64_reg_base_normal;
 	using value_type = uint64_t;
-	static const std::string names[16];
+	constexpr static int n = 16;
+	static const std::string names[n];
 };
 struct x64_reg64_0 : public x64_reg64 { using x64_reg64::x64_reg64; };
 
@@ -54,7 +55,8 @@ struct x64_reg32   : public x64_reg_base_normal
 {
 	using x64_reg_base_normal::x64_reg_base_normal;
 	using value_type = uint32_t;
-	static const std::string names[8];
+	constexpr static int n = 8;
+	static const std::string names[n];
 };
 struct x64_reg32_0 : public x64_reg32 { using x64_reg32::x64_reg32; };
 
@@ -62,7 +64,8 @@ struct x64_reg16   : public x64_reg_base_normal
 {
 	using x64_reg_base_normal::x64_reg_base_normal;
 	using value_type = uint16_t;
-	static const std::string names[8];
+	constexpr static int n = 8;
+	static const std::string names[n];
 };
 struct x64_reg16_0 : public x64_reg16 { using x64_reg16::x64_reg16; };
 
@@ -70,7 +73,8 @@ struct x64_reg8  : public x64_reg_base8
 {
 	using x64_reg_base8::x64_reg_base8;
 	using value_type = uint8_t;
-	static const std::string names[8];
+	constexpr static int n = 8;
+	static const std::string names[n];
 };
 struct x64_reg8h   : public x64_reg8  { using x64_reg8::x64_reg8; };
 struct x64_reg8l   : public x64_reg8  { using x64_reg8::x64_reg8; };
@@ -1056,5 +1060,15 @@ struct x64_idiv : public x64_single_op_base<0xf6, 0xf7, 7> { using x64_single_op
 struct x64_inc : public x64_single_op_base<0xfe, 0xff, 0> { using x64_single_op_base::x64_single_op_base; };
 struct x64_dec : public x64_single_op_base<0xfe, 0xff, 1> { using x64_single_op_base::x64_single_op_base; };
 struct x64_neg : public x64_single_op_base<0xf6, 0xf7, 3> { using x64_single_op_base::x64_single_op_base; };
+
+template<uint8_t A>
+struct x64_pushpop : x64_instruction
+{
+	x64_pushpop(x64_reg64 reg) { x64_add_rex(reg, x64_reg64(0)); add_opcode((reg.value & 7) | A); }
+	x64_pushpop(x64_reg16 reg) : x64_instruction(std::array<uint8_t, 2> { x64_override::oper_size, static_cast<uint8_t>(reg.value | A) } ) { }
+};
+
+struct x64_push : public x64_pushpop<0x50> { using x64_pushpop::x64_pushpop; };
+struct x64_pop : public x64_pushpop<0x58> { using x64_pushpop::x64_pushpop; };
 
 #endif /* X64INSTRUCTION_H_ */

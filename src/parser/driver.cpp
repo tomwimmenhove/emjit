@@ -1,5 +1,5 @@
-#include "driver.hh"
-#include "parser.hh"
+#include "driver.h"
+#include "parser.h"
 
 driver::driver ()
   : trace_parsing (false), trace_scanning (false)

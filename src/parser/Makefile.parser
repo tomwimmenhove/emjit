@@ -1,0 +1,16 @@
+# This Makefile is designed to be simple and readable.  It does not
+# aim at portability.  It requires GNU Make.
+
+BISON = bison
+FLEX = flex
+
+all: parser.cpp scanner.cpp
+
+%.cpp %.hh: %.yy
+	$(BISON) --defines=$*.h -o $*.cpp $<
+
+%.cpp: %.ll
+	$(FLEX) -o$@ $<
+
+clean:
+	rm -f parser.h parser.cpp scanner.cpp

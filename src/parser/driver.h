@@ -1,8 +1,8 @@
 #ifndef DRIVER_HH
-# define DRIVER_HH
-# include <string>
-# include <map>
-# include "parser.hh"
+#define DRIVER_HH
+#include <string>
+#include <map>
+#include "parser.h"
 #include <iostream>
 
 // Tell Flex the lexer's prototype ...
@@ -17,10 +17,7 @@ class driver
 	public:
 		driver ();
 
-		void done(const expression& e)
-		{
-			std::cout << e.eval() << '\n';
-		}
+		expression expression_result;
 
 		// Run the parser on file F.  Return 0 on success.
 		int parse (const std::string& f);
