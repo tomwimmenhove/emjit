@@ -15,6 +15,8 @@
 
 struct x64_reg_base
 {
+	inline constexpr x64_reg_base() : value(0) { }
+	inline constexpr x64_reg_base(const x64_reg_base& reg) : value(reg.value) { }
 	inline constexpr x64_reg_base(int value) : value(value) { }
 	const int value;
 
@@ -53,7 +55,6 @@ struct x64_reg_base8l : public x64_reg_base8
 struct x64_reg_base8h : public x64_reg_base8
 {
 	using x64_reg_base8::x64_reg_base8;
-
 	inline constexpr bool add_rex() { return false; }
 };
 
@@ -266,8 +267,6 @@ struct x64_reg_ptr32    : public x64_addr_ptr<x64_reg32>
 	using x64_addr_ptr::x64_addr_ptr;
 	using reg_type = x64_reg32;
 };
-//struct x64_reg_ptr32gp  : public x64_reg_ptr32 { using x64_reg_ptr32::x64_reg_ptr32; };
-//struct x64_reg_ptr32sp  : public x64_reg_ptr32 { using x64_reg_ptr32::x64_reg_ptr32; };
 
 struct x64_reg_ptr64    : public x64_addr_ptr<x64_reg64>
 {

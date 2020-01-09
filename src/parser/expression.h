@@ -5,6 +5,8 @@
 
 enum class expr_type
 {   
+	invalid = -1,
+
 	add,
 	sub,
 	mul,
@@ -15,7 +17,7 @@ enum class expr_type
 
 struct expression
 {
-	expr_type type;
+	expr_type type = expr_type::invalid;
 
 	expression() { }
 

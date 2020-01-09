@@ -16,17 +16,12 @@
 #include "arch/x64/x64testing.h"
 #include "arch/instructionstream.h"
 
+#include "parser/driver.h"
+#include "compiler/tac.h"
+#include "compiler/tac2x64.h"
+
 using namespace std;
 
-void print_stream_debug(const instruction_stream& s)
-{
-	auto sd = s.data();
-	for (size_t i = 0; i < s.size(); i++)
-	{
-		cout << i << ": " << std::hex << ((int) sd[i]) << " (" << std::dec << ((int) sd[i]) << ")\n";
-	}
-	cout << '\n';
-}
 
 int main()
 {
@@ -36,38 +31,46 @@ int main()
 	auto allocator = std::make_shared<auto_allocator> (start, len, PROT_READ | PROT_WRITE | PROT_EXEC);
 
 	instruction_stream s(allocator);
-//
-//	x64_instr inst1;
-//
-//	inst1.add_opcode(0x42);
-//
-//	inst1.set_imm((uint8_t) 0xdead);
-//
-//	auto bla = inst1.get_imm<uint64_t>();
-//
-//	s << x64_instr_mov(x64_regs::rbx, x64_regs::r15);
-//
-//	cout << "Size: " << inst1.size() << '\n';
-//	cout << "imm: " << hex << (int) bla << '\n';
-//
-//	auto disassmebly = x64_disassembler::disassemble(s, "intel");
-//
-//	cout << disassmebly;
-//
-//	return 0;
-	x64_testing testing;
 
-	try
-	{
-//		mov_unit_tests(allocator);
-		testing.run_tests();
-	}
-	catch( const unit_test_exception& ex )
-	{
-		cerr << "Unit test failed:\n" << ex.what() << '\n' << flush;
 
-		return 1;
-	}
+	/* Parse the code */
+	driver drv;
+	//drv.trace_parsing = true;
+	//drv.trace_scanning = true;
+	drv.parse ("src/parser/parseme.txt");
+
+	/* Get the entry point */
+	auto program = s.entry_point<int()>();
+
+	/* Convert the expression into TAC */
+	tac t(drv.expression_result);
+
+	/* Compile TAC to machine code */
+	tac2x64 t2e(s);
+
+	t2e.compile_expression(t);
+
+	cout << x64_disassembler::disassemble(s, "intel", true);
+
+	/* Run it! */
+	//auto res = program();
+
+	//cout << "Result: " << res << '\n';
+
+
+
+//	x64_testing testing;
+//
+//	try
+//	{
+//		testing.run_tests();
+//	}
+//	catch( const unit_test_exception& ex )
+//	{
+//		cerr << "Unit test failed:\n" << ex.what() << '\n' << flush;
+//
+//		return 1;
+//	}
 
 	return 0;
 

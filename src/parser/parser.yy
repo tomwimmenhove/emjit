@@ -8,6 +8,7 @@
 
 %code requires {
   #include <string>
+  #include <iostream>
   #include "expression.h"
   class driver;
 }
@@ -49,12 +50,12 @@ unit:  exp  { drv.expression_result = $1; };
 
 %left "+" "-";
 %left "*" "/";
-exp	: exp "+" exp   { $$ = expression(expr_type::add, $1, $3); }
-   	| exp "-" exp   { $$ = expression(expr_type::sub, $1, $3); }
-   	| exp "*" exp   { $$ = expression(expr_type::mul, $1, $3); }
-   	| exp "/" exp   { $$ = expression(expr_type::div, $1, $3); }
+exp	: exp "+" exp   { /*std::cout << "add\n";*/ $$ = expression(expr_type::add, $1, $3); }
+   	| exp "-" exp   { /*std::cout << "sub\n";*/ $$ = expression(expr_type::sub, $1, $3); }
+   	| exp "*" exp   { /*std::cout << "mul\n";*/ $$ = expression(expr_type::mul, $1, $3); }
+   	| exp "/" exp   { /*std::cout << "div\n";*/ $$ = expression(expr_type::div, $1, $3); }
 	| "(" exp ")"   { $$ = $2; }
-   	| "number"      { $$ = expression($1); }
+   	| "number"      { /*std::cout << "number " << $1 << '\n';*/ $$ = expression($1); }
    	;
 %%
 
