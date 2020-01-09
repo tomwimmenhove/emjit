@@ -988,10 +988,7 @@ void x64_testing::mov_unit_tests()
 	s << x64_mov(x64_regs::ah, x64_regs::bl);
 	s << x64_mov(x64_regs::ah, x64_regs::bh);
 
-
-	s << x64_mov(x64_reg_ptr64(x64_regs::rax), (int8_t) 0x42, x64_regs::al);
-	s << x64_mov(x64_reg_ptr64(x64_regs::rax), (int8_t) 0x42, x64_regs::spl);
-	s << x64_mov(x64_reg_ptr64(x64_regs::rax), (int8_t) 0x42, x64_regs::ah);
+	s << x64_mov(x64_regs::spl, x64_regs::bh);
 
 
 

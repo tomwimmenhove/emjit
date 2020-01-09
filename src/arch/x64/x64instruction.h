@@ -697,6 +697,25 @@ private:
 	};
 };
 
+class no_rex_exception: public std::exception
+{
+public:
+	explicit no_rex_exception(x64_reg8h reg)
+	{
+		msg = "can't encode register '";
+		msg += x64_reg8h::names[reg.value];
+		msg += "' in an instruction requiring REX prefix.";
+	}
+
+	virtual const char* what() const throw()
+	{
+		return msg.c_str();;
+	}
+
+private:
+	std::string msg;
+};
+
 struct x64_nop1	: public x64_instruction{x64_nop1()	: x64_instruction(std::array<uint8_t, 1> { 0x90 }) {} };
 struct x64_ret	: public x64_instruction{x64_ret()	: x64_instruction(std::array<uint8_t, 1> { 0xc3 }) {} };
 struct x64_lret	: public x64_instruction{x64_lret()	: x64_instruction(std::array<uint8_t, 1> { 0xcb }) {} };
@@ -713,8 +732,8 @@ public:
 	x64_srcdst_oper_base(x64_reg32 dst, x64_reg32 src) { reg_reg(dst, src, B); }
 	x64_srcdst_oper_base(x64_reg16 dst, x64_reg16 src) { reg_reg(dst, src, B); }
 	x64_srcdst_oper_base(x64_reg8  dst, x64_reg8  src) { reg_reg(dst, src, A); }
-	x64_srcdst_oper_base(x64_reg8h dst, x64_reg8  src) { reg_reg(dst.shift(), x64_reg8h(src), A); }
-	x64_srcdst_oper_base(x64_reg8  dst, x64_reg8h src) { reg_reg(x64_reg8h(dst), src.shift(), A); }
+	x64_srcdst_oper_base(x64_reg8h dst, x64_reg8  src) { if (src.add_rex()) throw no_rex_exception(dst) ; reg_reg(dst.shift(), x64_reg8h(src), A); }
+	x64_srcdst_oper_base(x64_reg8  dst, x64_reg8h src) { if (dst.add_rex()) throw no_rex_exception(src) ; reg_reg(x64_reg8h(dst), src.shift(), A); }
 	x64_srcdst_oper_base(x64_reg8h dst, x64_reg8h src) { reg_reg(dst.shift(), src.shift(), A); }
 
 	/* register into register pointer */
