@@ -988,9 +988,16 @@ void x64_testing::mov_unit_tests()
 	s << x64_mov(x64_regs::ah, x64_regs::bl);
 	s << x64_mov(x64_regs::ah, x64_regs::bh);
 
-	s << x64_mov(x64_regs::spl, x64_regs::bh);
+	//s << x64_mov(x64_regs::spl, x64_regs::bh);
+
+	s << x64_add(x64_regs::al, (uint8_t) 0x42);
+	s << x64_add(x64_regs::spl, (uint8_t) 0x42);
+	s << x64_add(x64_regs::ah, (uint8_t) 0x42);
 
 
+	s << x64_mul(x64_regs::al);
+	s << x64_mul(x64_regs::ah);
+	s << x64_mul(x64_regs::spl);
 
 	cout << x64_disassembler::disassemble(s, "intel", true);
 

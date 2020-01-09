@@ -942,7 +942,7 @@ public:
 	x64_mov(x64_reg64_0 reg, x64_addr_ptr<uint64_t*> addr) { eax_imm(reg, reinterpret_cast<uint64_t>(addr.ptr), 0xa1); }
 	x64_mov(x64_reg32_0 reg, x64_addr_ptr<uint32_t*> addr) { eax_imm(reg, reinterpret_cast<uint64_t>(addr.ptr), 0xa1); }
 	x64_mov(x64_reg16_0 reg, x64_addr_ptr<uint16_t*> addr) { eax_imm(reg, reinterpret_cast<uint64_t>(addr.ptr), 0xa1); }
-	x64_mov(x64_reg8_0 reg, x64_addr_ptr<uint8_t*>  addr) { eax_imm(reg, reinterpret_cast<uint64_t>(addr.ptr), 0xa0); }
+	x64_mov(x64_reg8_0  reg, x64_addr_ptr<uint8_t*>  addr) { eax_imm(reg, reinterpret_cast<uint64_t>(addr.ptr), 0xa0); }
 
 	/* Move register into immediate address */
 	/* 64 bit pointers */
@@ -960,7 +960,7 @@ class x64_arith_base : public x64_srcdst_oper_base<A, B, C, D>
 public:
 	using x64_srcdst_oper_base<A, B, C, D>::x64_srcdst_oper_base;
 
-	/* Add immediate into register */
+	/* immediate into register */
 	x64_arith_base(x64_reg64 reg, uint8_t imm) { reg_imm(reg, imm, 0x83); }
 	x64_arith_base(x64_reg64 reg, uint32_t imm) { reg_imm_oroc(reg, imm, F, 0x81); }
 
@@ -970,6 +970,7 @@ public:
 	x64_arith_base(x64_reg16 reg, uint8_t imm) { reg_imm(reg, imm, 0x83); }
 	x64_arith_base(x64_reg16 reg, uint16_t imm) { reg_imm_oroc(reg, imm, F, 0x81); }
 	x64_arith_base(x64_reg8  reg, uint8_t  imm) { reg_imm_oroc(reg, imm, E, 0x80); }
+	x64_arith_base(x64_reg8h reg, uint8_t  imm) { reg_imm_oroc(reg.shift(), imm, E, 0x80); }
 
 	virtual ~x64_arith_base() { }
 
@@ -1123,54 +1124,54 @@ struct x64_jmp_cond : public x64_instruction
 	}
 };
 
-struct x64_jo : x64_jmp_cond   { x64_jo(int8_t off)   : x64_jmp_cond(x64_cond::overflow, off) { } };
-struct x64_jno : x64_jmp_cond  { x64_jno(int8_t off)  : x64_jmp_cond(x64_cond::not_overflow, off) { } };
-struct x64_js : x64_jmp_cond   { x64_js(int8_t off)   : x64_jmp_cond(x64_cond::sign, off) { } };
-struct x64_jns : x64_jmp_cond  { x64_jns(int8_t off)  : x64_jmp_cond(x64_cond::not_sign, off) { } };
-struct x64_je : x64_jmp_cond   { x64_je(int8_t off)   : x64_jmp_cond(x64_cond::equal, off) { } };
-struct x64_jz : x64_jmp_cond   { x64_jz(int8_t off)   : x64_jmp_cond(x64_cond::zero, off) { } };
-struct x64_ne : x64_jmp_cond   { x64_ne(int8_t off)   : x64_jmp_cond(x64_cond::not_equal, off) { } };
-struct x64_nz : x64_jmp_cond   { x64_nz(int8_t off)   : x64_jmp_cond(x64_cond::not_zero, off) { } };
-struct x64_jb : x64_jmp_cond   { x64_jb(int8_t off)   : x64_jmp_cond(x64_cond::below, off) { } };
+struct x64_jo  : x64_jmp_cond  { x64_jo(int8_t off)   : x64_jmp_cond(x64_cond::overflow, off) { } };
+struct x64_jno  : x64_jmp_cond { x64_jno(int8_t off)  : x64_jmp_cond(x64_cond::not_overflow, off) { } };
+struct x64_js   : x64_jmp_cond { x64_js(int8_t off)   : x64_jmp_cond(x64_cond::sign, off) { } };
+struct x64_jns  : x64_jmp_cond { x64_jns(int8_t off)  : x64_jmp_cond(x64_cond::not_sign, off) { } };
+struct x64_je   : x64_jmp_cond { x64_je(int8_t off)   : x64_jmp_cond(x64_cond::equal, off) { } };
+struct x64_jz   : x64_jmp_cond { x64_jz(int8_t off)   : x64_jmp_cond(x64_cond::zero, off) { } };
+struct x64_ne   : x64_jmp_cond { x64_ne(int8_t off)   : x64_jmp_cond(x64_cond::not_equal, off) { } };
+struct x64_nz   : x64_jmp_cond { x64_nz(int8_t off)   : x64_jmp_cond(x64_cond::not_zero, off) { } };
+struct x64_jb   : x64_jmp_cond { x64_jb(int8_t off)   : x64_jmp_cond(x64_cond::below, off) { } };
 struct x64_jnae : x64_jmp_cond { x64_jnae(int8_t off) : x64_jmp_cond(x64_cond::not_above_or_equal, off) { } };
-struct x64_c : x64_jmp_cond    { x64_c(int8_t off)    : x64_jmp_cond(x64_cond::carry, off) { } };
-struct x64_nb : x64_jmp_cond   { x64_nb(int8_t off)   : x64_jmp_cond(x64_cond::not_below, off) { } };
-struct x64_ae : x64_jmp_cond   { x64_ae(int8_t off)   : x64_jmp_cond(x64_cond::above_or_equal, off) { } };
-struct x64_jnc : x64_jmp_cond  { x64_jnc(int8_t off)  : x64_jmp_cond(x64_cond::not_carry, off) { } };
-struct x64_be : x64_jmp_cond   { x64_be(int8_t off)   : x64_jmp_cond(x64_cond::below_or_equal, off) { } };
-struct x64_na : x64_jmp_cond   { x64_na(int8_t off)   : x64_jmp_cond(x64_cond::not_above, off) { } };
-struct x64_ja : x64_jmp_cond   { x64_ja(int8_t off)   : x64_jmp_cond(x64_cond::above, off) { } };
-struct x64_nbe : x64_jmp_cond  { x64_nbe(int8_t off)  : x64_jmp_cond(x64_cond::not_below_or_equal, off) { } };
-struct x64_jl : x64_jmp_cond   { x64_jl(int8_t off)   : x64_jmp_cond(x64_cond::less, off) { } };
+struct x64_c    : x64_jmp_cond { x64_c(int8_t off)    : x64_jmp_cond(x64_cond::carry, off) { } };
+struct x64_nb   : x64_jmp_cond { x64_nb(int8_t off)   : x64_jmp_cond(x64_cond::not_below, off) { } };
+struct x64_ae   : x64_jmp_cond { x64_ae(int8_t off)   : x64_jmp_cond(x64_cond::above_or_equal, off) { } };
+struct x64_jnc  : x64_jmp_cond { x64_jnc(int8_t off)  : x64_jmp_cond(x64_cond::not_carry, off) { } };
+struct x64_be   : x64_jmp_cond { x64_be(int8_t off)   : x64_jmp_cond(x64_cond::below_or_equal, off) { } };
+struct x64_na   : x64_jmp_cond { x64_na(int8_t off)   : x64_jmp_cond(x64_cond::not_above, off) { } };
+struct x64_ja   : x64_jmp_cond { x64_ja(int8_t off)   : x64_jmp_cond(x64_cond::above, off) { } };
+struct x64_nbe  : x64_jmp_cond { x64_nbe(int8_t off)  : x64_jmp_cond(x64_cond::not_below_or_equal, off) { } };
+struct x64_jl   : x64_jmp_cond { x64_jl(int8_t off)   : x64_jmp_cond(x64_cond::less, off) { } };
 struct x64_jnge : x64_jmp_cond { x64_jnge(int8_t off) : x64_jmp_cond(x64_cond::not_greater_or_equal, off) { } };
-struct x64_jge : x64_jmp_cond  { x64_jge(int8_t off)  : x64_jmp_cond(x64_cond::greater_or_equal, off) { } };
-struct x64_jnl : x64_jmp_cond  { x64_jnl(int8_t off)  : x64_jmp_cond(x64_cond::not_less, off) { } };
-struct x64_jle : x64_jmp_cond  { x64_jle(int8_t off)  : x64_jmp_cond(x64_cond::less_or_equal, off) { } };
-struct x64_jng : x64_jmp_cond  { x64_jng(int8_t off)  : x64_jmp_cond(x64_cond::not_greater, off) { } };
-struct x64_jg : x64_jmp_cond   { x64_jg(int8_t off)   : x64_jmp_cond(x64_cond::greater, off) { } };
+struct x64_jge  : x64_jmp_cond { x64_jge(int8_t off)  : x64_jmp_cond(x64_cond::greater_or_equal, off) { } };
+struct x64_jnl  : x64_jmp_cond { x64_jnl(int8_t off)  : x64_jmp_cond(x64_cond::not_less, off) { } };
+struct x64_jle  : x64_jmp_cond { x64_jle(int8_t off)  : x64_jmp_cond(x64_cond::less_or_equal, off) { } };
+struct x64_jng  : x64_jmp_cond { x64_jng(int8_t off)  : x64_jmp_cond(x64_cond::not_greater, off) { } };
+struct x64_jg   : x64_jmp_cond { x64_jg(int8_t off)   : x64_jmp_cond(x64_cond::greater, off) { } };
 struct x64_jnle : x64_jmp_cond { x64_jnle(int8_t off) : x64_jmp_cond(x64_cond::not_less_or_equal, off) { } };
-struct x64_jp : x64_jmp_cond   { x64_jp(int8_t off)   : x64_jmp_cond(x64_cond::parity, off) { } };
-struct x64_jpe : x64_jmp_cond  { x64_jpe(int8_t off)  : x64_jmp_cond(x64_cond::parity_even, off) { } };
-struct x64_jnp : x64_jmp_cond  { x64_jnp(int8_t off)  : x64_jmp_cond(x64_cond::not_parity, off) { } };
-struct x64_jpo : x64_jmp_cond  { x64_jpo(int8_t off)  : x64_jmp_cond(x64_cond::parity_odd, off) { } };
+struct x64_jp   : x64_jmp_cond { x64_jp(int8_t off)   : x64_jmp_cond(x64_cond::parity, off) { } };
+struct x64_jpe  : x64_jmp_cond { x64_jpe(int8_t off)  : x64_jmp_cond(x64_cond::parity_even, off) { } };
+struct x64_jnp  : x64_jmp_cond { x64_jnp(int8_t off)  : x64_jmp_cond(x64_cond::not_parity, off) { } };
+struct x64_jpo  : x64_jmp_cond { x64_jpo(int8_t off)  : x64_jmp_cond(x64_cond::parity_odd, off) { } };
 
 template<uint8_t A, uint8_t B, uint8_t C>
 struct x64_single_op_base : x64_instruction
 {
-	x64_single_op_base(x64_reg8 reg) { single_reg(reg, C, A, 3); }
-	x64_single_op_base(x64_reg16 reg) { single_reg(reg, C, B, 3); }
-	x64_single_op_base(x64_reg32 reg) { single_reg(reg, C, B, 3); }
 	x64_single_op_base(x64_reg64 reg) { single_reg(reg, C, B, 3); }
+	x64_single_op_base(x64_reg32 reg) { single_reg(reg, C, B, 3); }
+	x64_single_op_base(x64_reg16 reg) { single_reg(reg, C, B, 3); }
+	x64_single_op_base(x64_reg8  reg) { single_reg(reg, C, A, 3); }
+	x64_single_op_base(x64_reg8h reg) { single_reg(reg.shift(), C, A, 3); }
 };
 
-struct x64_mul : public x64_single_op_base<0xf6, 0xf7, 4> { using x64_single_op_base::x64_single_op_base; };
+struct x64_mul  : public x64_single_op_base<0xf6, 0xf7, 4> { using x64_single_op_base::x64_single_op_base; };
 struct x64_imul : public x64_single_op_base<0xf6, 0xf7, 5> { using x64_single_op_base::x64_single_op_base; };
-struct x64_div : public x64_single_op_base<0xf6, 0xf7, 6> { using x64_single_op_base::x64_single_op_base; };
+struct x64_div  : public x64_single_op_base<0xf6, 0xf7, 6> { using x64_single_op_base::x64_single_op_base; };
 struct x64_idiv : public x64_single_op_base<0xf6, 0xf7, 7> { using x64_single_op_base::x64_single_op_base; };
-
-struct x64_inc : public x64_single_op_base<0xfe, 0xff, 0> { using x64_single_op_base::x64_single_op_base; };
-struct x64_dec : public x64_single_op_base<0xfe, 0xff, 1> { using x64_single_op_base::x64_single_op_base; };
-struct x64_neg : public x64_single_op_base<0xf6, 0xf7, 3> { using x64_single_op_base::x64_single_op_base; };
+struct x64_inc  : public x64_single_op_base<0xfe, 0xff, 0> { using x64_single_op_base::x64_single_op_base; };
+struct x64_dec  : public x64_single_op_base<0xfe, 0xff, 1> { using x64_single_op_base::x64_single_op_base; };
+struct x64_neg  : public x64_single_op_base<0xf6, 0xf7, 3> { using x64_single_op_base::x64_single_op_base; };
 
 template<uint8_t A>
 struct x64_pushpop : x64_instruction
