@@ -13,7 +13,7 @@
 #include <vector>
 #include <memory>
 
-#include "instructionstream.h"
+#include "../instructionstream.h"
 
 class unit_test_exception : std::exception
 {

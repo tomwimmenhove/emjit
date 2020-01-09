@@ -13,7 +13,7 @@
 #include <functional>
 
 #include "instruction.h"
-#include "autoallocator.h"
+#include "../memory/autoallocator.h"
 
 class instruction_stream
 {

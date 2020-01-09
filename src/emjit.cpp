@@ -9,12 +9,12 @@
 #include <regex>
 #include <vector>
 
-#include "segvcatcher.h"
-#include "autoallocator.h"
-#include "x64instruction.h"
-#include "instructionstream.h"
-#include "x64disassembler.h"
-#include "x64testing.h"
+#include "memory/segvcatcher.h"
+#include "memory/autoallocator.h"
+#include "arch/x64/x64instruction.h"
+#include "arch/x64/x64disassembler.h"
+#include "arch/x64/x64testing.h"
+#include "arch/instructionstream.h"
 
 using namespace std;
 

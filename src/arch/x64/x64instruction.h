@@ -11,7 +11,7 @@
 #include <cstdint>
 #include <array>
 
-#include "instruction.h"
+#include "../instruction.h"
 
 struct x64_reg_base
 {

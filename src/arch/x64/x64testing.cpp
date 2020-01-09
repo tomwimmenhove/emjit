@@ -21,7 +21,7 @@
 #include "x64disassembler.h"
 #include "x64instruction.h"
 
-#include "parser/driver.h"
+#include "../../parser/driver.h"
 
 using namespace std::chrono;
 using namespace std;

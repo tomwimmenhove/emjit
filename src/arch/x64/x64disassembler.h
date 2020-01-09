@@ -8,7 +8,7 @@
 #ifndef X64DISASSEMBLER_H_
 #define X64DISASSEMBLER_H_
 
-#include "instructionstream.h"
+#include "../instructionstream.h"
 
 #include <cstdint>
 #include <string>
