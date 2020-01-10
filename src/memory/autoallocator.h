@@ -15,7 +15,7 @@
 class auto_allocator
 {
 public:
-	auto_allocator(uintptr_t start, size_t len, int prot = PROT_READ | PROT_WRITE);
+	auto_allocator(uintptr_t start, size_t len, int prot = PROT_READ | PROT_WRITE, size_t pre_alloc = 0);
 	virtual ~auto_allocator();
 
 	inline uintptr_t start() { return start_addr; }

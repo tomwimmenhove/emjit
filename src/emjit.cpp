@@ -28,7 +28,7 @@ int main()
 	uintptr_t start = 65536;
 	size_t len = 1024*1024*1024;
 
-	auto allocator = std::make_shared<auto_allocator> (start, len, PROT_READ | PROT_WRITE | PROT_EXEC);
+	auto allocator = std::make_shared<auto_allocator> (start, len, PROT_READ | PROT_WRITE | PROT_EXEC, 4096);
 
 	instruction_stream s(allocator);
 
@@ -53,9 +53,9 @@ int main()
 	cout << x64_disassembler::disassemble(s, "intel", true);
 
 	/* Run it! */
-	//auto res = program();
+	auto res = program();
 
-	//cout << "Result: " << res << '\n';
+	cout << "Result: " << res << '\n';
 
 
 

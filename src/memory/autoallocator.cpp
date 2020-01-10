@@ -15,11 +15,16 @@
 
 using namespace std;
 
-auto_allocator::auto_allocator(uintptr_t start, size_t len, int prot)
+auto_allocator::auto_allocator(uintptr_t start, size_t len, int prot, size_t pre_alloc)
 	: start_addr(start), len(len), prot(prot), psize(getpagesize())
 {
 	segv_catcher::Instance().set_handler(start, len,
 			std::bind(&auto_allocator::handler, this, placeholders::_1));
+
+	for (auto i = start; i < start + pre_alloc; i += psize)
+	{
+		handler(i);
+	}
 }
 
 auto_allocator::~auto_allocator()

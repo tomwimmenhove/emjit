@@ -8,6 +8,8 @@
 #ifndef COMPILER_TAC2X64_H_
 #define COMPILER_TAC2X64_H_
 
+#include <map>
+
 #include "../arch/instructionstream.h"
 #include "../parser/expression.h"
 #include "../arch/x64/x64instruction.h"
@@ -28,9 +30,14 @@ public:
 	{ }
 
 private:
-	used_register dr{ x64_reg32::n, { x64_regs::eax.value, x64_regs::esp.value, x64_regs::ebp.value }};
+	void add_tac_var(const tac_var& var);
+
+	used_register<x64_reg32> dr{ x64_reg32::n, { x64_regs::eax, x64_regs::esp, x64_regs::ebp }};
 
 	instruction_stream& inst_stream;
+
+	void prologue(int32_t stack_size);
+	void epilogue();
 
 	enum variable_type
 	{
@@ -41,16 +48,16 @@ private:
 
 	struct var
 	{
-		var(variable_type type, x64_reg32 reg) : type(type), reg(reg) { }
+		var() { }
+		var(const var&) = default;
 		var(variable_type type, int32_t i) : type(type), i(i) { }
 
-		variable_type type;
-		union
-		{
-			x64_reg32 reg;
-			int32_t i;
-		};
+		variable_type type = variable_type::reg;
+		int32_t i = 0;
 	};
+
+	std::map<int, var> var_map;
+	int stack_pos = 0;
 
 	template<typename T>
 	void stack_to_reg(x64_reg32 dst, int32_t src_offset)
@@ -71,6 +78,57 @@ private:
 	}
 
 	template<typename T>
+	void div(x64_reg32 dst, x64_reg32 divident, x64_reg32 divisor)
+	{
+		/* Careful: order matters! */
+		x64_tmp_reg<x64_reg32> tmp(inst_stream, dr);
+		x64_steal_reg<x64_reg32> steal_edx(inst_stream, dr);
+		x64_steal_reg<x64_reg32> steal_eax(inst_stream, dr);
+
+		int divisor_idx;
+		/* If the divisor is edx, we'll have to use a
+		 * temporary register, because edx should be zero */
+		if (divisor.value == x64_regs::edx.value)
+		{
+			/* Make sure we don't end up with our tmp in edx :) */
+			auto tmp_reg = tmp.take({dst, x64_regs::edx, x64_regs::eax, divident});
+
+			/* Move the divisor into our tmp register */
+			inst_stream << x64_mov(tmp_reg, x64_regs::edx);
+			divisor_idx = tmp_reg.value;
+		}
+		else
+		{
+			/* Otherwise, take edx so that we can safely set it to 0 within this scope*/
+			steal_edx.take(x64_regs::edx, {dst, x64_regs::edx});
+			divisor_idx = divisor.value;
+		}
+
+		/* Zero edx */
+		inst_stream << x64_xor(x64_regs::edx, x64_regs::edx);
+
+		/* Move the divident into eax. Store it if we have to */
+		if (divident.value != x64_regs::eax.value)
+		{
+			if (dst.value != x64_regs::eax.value)
+				steal_eax.take(x64_regs::eax, {dst, x64_regs::eax});
+
+			inst_stream << x64_mov(x64_regs::eax, divident);
+		}
+
+		inst_stream << T(x64_reg32(divisor_idx));
+
+		/* Move the result into the correct register, if not already there */
+		if (dst.value != x64_regs::eax.value)
+			inst_stream << x64_mov(dst, x64_regs::eax);
+
+		/* Do we need to restore edx ? */
+		if (divisor.value == x64_regs::edx.value && dr.is_used(x64_regs::edx))
+			inst_stream << x64_mov(divisor, tmp.reg());
+	}
+
+
+	template<typename T>
 	void src_dest(const var& dst, const var& src)
 	{
 		switch(dst.type)
@@ -85,17 +143,17 @@ private:
 			{
 			/* reg to reg */
 			case variable_type::reg:
-				inst_stream << T(dst.reg, src.reg);
+				inst_stream << T(x64_reg32(dst.i), x64_reg32(src.i));
 				break;
 
 			/* stack to reg */
 			case variable_type::stack:
-				stack_to_reg<T>(dst.reg, src.i);
+				stack_to_reg<T>(x64_reg32(dst.i), src.i);
 				break;
 
 			/* constant to reg */
 			case variable_type::constant:
-				inst_stream << T(dst.reg, src.i);
+				inst_stream << T(x64_reg32(dst.i), src.i);
 				break;
 			}
 			break;
@@ -108,7 +166,7 @@ private:
 			{
 			/* reg to stack */
 			case variable_type::reg:
-				reg_to_stack<T>(dst.i, src.reg);
+				reg_to_stack<T>(dst.i, src.i);
 				break;
 
 			/* stack to stack */

@@ -34,19 +34,24 @@ int tac::add_from_exp(const expression& exp)
 	switch(exp.type)
 	{
 	case expr_type::num:
+		entries.push_back(tac_entry(tac_type::assign, tac_var(varid, exp.num)));
 		cout << exp.num << '\n';
 		break;
 
 	case expr_type::add:
+		entries.push_back(tac_entry(tac_type::add, tac_var(a), tac_var(b)));
 		cout << 't' << a << " + " << 't' << b << '\n';
 		break;
 	case expr_type::sub:
+		entries.push_back(tac_entry(tac_type::sub, tac_var(a), tac_var(b)));
 		cout << 't' << a << " - " << 't' << b << '\n';
 		break;
 	case expr_type::mul:
+		entries.push_back(tac_entry(tac_type::mul, tac_var(a), tac_var(b)));
 		cout << 't' << a << " * " << 't' << b << '\n';
 		break;
 	case expr_type::div:
+		entries.push_back(tac_entry(tac_type::div, tac_var(a), tac_var(b)));
 		cout << 't' << a << " / " << 't' << b << '\n';
 		break;
 
