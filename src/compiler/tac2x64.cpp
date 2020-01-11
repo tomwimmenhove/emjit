@@ -163,6 +163,10 @@ void tac2x64::compile_expression(const tac& t)
 	inst_stream << x64_imul(x64_regs::ebx, x64_regs::r12d);
 	inst_stream << x64_imul(x64_regs::bx, x64_regs::r12w);
 
+	inst_stream << x64_imul(x64_regs::rax, x64_reg_addr(x64_regs::r12));
+
+	inst_stream << x64_imul(x64_regs::rax, x64_reg_addr(x64_regs::r12), 12, x64_sib_scale::s8, 100);
+
 }
 
 
