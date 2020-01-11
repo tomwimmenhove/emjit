@@ -283,7 +283,7 @@ void x64_testing::reg_reg_ptr_idx(string inst_name, instruction_stream& s, std::
 
 				auto shift = (i + j + k) & 3;
 				int scale_fact = 1 << shift;
-				auto inst = C(dst, regptr, regidx, static_cast<sib_scale>(shift));
+				auto inst = C(dst, regptr, regidx, static_cast<x64_sib_scale>(shift));
 
 				stringstream stream;
 
@@ -323,7 +323,7 @@ void x64_testing::reg_ptr_idx_reg(string inst_name, instruction_stream& s, std::
 
 				auto shift = (i + j + k) & 3;
 				int scale_fact = 1 << shift;
-				auto inst = C(regptr, regoff, static_cast<sib_scale>(shift), src);
+				auto inst = C(regptr, regoff, static_cast<x64_sib_scale>(shift), src);
 
 				stringstream stream;
 
@@ -363,7 +363,7 @@ void x64_testing::reg_reg_ptr_idx_off(string inst_name, instruction_stream& s, s
 				W offs = (j + 1) * 999 + (i + 1) * 333 + (k + 1) * 234;
 				auto shift = (i + j + k) & 3;
 				int scale_fact = 1 << shift;
-				auto inst = C(dst, regptr, regidx, static_cast<sib_scale>(shift), offs);
+				auto inst = C(dst, regptr, regidx, static_cast<x64_sib_scale>(shift), offs);
 
 				stringstream stream;
 
@@ -405,7 +405,7 @@ void x64_testing::reg_ptr_idx_off_reg(string inst_name, instruction_stream& s, s
 				V offs = (j + 1) * 999 + (i + 1) * 333 + (k + 1) * 234;
 				auto shift = (i + j + k) & 3;
 				int scale_fact = 1 << shift;
-				auto inst = C(regptr, regoff, static_cast<sib_scale>(shift), offs, src);
+				auto inst = C(regptr, regoff, static_cast<x64_sib_scale>(shift), offs, src);
 
 				stringstream stream;
 
@@ -480,7 +480,7 @@ void x64_testing::jmpcall_regptr_idx(std::string inst_name, instruction_stream& 
 			auto shift = (i + j) & 3;
 			int scale_fact = 1 << shift;
 
-			auto inst = C(T(U(i)), U(j), (sib_scale) shift);
+			auto inst = C(T(U(i)), U(j), (x64_sib_scale) shift);
 			stringstream stream;
 
 			add_to_strinstream(stream, s, inst);
@@ -514,7 +514,7 @@ void x64_testing::jmpcall_regptr_idx_off(std::string inst_name, instruction_stre
 			auto shift = (i + j) & 3;
 			int scale_fact = 1 << shift;
 
-			auto inst = C(T(U(i)), U(j), (sib_scale) shift, off);
+			auto inst = C(T(U(i)), U(j), (x64_sib_scale) shift, off);
 			stringstream stream;
 
 			add_to_strinstream(stream, s, inst);
