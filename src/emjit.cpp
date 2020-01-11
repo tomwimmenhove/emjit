@@ -59,18 +59,18 @@ int main()
 
 
 
-//	x64_testing testing;
-//
-//	try
-//	{
-//		testing.run_tests();
-//	}
-//	catch( const unit_test_exception& ex )
-//	{
-//		cerr << "Unit test failed:\n" << ex.what() << '\n' << flush;
-//
-//		return 1;
-//	}
+	x64_testing testing;
+
+	try
+	{
+		testing.run_tests();
+	}
+	catch( const unit_test_exception& ex )
+	{
+		cerr << "Unit test failed:\n" << ex.what() << '\n' << flush;
+
+		return 1;
+	}
 
 	return 0;
 
