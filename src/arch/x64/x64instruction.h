@@ -1166,12 +1166,35 @@ struct x64_single_op_base : x64_instruction
 };
 
 struct x64_mul  : public x64_single_op_base<0xf6, 0xf7, 4> { using x64_single_op_base::x64_single_op_base; };
-struct x64_imul : public x64_single_op_base<0xf6, 0xf7, 5> { using x64_single_op_base::x64_single_op_base; };
+//struct x64_imul : public x64_single_op_base<0xf6, 0xf7, 5> { using x64_single_op_base::x64_single_op_base; };
 struct x64_div  : public x64_single_op_base<0xf6, 0xf7, 6> { using x64_single_op_base::x64_single_op_base; };
 struct x64_idiv : public x64_single_op_base<0xf6, 0xf7, 7> { using x64_single_op_base::x64_single_op_base; };
 struct x64_inc  : public x64_single_op_base<0xfe, 0xff, 0> { using x64_single_op_base::x64_single_op_base; };
 struct x64_dec  : public x64_single_op_base<0xfe, 0xff, 1> { using x64_single_op_base::x64_single_op_base; };
 struct x64_neg  : public x64_single_op_base<0xf6, 0xf7, 3> { using x64_single_op_base::x64_single_op_base; };
+
+struct x64_imul : public x64_instruction
+{
+	x64_imul(x64_reg64 reg) { single_reg(reg, 5, 0xf7, 3); }
+	x64_imul(x64_reg32 reg) { single_reg(reg, 5, 0xf7, 3); }
+	x64_imul(x64_reg16 reg) { single_reg(reg, 5, 0xf7, 3); }
+	x64_imul(x64_reg8  reg) { single_reg(reg, 5, 0xf6, 3); }
+	x64_imul(x64_reg8h reg) { single_reg(reg.shift(), 5, 0xf6, 3); }
+
+	x64_imul(x64_reg64 dst, x64_reg64 src) { reg_reg0f(src, dst, 0xaf); }
+	x64_imul(x64_reg32 dst, x64_reg32 src) { reg_reg0f(src, dst, 0xaf); }
+	x64_imul(x64_reg16 dst, x64_reg16 src) { reg_reg0f(src, dst, 0xaf); }
+
+private:
+	template<typename T>
+	void reg_reg0f(T a, T b, uint8_t oc)
+	{
+		add_prefixes(a, b);
+		add_opcode(0x0f);
+		reg_reg_oc_mod(a, b, oc, 3);
+	}
+
+};
 
 template<uint8_t A>
 struct x64_pushpop : x64_instruction

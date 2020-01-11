@@ -153,6 +153,16 @@ void tac2x64::compile_expression(const tac& t)
 	inst_stream << x64_ret();
 
 	cout << "bla: " << div_fn(42 * 3, 3) << '\n';
+
+
+	inst_stream << x64_imul(x64_regs::rbx, x64_regs::rcx);
+	inst_stream << x64_imul(x64_regs::ebx, x64_regs::ecx);
+	inst_stream << x64_imul(x64_regs::bx, x64_regs::cx);
+
+	inst_stream << x64_imul(x64_regs::rbx, x64_regs::r12);
+	inst_stream << x64_imul(x64_regs::ebx, x64_regs::r12d);
+	inst_stream << x64_imul(x64_regs::bx, x64_regs::r12w);
+
 }
 
 
