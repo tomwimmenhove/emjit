@@ -40,7 +40,7 @@ int main()
 	drv.parse ("src/parser/parseme.txt");
 
 	/* Get the entry point */
-	auto program = s.entry_point<int()>();
+	auto program = s.entry_point<int(int, int)>();
 
 	/* Convert the expression into TAC */
 	tac t(drv.expression_result);
@@ -53,24 +53,24 @@ int main()
 	cout << x64_disassembler::disassemble(s, "intel", true);
 
 	/* Run it! */
-	auto res = program();
+	auto res = program(42, 10);
 
 	cout << "Result: " << res << '\n';
 
 
 
-	x64_testing testing;
-
-	try
-	{
-		testing.run_tests();
-	}
-	catch( const unit_test_exception& ex )
-	{
-		cerr << "Unit test failed:\n" << ex.what() << '\n' << flush;
-
-		return 1;
-	}
+//	x64_testing testing;
+//
+//	try
+//	{
+//		testing.run_tests();
+//	}
+//	catch( const unit_test_exception& ex )
+//	{
+//		cerr << "Unit test failed:\n" << ex.what() << '\n' << flush;
+//
+//		return 1;
+//	}
 
 	return 0;
 

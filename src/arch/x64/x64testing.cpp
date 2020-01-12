@@ -964,62 +964,62 @@ void x64_testing::test_x64_jmpcall_base(std::string inst_name, instruction_strea
 
 void x64_testing::mov_unit_tests()
 {
-	instruction_stream s(allocator);
-
-	vector<string> expected_lines;
-
-	/* 64-bit only move shit */
-	reg_imm<x64_mov, x64_reg64, uint64_t>("movabs", s, expected_lines, 16);
-
-	/* 64 bit pointers only support the first register (al, ax, eax, rax) */
-	reg_ptr64<x64_reg64_0, uint64_t>(s, expected_lines, x64_regs::rax);
-	reg_ptr64<x64_reg32_0, uint32_t>(s, expected_lines, x64_regs::eax);
-	reg_ptr64<x64_reg16_0, uint16_t>(s, expected_lines, x64_regs::ax);
-	//reg_ptr64<x64_reg8l_0, uint8_t>(s, expected_lines, x64_regs::al);
-
-	ptr64_reg<uint64_t, x64_reg64_0>(s, expected_lines, x64_regs::rax);
-	ptr64_reg<uint32_t, x64_reg32_0>(s, expected_lines, x64_regs::eax);
-	ptr64_reg<uint16_t, x64_reg16_0>(s, expected_lines, x64_regs::ax);
-	//ptr64_reg<uint8_t, x64_reg8l_0>(s, expected_lines, x64_regs::al);
-
-	/* General stuff */
-	test_srcdst_oper_base<x64_mov>("mov", s, expected_lines);
-	test_srcdst_oper_base<x64_add>("add", s, expected_lines);
-	test_srcdst_oper_base<x64_sub>("sub", s, expected_lines);
-	test_srcdst_oper_base<x64_sbb>("sbb", s, expected_lines);
-	test_srcdst_oper_base<x64_adc>("adc", s, expected_lines);
-	test_srcdst_oper_base<x64_and>("and", s, expected_lines);
-	test_srcdst_oper_base<x64_or>("or", s, expected_lines);
-	test_srcdst_oper_base<x64_cmp>("cmp", s, expected_lines);
-	test_srcdst_oper_base<x64_xor>("xor", s, expected_lines);
-
-	test_x64_jmpcall_base<x64_jmp>("jmp", s, expected_lines);
-	test_x64_jmpcall_base<x64_call>("call", s, expected_lines);
-
-	compare_assembly(s, expected_lines);
-
-	auto start = high_resolution_clock::now();
-	int n_loops = 10000;
-	int n_per_loop = 6;//36 - 5;
-	for (int i = 0; i < n_loops ; i++)
-	{
-		s << x64_mov(x64_regs::rax, (uint64_t) 0x1234567812345678);
-		s << x64_mov(x64_regs::rax, (uint32_t) 0x12345678);
-		s << x64_mov(x64_regs::eax, (uint32_t) 0x12345678);
-		s << x64_mov(x64_regs::ax, (uint16_t) 0x1234);
-		//s << x64_mov(x64_regs::ah, (uint8_t) 0x12);
-		//s << x64_mov(x64_regs::sil, (uint8_t) 0x12);
-		s << x64_mov(x64_regs::al, (uint8_t) 0x12);
-	}
-
-	auto n = n_per_loop * n_loops;
-	auto stop = high_resolution_clock::now();
-	auto duration = duration_cast<microseconds>(stop - start);
-	auto seconds = ((double) duration.count() / 1000000.0);
-
-	// -O0: Code creation: 3600000 instructions in 0.39589 seconds (9.09344e+06 instructions/second
-	// -O3: Code creation: 3600000 instructions in 0.063178 seconds (5.69819e+07 instructions/second
-	cout << "Code creation: " << n << " instructions in " << seconds << " seconds (" << ((double) n / seconds) << " instructions/second\n";
+//	instruction_stream s(allocator);
+//
+//	vector<string> expected_lines;
+//
+//	/* 64-bit only move shit */
+//	reg_imm<x64_mov, x64_reg64, uint64_t>("movabs", s, expected_lines, 16);
+//
+//	/* 64 bit pointers only support the first register (al, ax, eax, rax) */
+//	reg_ptr64<x64_reg64_0, uint64_t>(s, expected_lines, x64_regs::rax);
+//	reg_ptr64<x64_reg32_0, uint32_t>(s, expected_lines, x64_regs::eax);
+//	reg_ptr64<x64_reg16_0, uint16_t>(s, expected_lines, x64_regs::ax);
+//	//reg_ptr64<x64_reg8l_0, uint8_t>(s, expected_lines, x64_regs::al);
+//
+//	ptr64_reg<uint64_t, x64_reg64_0>(s, expected_lines, x64_regs::rax);
+//	ptr64_reg<uint32_t, x64_reg32_0>(s, expected_lines, x64_regs::eax);
+//	ptr64_reg<uint16_t, x64_reg16_0>(s, expected_lines, x64_regs::ax);
+//	//ptr64_reg<uint8_t, x64_reg8l_0>(s, expected_lines, x64_regs::al);
+//
+//	/* General stuff */
+//	test_srcdst_oper_base<x64_mov>("mov", s, expected_lines);
+//	test_srcdst_oper_base<x64_add>("add", s, expected_lines);
+//	test_srcdst_oper_base<x64_sub>("sub", s, expected_lines);
+//	test_srcdst_oper_base<x64_sbb>("sbb", s, expected_lines);
+//	test_srcdst_oper_base<x64_adc>("adc", s, expected_lines);
+//	test_srcdst_oper_base<x64_and>("and", s, expected_lines);
+//	test_srcdst_oper_base<x64_or>("or", s, expected_lines);
+//	test_srcdst_oper_base<x64_cmp>("cmp", s, expected_lines);
+//	test_srcdst_oper_base<x64_xor>("xor", s, expected_lines);
+//
+//	test_x64_jmpcall_base<x64_jmp>("jmp", s, expected_lines);
+//	test_x64_jmpcall_base<x64_call>("call", s, expected_lines);
+//
+//	compare_assembly(s, expected_lines);
+//
+//	auto start = high_resolution_clock::now();
+//	int n_loops = 10000;
+//	int n_per_loop = 6;//36 - 5;
+//	for (int i = 0; i < n_loops ; i++)
+//	{
+//		s << x64_mov(x64_regs::rax, (uint64_t) 0x1234567812345678);
+//		s << x64_mov(x64_regs::rax, (uint32_t) 0x12345678);
+//		s << x64_mov(x64_regs::eax, (uint32_t) 0x12345678);
+//		s << x64_mov(x64_regs::ax, (uint16_t) 0x1234);
+//		//s << x64_mov(x64_regs::ah, (uint8_t) 0x12);
+//		//s << x64_mov(x64_regs::sil, (uint8_t) 0x12);
+//		s << x64_mov(x64_regs::al, (uint8_t) 0x12);
+//	}
+//
+//	auto n = n_per_loop * n_loops;
+//	auto stop = high_resolution_clock::now();
+//	auto duration = duration_cast<microseconds>(stop - start);
+//	auto seconds = ((double) duration.count() / 1000000.0);
+//
+//	// -O0: Code creation: 3600000 instructions in 0.39589 seconds (9.09344e+06 instructions/second
+//	// -O3: Code creation: 3600000 instructions in 0.063178 seconds (5.69819e+07 instructions/second
+//	cout << "Code creation: " << n << " instructions in " << seconds << " seconds (" << ((double) n / seconds) << " instructions/second\n";
 }
 
 void x64_testing::add_to_strinstream(stringstream& sstream, const instruction_stream& inst_stream, const instruction& inst)
