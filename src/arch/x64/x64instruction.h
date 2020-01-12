@@ -257,58 +257,55 @@ struct x64_sib
 
 } __attribute__((packed));
 
-template<typename T>
-struct x64_addr_ptr
-{
-	constexpr x64_addr_ptr(const T& ptr) : ptr(ptr) { }
-	const T ptr;
-};
-
-struct x64_reg_ptr32    : public x64_addr_ptr<x64_reg32>
-{
-	using x64_addr_ptr::x64_addr_ptr;
-	using reg_type = x64_reg32;
-};
-
-struct x64_reg_ptr64    : public x64_addr_ptr<x64_reg64>
-{
-	using x64_addr_ptr::x64_addr_ptr;
-	using reg_type = x64_reg64;
-};
-
-static constexpr x64_reg_ptr32  x64_reg_addr(const x64_reg32& reg) { return x64_reg_ptr32(reg); }
-static constexpr x64_reg_ptr64  x64_reg_addr(const x64_reg64& reg) { return x64_reg_ptr64(reg); }
-
 class x64_address
 {
 public:
-	x64_address(x64_addr_ptr<int32_t> addr) : address_size(sizeof(addr.ptr)), imm_addr(addr.ptr) { }
+	explicit x64_address(int32_t  addr) : addr_size(sizeof(addr)), imm_addr(addr) { }
+	explicit x64_address(x64_reg64 addr) : addr_reg(addr.value), addr_size(sizeof(x64_reg64::value_type)) { }
+	explicit x64_address(x64_reg32 addr) : addr_reg(addr.value), addr_size(sizeof(x64_reg32::value_type)) { }
+	explicit x64_address(x64_reg64 addr, int8_t  offset) : addr_reg(addr.value), addr_size(sizeof(x64_reg64::value_type)), offs(offset), offs_size(sizeof(offset)) { }
+	explicit x64_address(x64_reg32 addr, int8_t  offset) : addr_reg(addr.value), addr_size(sizeof(x64_reg32::value_type)), offs(offset), offs_size(sizeof(offset)) { }
+	explicit x64_address(x64_reg64 addr, int32_t offset) : addr_reg(addr.value), addr_size(sizeof(x64_reg64::value_type)), offs(offset), offs_size(sizeof(offset)) { }
+	explicit x64_address(x64_reg32 addr, int32_t offset) : addr_reg(addr.value), addr_size(sizeof(x64_reg32::value_type)), offs(offset), offs_size(sizeof(offset)) { }
+	explicit x64_address(x64_reg64 addr, x64_reg64 index, int8_t  offset) : addr_reg(addr.value), addr_size(sizeof(x64_reg64::value_type)), idx_reg(index.value), offs(offset), offs_size(sizeof(offset)) { }
+	explicit x64_address(x64_reg32 addr, x64_reg32 index, int8_t  offset) : addr_reg(addr.value), addr_size(sizeof(x64_reg32::value_type)), idx_reg(index.value), offs(offset), offs_size(sizeof(offset)) { }
+	explicit x64_address(x64_reg64 addr, x64_reg64 index, int32_t offset) : addr_reg(addr.value), addr_size(sizeof(x64_reg64::value_type)), idx_reg(index.value), offs(offset), offs_size(sizeof(offset)) { }
+	explicit x64_address(x64_reg32 addr, x64_reg32 index, int32_t offset) : addr_reg(addr.value), addr_size(sizeof(x64_reg32::value_type)), idx_reg(index.value), offs(offset), offs_size(sizeof(offset)) { }
+	explicit x64_address(x64_reg64 addr, x64_reg64 index, x64_sib_scale scale = x64_sib_scale::s1) : addr_reg(addr.value), addr_size(sizeof(x64_reg64::value_type)), idx_reg(index.value), scl(scale) { }
+	explicit x64_address(x64_reg32 addr, x64_reg32 index, x64_sib_scale scale = x64_sib_scale::s1) : addr_reg(addr.value), addr_size(sizeof(x64_reg32::value_type)), idx_reg(index.value), scl(scale) { }
+	explicit x64_address(x64_reg64 addr, x64_reg64 index, x64_sib_scale scale, int8_t  offset) : addr_reg(addr.value), addr_size(sizeof(x64_reg64::value_type)), idx_reg(index.value), scl(scale), offs(offset), offs_size(sizeof(offset)) { }
+	explicit x64_address(x64_reg32 addr, x64_reg32 index, x64_sib_scale scale, int8_t  offset) : addr_reg(addr.value), addr_size(sizeof(x64_reg32::value_type)), idx_reg(index.value), scl(scale), offs(offset), offs_size(sizeof(offset)) { }
+	explicit x64_address(x64_reg64 addr, x64_reg64 index, x64_sib_scale scale, int32_t offset) : addr_reg(addr.value), addr_size(sizeof(x64_reg64::value_type)), idx_reg(index.value), scl(scale), offs(offset), offs_size(sizeof(offset)) { }
+	explicit x64_address(x64_reg32 addr, x64_reg32 index, x64_sib_scale scale, int32_t offset) : addr_reg(addr.value), addr_size(sizeof(x64_reg32::value_type)), idx_reg(index.value), scl(scale), offs(offset), offs_size(sizeof(offset)) { }
 
-	x64_address(x64_reg_ptr64 addr) : addr_reg(addr.ptr.value), address_size(sizeof(addr.ptr)) { }
-	x64_address(x64_reg_ptr32 addr) : addr_reg(addr.ptr.value), address_size(sizeof(addr.ptr)) { }
+	inline bool is_immediate() const { return idx_reg == -1; }
+	inline int32_t immediate() const { return imm_addr; }
 
-	x64_address(x64_reg_ptr64 addr, int8_t  offset) : addr_reg(addr.ptr.value), address_size(sizeof(addr.ptr)), offset(offset), offset_size(sizeof(offset)) { }
-	x64_address(x64_reg_ptr32 addr, int8_t  offset) : addr_reg(addr.ptr.value), address_size(sizeof(addr.ptr)), offset(offset), offset_size(sizeof(offset)) { }
-	x64_address(x64_reg_ptr64 addr, int32_t offset) : addr_reg(addr.ptr.value), address_size(sizeof(addr.ptr)), offset(offset), offset_size(sizeof(offset)) { }
-	x64_address(x64_reg_ptr32 addr, int32_t offset) : addr_reg(addr.ptr.value), address_size(sizeof(addr.ptr)), offset(offset), offset_size(sizeof(offset)) { }
+	inline x64_reg_base_normal adddress_reg() const { return x64_reg_base_normal(addr_reg); };
+	inline x64_reg32 adddress_reg32() const { return x64_reg32(addr_reg); };
+	inline x64_reg64 adddress_reg64() const { return x64_reg64(addr_reg); };
 
-	x64_address(x64_reg_ptr64 addr, x64_reg64 index, x64_sib_scale scale)                 : addr_reg(addr.ptr.value), address_size(sizeof(addr.ptr)), index_reg(index.value), scale(scale) { }
-	x64_address(x64_reg_ptr32 addr, x64_reg32 index, x64_sib_scale scale)                 : addr_reg(addr.ptr.value), address_size(sizeof(addr.ptr)), index_reg(index.value), scale(scale) { }
-	x64_address(x64_reg_ptr64 addr, x64_reg64 index, x64_sib_scale scale, int8_t  offset) : addr_reg(addr.ptr.value), address_size(sizeof(addr.ptr)), index_reg(index.value), scale(scale), offset(offset), offset_size(sizeof(offset)) { }
-	x64_address(x64_reg_ptr32 addr, x64_reg32 index, x64_sib_scale scale, int8_t  offset) : addr_reg(addr.ptr.value), address_size(sizeof(addr.ptr)), index_reg(index.value), scale(scale), offset(offset), offset_size(sizeof(offset)) { }
-	x64_address(x64_reg_ptr64 addr, x64_reg64 index, x64_sib_scale scale, int32_t offset) : addr_reg(addr.ptr.value), address_size(sizeof(addr.ptr)), index_reg(index.value), scale(scale), offset(offset), offset_size(sizeof(offset)) { }
-	x64_address(x64_reg_ptr32 addr, x64_reg32 index, x64_sib_scale scale, int32_t offset) : addr_reg(addr.ptr.value), address_size(sizeof(addr.ptr)), index_reg(index.value), scale(scale), offset(offset), offset_size(sizeof(offset)) { }
+	inline int address_size() const { return addr_size; }
 
-	inline bool has_index() { return index_reg != -1; }
-	//inline
+	inline bool has_index() const { return idx_reg != -1; }
 
+	inline x64_reg_base_normal index_reg() const { return x64_reg_base_normal(idx_reg); };
+	inline x64_reg32 index_reg32() const { return x64_reg32(idx_reg); };
+	inline x64_reg64 index_reg64() const { return x64_reg64(idx_reg); };
+	
+	inline x64_sib_scale scale() const { return scl; }
+	
+	inline bool has_offset() const { return offs_size != 0; }
+	inline int offset_size() const { return offs_size; }
+	inline int32_t offset() const { return offs; }
+	
 private:
-	int addr_reg = 0;
-	int address_size;
-	int index_reg = -1;
-	x64_sib_scale scale = x64_sib_scale::s1;
-	int32_t offset = 0;
-	int offset_size = 0;
+	int addr_reg = -1;
+	int addr_size;
+	int idx_reg = -1;
+	x64_sib_scale scl = x64_sib_scale::s1;
+	int32_t offs = 0;
+	int offs_size = 0;
 	int32_t imm_addr = 0;
 };
 
@@ -468,10 +465,14 @@ public:
 	 : has_modrm(true), has_sib(true), sib(s)
 	{ }
 
-	template<typename IMM_TYPE>
-	x64_instruction(IMM_TYPE imm)
-	 : imm_size(sizeof(IMM_TYPE)), imm64(static_cast<uint64_t>(from_or_to_little(imm)))
-	{ }
+	x64_instruction(uint8_t  imm) : imm_size(sizeof(uint8_t)),  imm64(static_cast<uint64_t>(from_or_to_little(imm))) { }
+	x64_instruction(uint16_t imm) : imm_size(sizeof(uint16_t)), imm64(static_cast<uint64_t>(from_or_to_little(imm))) { }
+	x64_instruction(uint32_t imm) : imm_size(sizeof(uint32_t)), imm64(static_cast<uint64_t>(from_or_to_little(imm))) { }
+	x64_instruction(uint64_t imm) : imm_size(sizeof(uint64_t)), imm64(static_cast<uint64_t>(from_or_to_little(imm))) { }
+	x64_instruction(int8_t   imm) : imm_size(sizeof(int8_t)),   imm64(static_cast<uint64_t>(from_or_to_little(imm))) { }
+	x64_instruction(int16_t  imm) : imm_size(sizeof(int16_t)),  imm64(static_cast<uint64_t>(from_or_to_little(imm))) { }
+	x64_instruction(int32_t  imm) : imm_size(sizeof(int32_t)),  imm64(static_cast<uint64_t>(from_or_to_little(imm))) { }
+	x64_instruction(int64_t  imm) : imm_size(sizeof(int64_t)),  imm64(static_cast<uint64_t>(from_or_to_little(imm))) { }
 
 	inline std::size_t size() const override
 	{
@@ -580,18 +581,85 @@ protected:
 		if (a.add_rex() || b.add_rex() || c.add_rex())
 			rex |= x64_rex::rex;
 
-		if (rex)
-			add_opcode(rex);
+		if (rex) add_opcode(rex);
 	}
 	template<typename T, typename U>
 	inline void x64_add_rex(const T& a, const U& b, size_t oper_size = sizeof(int32_t))
 	{ x64_add_rex(a, T(0), b, oper_size); }
 
 	template<typename T>
-	void single_regptr(const x64_addr_ptr<T>& reg, uint8_t b, std::initializer_list<uint8_t> oc, uint8_t mod)
+	void set_x64_reg_address(T reg, const x64_address& address, std::initializer_list<uint8_t> oc)
 	{
-		x64_add_rex(reg.ptr, x64_reg32(0));
-		reg_reg_oc_mod(reg.ptr, x64_reg32(b), oc, mod);
+		/* Add prefixes */
+		if (address.address_size() == sizeof(uint32_t))
+			add_opcode(x64_override::addr_size);
+
+		if (sizeof(typename T::value_type) == sizeof(uint16_t))
+			add_opcode(x64_override::oper_size);
+
+		x64_add_rex(address.adddress_reg(), address.index_reg(), reg, sizeof(typename T::value_type));
+
+		/* Set the opcode */
+		add_opcode(oc);
+
+		/* Get the offset and it's size */
+		int32_t offset;
+		int offset_size;
+		bool use_offset = address.has_offset();
+		if (use_offset)
+		{
+			offset = address.offset();
+			offset_size = address.offset_size();
+		}
+		else if (address.adddress_reg().is_bp() || address.adddress_reg().is_r13())
+		{
+			/* rbp and r13 can't be encoded without an offset */
+			use_offset = true;
+			offset = 0;
+			offset_size = sizeof(int8_t);
+		}
+
+		/* Set the Mod-field according to the presence and size of the immediate offset */
+		uint8_t mod = 0;
+		if (use_offset)
+		{
+			if (offset_size == sizeof(int8_t))
+			{
+				mod = 1;
+				set_imm(static_cast<int8_t>(offset));
+			}
+			else
+			{
+				mod = 2;
+				set_imm(offset);
+			}
+		}
+
+		if (address.has_index())
+		{
+			if (address.index_reg().is_sp())
+				throw std::invalid_argument("Stack pointer cannot be used as index register");
+
+			/* Encode address and index register in the SIB byte */
+			set_modrm(x64_modrm{4, reg, mod});
+			set_sib(x64_sib(address.adddress_reg(), address.index_reg(), address.scale()));
+		}
+		else
+		{
+			/* If the instruction has no index register, we can
+			 * encode address and index register in the ModRM byte */
+			set_modrm(x64_modrm{address.adddress_reg(), reg, mod});
+
+			/* Mandatory SIB byte for rsp and r12 */
+			if (address.adddress_reg().is_sp() || address.adddress_reg().is_r12())
+				set_sib(0x24);
+		}
+	}
+
+	void single_reg64(const x64_reg64& reg, uint8_t b, std::initializer_list<uint8_t> oc, uint8_t mod)
+	{
+		x64_add_rex(reg, x64_reg32(0));
+		reg_reg_oc_mod(reg, x64_reg32(b), oc, mod);
 	}
 
 	template<typename T>
@@ -601,89 +669,11 @@ protected:
 		reg_reg_oc_mod(reg, x64_reg32(b), oc, mod);
 	}
 
-	template<typename T, typename U>
-	void reg_reg_ptr(const T& a, const x64_addr_ptr<U>& b, std::initializer_list<uint8_t> oc)
-	{
-		/*
-		 * %sp, %r12 and %bp, r13 require some special treatment.
-		 * See: https://stackoverflow.com/questions/36529449/why-are-rbp-and-rsp-called-general-purpose-registers
-		 */
-
-		/* %bp and %r12 can only be used with a zero-offset */
-		if (b.ptr.is_bp() || b.ptr.is_r13())
-		{
-			reg_reg_ptr_off(a, b, oc, 1, static_cast<uint8_t>(0));
-			return;
-		}
-
-		add_prefixes(a, b);
-		reg_reg_oc_mod(b.ptr, a, oc, 0);
-
-		/* %sp and %r12 always require a 0x24 sib byte. See stackoverflow link above */
-		if (b.ptr.is_sp() || b.ptr.is_r12())
-			set_sib(0x24);
-	}
-
-	template<typename T, typename U, typename W>
-	void reg_reg_ptr_off(const T& a, const x64_addr_ptr<U>& b, std::initializer_list<uint8_t> oc, int mod, W imm)
-	{
-		add_prefixes(a, b);
-		reg_reg_oc_mod(b.ptr, a, oc, mod);
-
-		if (b.ptr.is_sp() || b.ptr.is_r12())
-			set_sib(0x24);
-
-		set_imm(imm);
-	}
-
 	template<typename T>
 	void reg_reg(T a, T b, std::initializer_list<uint8_t> oc)
 	{
 		add_prefixes(a, b);
 		reg_reg_oc_mod(a, b, oc, 3);
-	}
-
-	template<typename T, typename U>
-	void reg_reg_ptr_idx(const T& a, const x64_addr_ptr<U>& b, const U& c, x64_sib_scale scale, std::initializer_list<uint8_t> oc)
-	{
-		if (c.is_sp())
-			throw std::invalid_argument("Stack pointer cannot be used as index register");
-
-		if (b.ptr.is_bp() || b.ptr.is_r13())
-		{
-			reg_reg_ptr_idx_off(a, b, c, scale, static_cast<int8_t>(0), oc, 1);
-			return;
-		}
-
-		add_prefixes(a, b, c);
-		add_opcode(oc);
-		set_modrm(x64_modrm{4, a, 0});
-		set_sib(x64_sib(b.ptr, c, scale));
-	}
-
-	template<typename T, typename U, typename V>
-	void reg_reg_ptr_idx_off(const T& a, const x64_addr_ptr<U>& b, const U& c, x64_sib_scale scale, V off, std::initializer_list<uint8_t> oc, int mod)
-	{
-		if (c.is_sp())
-			throw std::invalid_argument("Stack pointer cannot be used as index register");
-
-		add_prefixes(a, b, c);
-		add_opcode(oc);
-		set_modrm(x64_modrm{4, a, mod});
-		set_sib(x64_sib(b.ptr, c, scale));
-		set_imm(off);
-	}
-
-	template<typename T, typename U>
-	inline void add_prefixes(const T& a, const x64_addr_ptr<U>& b, const U& c = U(0))
-	{
-		if (sizeof(typename U::value_type) == sizeof(uint32_t))
-			add_opcode(x64_override::addr_size);
-
-		if (sizeof(typename T::value_type) == sizeof(uint16_t))
-			add_opcode(x64_override::oper_size);
-
-		x64_add_rex(b.ptr, c, a, sizeof(typename T::value_type));
 	}
 
 	template<typename T>
@@ -720,16 +710,6 @@ protected:
 		add_prefixes(reg, T(0));
 		add_opcode(oc);
 		set_imm(imm);
-	}
-
-	template<typename T, typename U>
-	void reg_imm_addr(T reg, x64_addr_ptr<U> addr, std::initializer_list<uint8_t> oc)
-	{
-		add_prefixes(T(0), reg);
-		add_opcode(oc);
-		set_modrm(x64_modrm(4, reg, 0));
-		set_sib(0x25);
-		set_imm(addr.ptr);
 	}
 
 #if __BYTE_ORDER == __LITTLE_ENDIAN
@@ -780,205 +760,33 @@ private:
 };
 
 template<uint8_t A, uint8_t B, uint8_t C, uint8_t D, uint8_t... Prefixes>
-class x64_src_regdst_oper_base : public x64_instruction
+class x64_srcdst_oper_base : public x64_instruction
 {
 public:
 	using x64_instruction::x64_instruction;
 
 	/* register into register */
-	x64_src_regdst_oper_base(x64_reg64 dst, x64_reg64 src) { reg_reg(dst, src, {std::forward<uint8_t>(Prefixes)..., B}); }
-	x64_src_regdst_oper_base(x64_reg32 dst, x64_reg32 src) { reg_reg(dst, src, {std::forward<uint8_t>(Prefixes)..., B}); }
-	x64_src_regdst_oper_base(x64_reg16 dst, x64_reg16 src) { reg_reg(dst, src, {std::forward<uint8_t>(Prefixes)..., B}); }
-	x64_src_regdst_oper_base(x64_reg8  dst, x64_reg8  src) { reg_reg(dst, src, {std::forward<uint8_t>(Prefixes)..., A}); }
-	x64_src_regdst_oper_base(x64_reg8h dst, x64_reg8  src) { if (src.add_rex()) throw no_rex_exception(dst) ; reg_reg(dst.shift(), x64_reg8h(src), {std::forward<uint8_t>(Prefixes)..., A}); }
-	x64_src_regdst_oper_base(x64_reg8  dst, x64_reg8h src) { if (dst.add_rex()) throw no_rex_exception(src) ; reg_reg(x64_reg8h(dst), src.shift(), {std::forward<uint8_t>(Prefixes)..., A}); }
-	x64_src_regdst_oper_base(x64_reg8h dst, x64_reg8h src) { reg_reg(dst.shift(), src.shift(), {std::forward<uint8_t>(Prefixes)..., A}); }
+	x64_srcdst_oper_base(x64_reg64 dst, x64_reg64 src) { reg_reg(dst, src, {std::forward<uint8_t>(Prefixes)..., B}); }
+	x64_srcdst_oper_base(x64_reg32 dst, x64_reg32 src) { reg_reg(dst, src, {std::forward<uint8_t>(Prefixes)..., B}); }
+	x64_srcdst_oper_base(x64_reg16 dst, x64_reg16 src) { reg_reg(dst, src, {std::forward<uint8_t>(Prefixes)..., B}); }
+	x64_srcdst_oper_base(x64_reg8  dst, x64_reg8  src) { reg_reg(dst, src, {std::forward<uint8_t>(Prefixes)..., A}); }
+	x64_srcdst_oper_base(x64_reg8h dst, x64_reg8  src) { if (src.add_rex()) throw no_rex_exception(dst) ; reg_reg(dst.shift(), x64_reg8h(src), {std::forward<uint8_t>(Prefixes)..., A}); }
+	x64_srcdst_oper_base(x64_reg8  dst, x64_reg8h src) { if (dst.add_rex()) throw no_rex_exception(src) ; reg_reg(x64_reg8h(dst), src.shift(), {std::forward<uint8_t>(Prefixes)..., A}); }
+	x64_srcdst_oper_base(x64_reg8h dst, x64_reg8h src) { reg_reg(dst.shift(), src.shift(), {std::forward<uint8_t>(Prefixes)..., A}); }
 
-	/* register pointer into register */
-	x64_src_regdst_oper_base(x64_reg64 reg, x64_reg_ptr64 addr) { reg_reg_ptr(reg, addr, {std::forward<uint8_t>(Prefixes)..., D}); }
-	x64_src_regdst_oper_base(x64_reg32 reg, x64_reg_ptr64 addr) { reg_reg_ptr(reg, addr, {std::forward<uint8_t>(Prefixes)..., D}); }
-	x64_src_regdst_oper_base(x64_reg16 reg, x64_reg_ptr64 addr) { reg_reg_ptr(reg, addr, {std::forward<uint8_t>(Prefixes)..., D}); }
-	x64_src_regdst_oper_base(x64_reg8  reg, x64_reg_ptr64 addr) { reg_reg_ptr(reg, addr, {std::forward<uint8_t>(Prefixes)..., C}); }
-	x64_src_regdst_oper_base(x64_reg8h reg, x64_reg_ptr64 addr) { reg_reg_ptr(reg.shift(), addr, {std::forward<uint8_t>(Prefixes)..., C}); }
+	/* memory into register */
+	x64_srcdst_oper_base(x64_reg64 dst, const x64_address& src) { set_x64_reg_address(dst, src, {std::forward<uint8_t>(Prefixes)..., D}); }
+	x64_srcdst_oper_base(x64_reg32 dst, const x64_address& src) { set_x64_reg_address(dst, src, {std::forward<uint8_t>(Prefixes)..., D}); }
+	x64_srcdst_oper_base(x64_reg16 dst, const x64_address& src) { set_x64_reg_address(dst, src, {std::forward<uint8_t>(Prefixes)..., D}); }
+	x64_srcdst_oper_base(x64_reg8  dst, const x64_address& src) { set_x64_reg_address(dst, src, {std::forward<uint8_t>(Prefixes)..., C}); }
+	x64_srcdst_oper_base(x64_reg8h dst, const x64_address& src) { set_x64_reg_address(dst.shift(), src, {std::forward<uint8_t>(Prefixes)..., C}); }
 
-	x64_src_regdst_oper_base(x64_reg64 reg, x64_reg_ptr32 addr) { reg_reg_ptr(reg, addr, {std::forward<uint8_t>(Prefixes)..., D}); }
-	x64_src_regdst_oper_base(x64_reg32 reg, x64_reg_ptr32 addr) { reg_reg_ptr(reg, addr, {std::forward<uint8_t>(Prefixes)..., D}); }
-	x64_src_regdst_oper_base(x64_reg16 reg, x64_reg_ptr32 addr) { reg_reg_ptr(reg, addr, {std::forward<uint8_t>(Prefixes)..., D}); }
-	x64_src_regdst_oper_base(x64_reg8  reg, x64_reg_ptr32 addr) { reg_reg_ptr(reg, addr, {std::forward<uint8_t>(Prefixes)..., C}); }
-	x64_src_regdst_oper_base(x64_reg8h reg, x64_reg_ptr32 addr) { reg_reg_ptr(reg.shift(), addr, {std::forward<uint8_t>(Prefixes)..., C}); }
-
-	/* register pointer + 8 bit offset into register */
-	x64_src_regdst_oper_base(x64_reg64 reg, x64_reg_ptr64 addr, int8_t off) { reg_reg_ptr_off(reg, addr, {std::forward<uint8_t>(Prefixes)..., D}, 1, off); }
-	x64_src_regdst_oper_base(x64_reg32 reg, x64_reg_ptr64 addr, int8_t off) { reg_reg_ptr_off(reg, addr, {std::forward<uint8_t>(Prefixes)..., D}, 1, off); }
-	x64_src_regdst_oper_base(x64_reg16 reg, x64_reg_ptr64 addr, int8_t off) { reg_reg_ptr_off(reg, addr, {std::forward<uint8_t>(Prefixes)..., D}, 1, off); }
-	x64_src_regdst_oper_base(x64_reg8  reg, x64_reg_ptr64 addr, int8_t off) { reg_reg_ptr_off(reg, addr, {std::forward<uint8_t>(Prefixes)..., C}, 1, off); }
-	x64_src_regdst_oper_base(x64_reg8h reg, x64_reg_ptr64 addr, int8_t off) { reg_reg_ptr_off(reg.shift(), addr, {std::forward<uint8_t>(Prefixes)..., C}, 1, off); }
-
-	x64_src_regdst_oper_base(x64_reg64 reg, x64_reg_ptr32 addr, int8_t off) { reg_reg_ptr_off(reg, addr, {std::forward<uint8_t>(Prefixes)..., D}, 1, off); }
-	x64_src_regdst_oper_base(x64_reg32 reg, x64_reg_ptr32 addr, int8_t off) { reg_reg_ptr_off(reg, addr, {std::forward<uint8_t>(Prefixes)..., D}, 1, off); }
-	x64_src_regdst_oper_base(x64_reg16 reg, x64_reg_ptr32 addr, int8_t off) { reg_reg_ptr_off(reg, addr, {std::forward<uint8_t>(Prefixes)..., D}, 1, off); }
-	x64_src_regdst_oper_base(x64_reg8  reg, x64_reg_ptr32 addr, int8_t off) { reg_reg_ptr_off(reg, addr, {std::forward<uint8_t>(Prefixes)..., C}, 1, off); }
-	x64_src_regdst_oper_base(x64_reg8h reg, x64_reg_ptr32 addr, int8_t off) { reg_reg_ptr_off(reg.shift(), addr, {std::forward<uint8_t>(Prefixes)..., C}, 1, off); }
-
-	/* register pointer + 32 bit offset into register */
-	x64_src_regdst_oper_base(x64_reg64 reg, x64_reg_ptr64 addr, int32_t off) { reg_reg_ptr_off(reg, addr, {std::forward<uint8_t>(Prefixes)..., D}, 2, off); }
-	x64_src_regdst_oper_base(x64_reg32 reg, x64_reg_ptr64 addr, int32_t off) { reg_reg_ptr_off(reg, addr, {std::forward<uint8_t>(Prefixes)..., D}, 2, off); }
-	x64_src_regdst_oper_base(x64_reg16 reg, x64_reg_ptr64 addr, int32_t off) { reg_reg_ptr_off(reg, addr, {std::forward<uint8_t>(Prefixes)..., D}, 2, off); }
-	x64_src_regdst_oper_base(x64_reg8  reg, x64_reg_ptr64 addr, int32_t off) { reg_reg_ptr_off(reg, addr, {std::forward<uint8_t>(Prefixes)..., C}, 2, off); }
-	x64_src_regdst_oper_base(x64_reg8h reg, x64_reg_ptr64 addr, int32_t off) { reg_reg_ptr_off(reg.shift(), addr, {std::forward<uint8_t>(Prefixes)..., C}, 2, off); }
-
-	x64_src_regdst_oper_base(x64_reg64 reg, x64_reg_ptr32 addr, int32_t off) { reg_reg_ptr_off(reg, addr, {std::forward<uint8_t>(Prefixes)..., D}, 2, off); }
-	x64_src_regdst_oper_base(x64_reg32 reg, x64_reg_ptr32 addr, int32_t off) { reg_reg_ptr_off(reg, addr, {std::forward<uint8_t>(Prefixes)..., D}, 2, off); }
-	x64_src_regdst_oper_base(x64_reg16 reg, x64_reg_ptr32 addr, int32_t off) { reg_reg_ptr_off(reg, addr, {std::forward<uint8_t>(Prefixes)..., D}, 2, off); }
-	x64_src_regdst_oper_base(x64_reg8  reg, x64_reg_ptr32 addr, int32_t off) { reg_reg_ptr_off(reg, addr, {std::forward<uint8_t>(Prefixes)..., C}, 2, off); }
-	x64_src_regdst_oper_base(x64_reg8h reg, x64_reg_ptr32 addr, int32_t off) { reg_reg_ptr_off(reg.shift(), addr, {std::forward<uint8_t>(Prefixes)..., C}, 2, off); }
-
-	/* immediate address into register */
-	/* 32 bit pointers */
-	x64_src_regdst_oper_base(x64_reg64 reg, x64_addr_ptr<int32_t> addr) { reg_imm_addr(reg, addr, {std::forward<uint8_t>(Prefixes)..., D}); }
-	x64_src_regdst_oper_base(x64_reg32 reg, x64_addr_ptr<int32_t> addr) { reg_imm_addr(reg, addr, {std::forward<uint8_t>(Prefixes)..., D}); }
-	x64_src_regdst_oper_base(x64_reg16 reg, x64_addr_ptr<int32_t> addr) { reg_imm_addr(reg, addr, {std::forward<uint8_t>(Prefixes)..., D}); }
-	x64_src_regdst_oper_base(x64_reg8  reg, x64_addr_ptr<int32_t> addr) { reg_imm_addr(reg, addr, {std::forward<uint8_t>(Prefixes)..., C}); }
-	x64_src_regdst_oper_base(x64_reg8h reg, x64_addr_ptr<int32_t> addr) { reg_imm_addr(reg.shift(), addr, {std::forward<uint8_t>(Prefixes)..., C}); }
-
-	/* 64 bit base address + index * scale into reg */
-	x64_src_regdst_oper_base(x64_reg64 reg, x64_reg_ptr64 addr, x64_reg64 index, x64_sib_scale scale) { reg_reg_ptr_idx(reg, addr, index, scale, {std::forward<uint8_t>(Prefixes)..., D}); }
-	x64_src_regdst_oper_base(x64_reg32 reg, x64_reg_ptr64 addr, x64_reg64 index, x64_sib_scale scale) { reg_reg_ptr_idx(reg, addr, index, scale, {std::forward<uint8_t>(Prefixes)..., D}); }
-	x64_src_regdst_oper_base(x64_reg16 reg, x64_reg_ptr64 addr, x64_reg64 index, x64_sib_scale scale) { reg_reg_ptr_idx(reg, addr, index, scale, {std::forward<uint8_t>(Prefixes)..., D}); }
-	x64_src_regdst_oper_base(x64_reg8  reg, x64_reg_ptr64 addr, x64_reg64 index, x64_sib_scale scale) { reg_reg_ptr_idx(reg, addr, index, scale, {std::forward<uint8_t>(Prefixes)..., C}); }
-	x64_src_regdst_oper_base(x64_reg8h reg, x64_reg_ptr64 addr, x64_reg64 index, x64_sib_scale scale) { reg_reg_ptr_idx(reg.shift(), addr, index, scale, {std::forward<uint8_t>(Prefixes)..., C}); }
-
-	/* 32 bit base address + index * scale into reg */
-	x64_src_regdst_oper_base(x64_reg64 reg, x64_reg_ptr32 addr, x64_reg32 index, x64_sib_scale scale) { reg_reg_ptr_idx(reg, addr, index, scale, {std::forward<uint8_t>(Prefixes)..., D}); }
-	x64_src_regdst_oper_base(x64_reg32 reg, x64_reg_ptr32 addr, x64_reg32 index, x64_sib_scale scale) { reg_reg_ptr_idx(reg, addr, index, scale, {std::forward<uint8_t>(Prefixes)..., D}); }
-	x64_src_regdst_oper_base(x64_reg16 reg, x64_reg_ptr32 addr, x64_reg32 index, x64_sib_scale scale) { reg_reg_ptr_idx(reg, addr, index, scale, {std::forward<uint8_t>(Prefixes)..., D}); }
-	x64_src_regdst_oper_base(x64_reg8  reg, x64_reg_ptr32 addr, x64_reg32 index, x64_sib_scale scale) { reg_reg_ptr_idx(reg, addr, index, scale, {std::forward<uint8_t>(Prefixes)..., C}); }
-	x64_src_regdst_oper_base(x64_reg8h reg, x64_reg_ptr32 addr, x64_reg32 index, x64_sib_scale scale) { reg_reg_ptr_idx(reg.shift(), addr, index, scale, {std::forward<uint8_t>(Prefixes)..., C}); }
-
-
-	/* 64 bit base address + index * scale + 8 bit offset into reg */
-	x64_src_regdst_oper_base(x64_reg64 reg, x64_reg_ptr64 addr, x64_reg64 index, x64_sib_scale scale, int8_t off) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, {std::forward<uint8_t>(Prefixes)..., D}, 1); }
-	x64_src_regdst_oper_base(x64_reg32 reg, x64_reg_ptr64 addr, x64_reg64 index, x64_sib_scale scale, int8_t off) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, {std::forward<uint8_t>(Prefixes)..., D}, 1); }
-	x64_src_regdst_oper_base(x64_reg16 reg, x64_reg_ptr64 addr, x64_reg64 index, x64_sib_scale scale, int8_t off) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, {std::forward<uint8_t>(Prefixes)..., D}, 1); }
-	x64_src_regdst_oper_base(x64_reg8  reg, x64_reg_ptr64 addr, x64_reg64 index, x64_sib_scale scale, int8_t off) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, {std::forward<uint8_t>(Prefixes)..., C}, 1); }
-	x64_src_regdst_oper_base(x64_reg8h reg, x64_reg_ptr64 addr, x64_reg64 index, x64_sib_scale scale, int8_t off) { reg_reg_ptr_idx_off(reg.shift(), addr, index, scale, off, {std::forward<uint8_t>(Prefixes)..., C}, 1); }
-
-	/* 32 bit base address + index * scale + 8 bit offset  into reg */
-	x64_src_regdst_oper_base(x64_reg64 reg, x64_reg_ptr32 addr, x64_reg32 index, x64_sib_scale scale, int8_t off) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, {std::forward<uint8_t>(Prefixes)..., D}, 1); }
-	x64_src_regdst_oper_base(x64_reg32 reg, x64_reg_ptr32 addr, x64_reg32 index, x64_sib_scale scale, int8_t off) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, {std::forward<uint8_t>(Prefixes)..., D}, 1); }
-	x64_src_regdst_oper_base(x64_reg16 reg, x64_reg_ptr32 addr, x64_reg32 index, x64_sib_scale scale, int8_t off) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, {std::forward<uint8_t>(Prefixes)..., D}, 1); }
-	x64_src_regdst_oper_base(x64_reg8  reg, x64_reg_ptr32 addr, x64_reg32 index, x64_sib_scale scale, int8_t off) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, {std::forward<uint8_t>(Prefixes)..., C}, 1); }
-	x64_src_regdst_oper_base(x64_reg8h reg, x64_reg_ptr32 addr, x64_reg32 index, x64_sib_scale scale, int8_t off) { reg_reg_ptr_idx_off(reg.shift(), addr, index, scale, off, {std::forward<uint8_t>(Prefixes)..., C}, 1); }
-
-	/* 64 bit base address + index * scale + 32 bit offset into reg */
-	x64_src_regdst_oper_base(x64_reg64 reg, x64_reg_ptr64 addr, x64_reg64 index, x64_sib_scale scale, int32_t off) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, {std::forward<uint8_t>(Prefixes)..., D}, 2); }
-	x64_src_regdst_oper_base(x64_reg32 reg, x64_reg_ptr64 addr, x64_reg64 index, x64_sib_scale scale, int32_t off) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, {std::forward<uint8_t>(Prefixes)..., D}, 2); }
-	x64_src_regdst_oper_base(x64_reg16 reg, x64_reg_ptr64 addr, x64_reg64 index, x64_sib_scale scale, int32_t off) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, {std::forward<uint8_t>(Prefixes)..., D}, 2); }
-	x64_src_regdst_oper_base(x64_reg8  reg, x64_reg_ptr64 addr, x64_reg64 index, x64_sib_scale scale, int32_t off) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, {std::forward<uint8_t>(Prefixes)..., C}, 2); }
-	x64_src_regdst_oper_base(x64_reg8h reg, x64_reg_ptr64 addr, x64_reg64 index, x64_sib_scale scale, int32_t off) { reg_reg_ptr_idx_off(reg.shift(), addr, index, scale, off, {std::forward<uint8_t>(Prefixes)..., C}, 2); }
-
-	/* 32 bit base address + index * scale + 32 bit offset  into reg */
-	x64_src_regdst_oper_base(x64_reg64 reg, x64_reg_ptr32 addr, x64_reg32 index, x64_sib_scale scale, int32_t off) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, {std::forward<uint8_t>(Prefixes)..., D}, 2); }
-	x64_src_regdst_oper_base(x64_reg32 reg, x64_reg_ptr32 addr, x64_reg32 index, x64_sib_scale scale, int32_t off) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, {std::forward<uint8_t>(Prefixes)..., D}, 2); }
-	x64_src_regdst_oper_base(x64_reg16 reg, x64_reg_ptr32 addr, x64_reg32 index, x64_sib_scale scale, int32_t off) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, {std::forward<uint8_t>(Prefixes)..., D}, 2); }
-	x64_src_regdst_oper_base(x64_reg8  reg, x64_reg_ptr32 addr, x64_reg32 index, x64_sib_scale scale, int32_t off) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, {std::forward<uint8_t>(Prefixes)..., C}, 2); }
-	x64_src_regdst_oper_base(x64_reg8h reg, x64_reg_ptr32 addr, x64_reg32 index, x64_sib_scale scale, int32_t off) { reg_reg_ptr_idx_off(reg.shift(), addr, index, scale, off, {std::forward<uint8_t>(Prefixes)..., C}, 2); }
-};
-
-template<uint8_t A, uint8_t B, uint8_t C, uint8_t D, uint8_t... Prefixes>
-class x64_srcdst_oper_base : public x64_src_regdst_oper_base<A, B, C, D, std::forward<uint8_t>(Prefixes)...>
-{
-public:
-	using x64_src_regdst_oper_base<A, B, C, D, std::forward<uint8_t>(Prefixes)...>::x64_src_regdst_oper_base;
-
-	/* register into register pointer */
-	x64_srcdst_oper_base(x64_reg_ptr64 addr, x64_reg64 reg) { this->template reg_reg_ptr(reg, addr, {std::forward<uint8_t>(Prefixes)..., B}); }
-	x64_srcdst_oper_base(x64_reg_ptr64 addr, x64_reg32 reg) { this->template reg_reg_ptr(reg, addr, {std::forward<uint8_t>(Prefixes)..., B}); }
-	x64_srcdst_oper_base(x64_reg_ptr64 addr, x64_reg16 reg) { this->template reg_reg_ptr(reg, addr, {std::forward<uint8_t>(Prefixes)..., B}); }
-	x64_srcdst_oper_base(x64_reg_ptr64 addr, x64_reg8  reg) { this->template reg_reg_ptr(reg, addr, {std::forward<uint8_t>(Prefixes)..., A}); }
-	x64_srcdst_oper_base(x64_reg_ptr64 addr, x64_reg8h reg) { this->template reg_reg_ptr(reg.shift(), addr, {std::forward<uint8_t>(Prefixes)..., A}); }
-
-	x64_srcdst_oper_base(x64_reg_ptr32 addr, x64_reg64 reg) { this->template reg_reg_ptr(reg, addr, {std::forward<uint8_t>(Prefixes)..., B}); }
-	x64_srcdst_oper_base(x64_reg_ptr32 addr, x64_reg32 reg) { this->template reg_reg_ptr(reg, addr, {std::forward<uint8_t>(Prefixes)..., B}); }
-	x64_srcdst_oper_base(x64_reg_ptr32 addr, x64_reg16 reg) { this->template reg_reg_ptr(reg, addr, {std::forward<uint8_t>(Prefixes)..., B}); }
-	x64_srcdst_oper_base(x64_reg_ptr32 addr, x64_reg8  reg) { this->template reg_reg_ptr(reg, addr, {std::forward<uint8_t>(Prefixes)..., A}); }
-	x64_srcdst_oper_base(x64_reg_ptr32 addr, x64_reg8h reg) { this->template reg_reg_ptr(reg.shift(), addr, {std::forward<uint8_t>(Prefixes)..., A}); }
-
-	/* register into register pointer + 8 bit offset */
-	x64_srcdst_oper_base(x64_reg_ptr64 addr, int8_t off, x64_reg64 reg) { this->template reg_reg_ptr_off(reg, addr, {std::forward<uint8_t>(Prefixes)..., B}, 1, off); }
-	x64_srcdst_oper_base(x64_reg_ptr64 addr, int8_t off, x64_reg32 reg) { this->template reg_reg_ptr_off(reg, addr, {std::forward<uint8_t>(Prefixes)..., B}, 1, off); }
-	x64_srcdst_oper_base(x64_reg_ptr64 addr, int8_t off, x64_reg16 reg) { this->template reg_reg_ptr_off(reg, addr, {std::forward<uint8_t>(Prefixes)..., B}, 1, off); }
-	x64_srcdst_oper_base(x64_reg_ptr64 addr, int8_t off, x64_reg8  reg) { this->template reg_reg_ptr_off(reg, addr, {std::forward<uint8_t>(Prefixes)..., A}, 1, off); }
-	x64_srcdst_oper_base(x64_reg_ptr64 addr, int8_t off, x64_reg8h reg) { this->template reg_reg_ptr_off(reg.shift(), addr, {std::forward<uint8_t>(Prefixes)..., A}, 1, off); }
-
-	x64_srcdst_oper_base(x64_reg_ptr32 addr, int8_t off, x64_reg64 reg) { this->template reg_reg_ptr_off(reg, addr, {std::forward<uint8_t>(Prefixes)..., B}, 1, off); }
-	x64_srcdst_oper_base(x64_reg_ptr32 addr, int8_t off, x64_reg32 reg) { this->template reg_reg_ptr_off(reg, addr, {std::forward<uint8_t>(Prefixes)..., B}, 1, off); }
-	x64_srcdst_oper_base(x64_reg_ptr32 addr, int8_t off, x64_reg16 reg) { this->template reg_reg_ptr_off(reg, addr, {std::forward<uint8_t>(Prefixes)..., B}, 1, off); }
-	x64_srcdst_oper_base(x64_reg_ptr32 addr, int8_t off, x64_reg8  reg) { this->template reg_reg_ptr_off(reg, addr, {std::forward<uint8_t>(Prefixes)..., A}, 1, off); }
-	x64_srcdst_oper_base(x64_reg_ptr32 addr, int8_t off, x64_reg8h reg) { this->template reg_reg_ptr_off(reg.shift(), addr, {std::forward<uint8_t>(Prefixes)..., A}, 1, off); }
-
-	/* register into register pointer + 32 bit offset */
-	x64_srcdst_oper_base(x64_reg_ptr64 addr, int32_t off, x64_reg64 reg) { this->template reg_reg_ptr_off(reg, addr, {std::forward<uint8_t>(Prefixes)..., B}, 2, off); }
-	x64_srcdst_oper_base(x64_reg_ptr64 addr, int32_t off, x64_reg32 reg) { this->template reg_reg_ptr_off(reg, addr, {std::forward<uint8_t>(Prefixes)..., B}, 2, off); }
-	x64_srcdst_oper_base(x64_reg_ptr64 addr, int32_t off, x64_reg16 reg) { this->template reg_reg_ptr_off(reg, addr, {std::forward<uint8_t>(Prefixes)..., B}, 2, off); }
-	x64_srcdst_oper_base(x64_reg_ptr64 addr, int32_t off, x64_reg8  reg) { this->template reg_reg_ptr_off(reg, addr, {std::forward<uint8_t>(Prefixes)..., A}, 2, off); }
-	x64_srcdst_oper_base(x64_reg_ptr64 addr, int32_t off, x64_reg8h reg) { this->template reg_reg_ptr_off(reg.shift(), addr, {std::forward<uint8_t>(Prefixes)..., A}, 2, off); }
-
-	x64_srcdst_oper_base(x64_reg_ptr32 addr, int32_t off, x64_reg64 reg) { this->template reg_reg_ptr_off(reg, addr, {std::forward<uint8_t>(Prefixes)..., B}, 2, off); }
-	x64_srcdst_oper_base(x64_reg_ptr32 addr, int32_t off, x64_reg32 reg) { this->template reg_reg_ptr_off(reg, addr, {std::forward<uint8_t>(Prefixes)..., B}, 2, off); }
-	x64_srcdst_oper_base(x64_reg_ptr32 addr, int32_t off, x64_reg16 reg) { this->template reg_reg_ptr_off(reg, addr, {std::forward<uint8_t>(Prefixes)..., B}, 2, off); }
-	x64_srcdst_oper_base(x64_reg_ptr32 addr, int32_t off, x64_reg8  reg) { this->template reg_reg_ptr_off(reg, addr, {std::forward<uint8_t>(Prefixes)..., A}, 2, off); }
-	x64_srcdst_oper_base(x64_reg_ptr32 addr, int32_t off, x64_reg8h reg) { this->template reg_reg_ptr_off(reg.shift(), addr, {std::forward<uint8_t>(Prefixes)..., A}, 2, off); }
-
-	/* register into immediate address */
-	/* 32 bit pointers */
-	x64_srcdst_oper_base(x64_addr_ptr<int32_t> addr, x64_reg64 reg) { this->template reg_imm_addr(reg, addr, {std::forward<uint8_t>(Prefixes)..., B}); }
-	x64_srcdst_oper_base(x64_addr_ptr<int32_t> addr, x64_reg32 reg) { this->template reg_imm_addr(reg, addr, {std::forward<uint8_t>(Prefixes)..., B}); }
-	x64_srcdst_oper_base(x64_addr_ptr<int32_t> addr, x64_reg16 reg) { this->template reg_imm_addr(reg, addr, {std::forward<uint8_t>(Prefixes)..., B}); }
-	x64_srcdst_oper_base(x64_addr_ptr<int32_t> addr, x64_reg8  reg) { this->template reg_imm_addr(reg, addr, {std::forward<uint8_t>(Prefixes)..., A}); }
-	x64_srcdst_oper_base(x64_addr_ptr<int32_t> addr, x64_reg8h reg) { this->template reg_imm_addr(reg.shift(), addr, {std::forward<uint8_t>(Prefixes)..., A}); }
-
-	/* reg into 64 bit base address + index * scale */
-	x64_srcdst_oper_base(x64_reg_ptr64 addr, x64_reg64 index, x64_sib_scale scale, x64_reg64 reg) { this->template reg_reg_ptr_idx(reg, addr, index, scale, {std::forward<uint8_t>(Prefixes)..., B}); }
-	x64_srcdst_oper_base(x64_reg_ptr64 addr, x64_reg64 index, x64_sib_scale scale, x64_reg32 reg) { this->template reg_reg_ptr_idx(reg, addr, index, scale, {std::forward<uint8_t>(Prefixes)..., B}); }
-	x64_srcdst_oper_base(x64_reg_ptr64 addr, x64_reg64 index, x64_sib_scale scale, x64_reg16 reg) { this->template reg_reg_ptr_idx(reg, addr, index, scale, {std::forward<uint8_t>(Prefixes)..., B}); }
-	x64_srcdst_oper_base(x64_reg_ptr64 addr, x64_reg64 index, x64_sib_scale scale, x64_reg8  reg) { this->template reg_reg_ptr_idx(reg, addr, index, scale, {std::forward<uint8_t>(Prefixes)..., A}); }
-	x64_srcdst_oper_base(x64_reg_ptr64 addr, x64_reg64 index, x64_sib_scale scale, x64_reg8h reg) { this->template reg_reg_ptr_idx(reg.shift(), addr, index, scale, {std::forward<uint8_t>(Prefixes)..., A}); }
-
-	/* reg into 32 bit base address + index * scale */
-	x64_srcdst_oper_base(x64_reg_ptr32 addr, x64_reg32 index, x64_sib_scale scale, x64_reg64 reg) { this->template reg_reg_ptr_idx(reg, addr, index, scale, {std::forward<uint8_t>(Prefixes)..., B}); }
-	x64_srcdst_oper_base(x64_reg_ptr32 addr, x64_reg32 index, x64_sib_scale scale, x64_reg32 reg) { this->template reg_reg_ptr_idx(reg, addr, index, scale, {std::forward<uint8_t>(Prefixes)..., B}); }
-	x64_srcdst_oper_base(x64_reg_ptr32 addr, x64_reg32 index, x64_sib_scale scale, x64_reg16 reg) { this->template reg_reg_ptr_idx(reg, addr, index, scale, {std::forward<uint8_t>(Prefixes)..., B}); }
-	x64_srcdst_oper_base(x64_reg_ptr32 addr, x64_reg32 index, x64_sib_scale scale, x64_reg8  reg) { this->template reg_reg_ptr_idx(reg, addr, index, scale, {std::forward<uint8_t>(Prefixes)..., A}); }
-	x64_srcdst_oper_base(x64_reg_ptr32 addr, x64_reg32 index, x64_sib_scale scale, x64_reg8h reg) { this->template reg_reg_ptr_idx(reg.shift(), addr, index, scale, {std::forward<uint8_t>(Prefixes)..., A}); }
-
-	/* reg into 64 bit base address + index + 8 bit offset  * scale */
-	x64_srcdst_oper_base(x64_reg_ptr64 addr, x64_reg64 index, x64_sib_scale scale, int8_t off, x64_reg64 reg) { this->template reg_reg_ptr_idx_off(reg, addr, index, scale, off, {std::forward<uint8_t>(Prefixes)..., B}, 1); }
-	x64_srcdst_oper_base(x64_reg_ptr64 addr, x64_reg64 index, x64_sib_scale scale, int8_t off, x64_reg32 reg) { this->template reg_reg_ptr_idx_off(reg, addr, index, scale, off, {std::forward<uint8_t>(Prefixes)..., B}, 1); }
-	x64_srcdst_oper_base(x64_reg_ptr64 addr, x64_reg64 index, x64_sib_scale scale, int8_t off, x64_reg16 reg) { this->template reg_reg_ptr_idx_off(reg, addr, index, scale, off, {std::forward<uint8_t>(Prefixes)..., B}, 1); }
-	x64_srcdst_oper_base(x64_reg_ptr64 addr, x64_reg64 index, x64_sib_scale scale, int8_t off, x64_reg8  reg) { this->template reg_reg_ptr_idx_off(reg, addr, index, scale, off, {std::forward<uint8_t>(Prefixes)..., A}, 1); }
-	x64_srcdst_oper_base(x64_reg_ptr64 addr, x64_reg64 index, x64_sib_scale scale, int8_t off, x64_reg8h reg) { this->template reg_reg_ptr_idx_off(reg.shift(), addr, index, scale, off, {std::forward<uint8_t>(Prefixes)..., A}, 1); }
-
-	/* reg into 32 bit base address + index + 8 bit offset  * scale */
-	x64_srcdst_oper_base(x64_reg_ptr32 addr, x64_reg32 index, x64_sib_scale scale, int8_t off, x64_reg64 reg) { this->template reg_reg_ptr_idx_off(reg, addr, index, scale, off, {std::forward<uint8_t>(Prefixes)..., B}, 1); }
-	x64_srcdst_oper_base(x64_reg_ptr32 addr, x64_reg32 index, x64_sib_scale scale, int8_t off, x64_reg32 reg) { this->template reg_reg_ptr_idx_off(reg, addr, index, scale, off, {std::forward<uint8_t>(Prefixes)..., B}, 1); }
-	x64_srcdst_oper_base(x64_reg_ptr32 addr, x64_reg32 index, x64_sib_scale scale, int8_t off, x64_reg16 reg) { this->template reg_reg_ptr_idx_off(reg, addr, index, scale, off, {std::forward<uint8_t>(Prefixes)..., B}, 1); }
-	x64_srcdst_oper_base(x64_reg_ptr32 addr, x64_reg32 index, x64_sib_scale scale, int8_t off, x64_reg8  reg) { this->template reg_reg_ptr_idx_off(reg, addr, index, scale, off, {std::forward<uint8_t>(Prefixes)..., A}, 1); }
-	x64_srcdst_oper_base(x64_reg_ptr32 addr, x64_reg32 index, x64_sib_scale scale, int8_t off, x64_reg8h reg) { this->template reg_reg_ptr_idx_off(reg.shift(), addr, index, scale, off, {std::forward<uint8_t>(Prefixes)..., A}, 1); }
-
-	/* reg into 64 bit base address + index + 32 bit offset  * scale */
-	x64_srcdst_oper_base(x64_reg_ptr64 addr, x64_reg64 index, x64_sib_scale scale, int32_t off, x64_reg64 reg) { this->template reg_reg_ptr_idx_off(reg, addr, index, scale, off, {std::forward<uint8_t>(Prefixes)..., B}, 2); }
-	x64_srcdst_oper_base(x64_reg_ptr64 addr, x64_reg64 index, x64_sib_scale scale, int32_t off, x64_reg32 reg) { this->template reg_reg_ptr_idx_off(reg, addr, index, scale, off, {std::forward<uint8_t>(Prefixes)..., B}, 2); }
-	x64_srcdst_oper_base(x64_reg_ptr64 addr, x64_reg64 index, x64_sib_scale scale, int32_t off, x64_reg16 reg) { this->template reg_reg_ptr_idx_off(reg, addr, index, scale, off, {std::forward<uint8_t>(Prefixes)..., B}, 2); }
-	x64_srcdst_oper_base(x64_reg_ptr64 addr, x64_reg64 index, x64_sib_scale scale, int32_t off, x64_reg8  reg) { this->template reg_reg_ptr_idx_off(reg, addr, index, scale, off, {std::forward<uint8_t>(Prefixes)..., A}, 2); }
-	x64_srcdst_oper_base(x64_reg_ptr64 addr, x64_reg64 index, x64_sib_scale scale, int32_t off, x64_reg8h reg) { this->template reg_reg_ptr_idx_off(reg.shift(), addr, index, scale, off, {std::forward<uint8_t>(Prefixes)..., A}, 2); }
-
-	/* reg into 32 bit base address + index + 32 bit offset  * scale */
-	x64_srcdst_oper_base(x64_reg_ptr32 addr, x64_reg32 index, x64_sib_scale scale, int32_t off, x64_reg64 reg) { this->template reg_reg_ptr_idx_off(reg, addr, index, scale, off, {std::forward<uint8_t>(Prefixes)..., B}, 2); }
-	x64_srcdst_oper_base(x64_reg_ptr32 addr, x64_reg32 index, x64_sib_scale scale, int32_t off, x64_reg32 reg) { this->template reg_reg_ptr_idx_off(reg, addr, index, scale, off, {std::forward<uint8_t>(Prefixes)..., B}, 2); }
-	x64_srcdst_oper_base(x64_reg_ptr32 addr, x64_reg32 index, x64_sib_scale scale, int32_t off, x64_reg16 reg) { this->template reg_reg_ptr_idx_off(reg, addr, index, scale, off, {std::forward<uint8_t>(Prefixes)..., B}, 2); }
-	x64_srcdst_oper_base(x64_reg_ptr32 addr, x64_reg32 index, x64_sib_scale scale, int32_t off, x64_reg8  reg) { this->template reg_reg_ptr_idx_off(reg, addr, index, scale, off, {std::forward<uint8_t>(Prefixes)..., A}, 2); }
-	x64_srcdst_oper_base(x64_reg_ptr32 addr, x64_reg32 index, x64_sib_scale scale, int32_t off, x64_reg8h reg) { this->template reg_reg_ptr_idx_off(reg.shift(), addr, index, scale, off, {std::forward<uint8_t>(Prefixes)..., A}, 2); }
+	/* register into memory */
+	x64_srcdst_oper_base(const x64_address& dst, x64_reg64 src) { set_x64_reg_address(src, dst, {std::forward<uint8_t>(Prefixes)..., B}); }
+	x64_srcdst_oper_base(const x64_address& dst, x64_reg32 src) { set_x64_reg_address(src, dst, {std::forward<uint8_t>(Prefixes)..., B}); }
+	x64_srcdst_oper_base(const x64_address& dst, x64_reg16 src) { set_x64_reg_address(src, dst, {std::forward<uint8_t>(Prefixes)..., B}); }
+	x64_srcdst_oper_base(const x64_address& dst, x64_reg8  src) { set_x64_reg_address(src, dst, {std::forward<uint8_t>(Prefixes)..., A}); }
+	x64_srcdst_oper_base(const x64_address& dst, x64_reg8h src) { set_x64_reg_address(src.shift(), dst, {std::forward<uint8_t>(Prefixes)..., A}); }
 };
 
 template<uint8_t A, uint8_t B, uint8_t C, uint8_t D, uint8_t E, uint8_t F, uint8_t MOD, uint8_t... Prefixes>
@@ -1029,23 +837,9 @@ struct x64_jmpcall_base : public x64_instruction
 {
 	using x64_instruction::x64_instruction;
 
+	x64_jmpcall_base(const x64_address& src) { set_x64_reg_address(x64_reg32(C), src, {std::forward<uint8_t>(Prefixes)..., A}); }
 	x64_jmpcall_base(int32_t off) : x64_instruction( {std::forward<uint8_t>(Prefixes)..., B}, off) { }
-	x64_jmpcall_base(x64_reg64 reg) { single_regptr(x64_reg_addr(reg), C, {std::forward<uint8_t>(Prefixes)..., A}, 3); }
-
-	x64_jmpcall_base(x64_reg_ptr64 addr) { reg_reg_ptr(x64_reg32(C), addr, {std::forward<uint8_t>(Prefixes)..., A}); }
-	x64_jmpcall_base(x64_reg_ptr32 addr) { reg_reg_ptr(x64_reg32(C), addr, {std::forward<uint8_t>(Prefixes)..., A}); }
-	x64_jmpcall_base(x64_reg_ptr64 addr, int8_t off) { reg_reg_ptr_off(x64_reg32(C), addr, {std::forward<uint8_t>(Prefixes)..., A}, 1, off); }
-	x64_jmpcall_base(x64_reg_ptr32 addr, int8_t off) { reg_reg_ptr_off(x64_reg32(C), addr, {std::forward<uint8_t>(Prefixes)..., A}, 1, off); }
-	x64_jmpcall_base(x64_reg_ptr64 addr, int32_t off) { reg_reg_ptr_off(x64_reg32(C), addr, {std::forward<uint8_t>(Prefixes)..., A}, 2, off); }
-	x64_jmpcall_base(x64_reg_ptr32 addr, int32_t off) { reg_reg_ptr_off(x64_reg32(C), addr, {std::forward<uint8_t>(Prefixes)..., A}, 2, off); }
-
-	x64_jmpcall_base(x64_reg_ptr64 addr, x64_reg64 index, x64_sib_scale scale) { reg_reg_ptr_idx(x64_reg32(C), addr, index, scale, {std::forward<uint8_t>(Prefixes)..., A}); }
-	x64_jmpcall_base(x64_reg_ptr32 addr, x64_reg32 index, x64_sib_scale scale) { reg_reg_ptr_idx(x64_reg32(C), addr, index, scale, {std::forward<uint8_t>(Prefixes)..., A}); }
-
-	x64_jmpcall_base(x64_reg_ptr64 addr, x64_reg64 index, x64_sib_scale scale, int32_t off) { reg_reg_ptr_idx_off(x64_reg32(C), addr, index, scale, off, {std::forward<uint8_t>(Prefixes)..., A}, 2); }
-	x64_jmpcall_base(x64_reg_ptr32 addr, x64_reg32 index, x64_sib_scale scale, int32_t off) { reg_reg_ptr_idx_off(x64_reg32(C), addr, index, scale, off, {std::forward<uint8_t>(Prefixes)..., A}, 2); }
-	x64_jmpcall_base(x64_reg_ptr64 addr, x64_reg64 index, x64_sib_scale scale, int8_t off) { reg_reg_ptr_idx_off(x64_reg32(C), addr, index, scale, off, {std::forward<uint8_t>(Prefixes)..., A}, 1); }
-	x64_jmpcall_base(x64_reg_ptr32 addr, x64_reg32 index, x64_sib_scale scale, int8_t off) { reg_reg_ptr_idx_off(x64_reg32(C), addr, index, scale, off, {std::forward<uint8_t>(Prefixes)..., A}, 1); }
+	x64_jmpcall_base(x64_reg64 reg) { single_reg64(reg, C, {std::forward<uint8_t>(Prefixes)..., A}, 3); }
 };
 
 template<uint8_t A, uint8_t B, uint8_t C, uint8_t... Prefixes>
@@ -1152,17 +946,25 @@ public:
 
 	/* Move immediate address into register */
 	/* 64 bit pointers */
-	x64_mov(x64_reg64_0 reg, x64_addr_ptr<uint64_t*> addr) { eax_imm(reg, reinterpret_cast<uint64_t>(addr.ptr), {0xa1}); }
-	x64_mov(x64_reg32_0 reg, x64_addr_ptr<uint32_t*> addr) { eax_imm(reg, reinterpret_cast<uint64_t>(addr.ptr), {0xa1}); }
-	x64_mov(x64_reg16_0 reg, x64_addr_ptr<uint16_t*> addr) { eax_imm(reg, reinterpret_cast<uint64_t>(addr.ptr), {0xa1}); }
-	x64_mov(x64_reg8_0  reg, x64_addr_ptr<uint8_t*>  addr) { eax_imm(reg, reinterpret_cast<uint64_t>(addr.ptr), {0xa0}); }
+	x64_mov(x64_reg64_0 reg, uint64_t* addr) { eax_imm(reg, reinterpret_cast<uint64_t>(addr), {0xa1}); }
+	x64_mov(x64_reg32_0 reg, uint32_t* addr) { eax_imm(reg, reinterpret_cast<uint64_t>(addr), {0xa1}); }
+	x64_mov(x64_reg16_0 reg, uint16_t* addr) { eax_imm(reg, reinterpret_cast<uint64_t>(addr), {0xa1}); }
+	x64_mov(x64_reg8_0  reg, uint8_t*  addr) { eax_imm(reg, reinterpret_cast<uint64_t>(addr), {0xa0}); }
+	x64_mov(x64_reg64_0 reg, int64_t* addr) { eax_imm(reg, reinterpret_cast<uint64_t>(addr), {0xa1}); }
+	x64_mov(x64_reg32_0 reg, int32_t* addr) { eax_imm(reg, reinterpret_cast<uint64_t>(addr), {0xa1}); }
+	x64_mov(x64_reg16_0 reg, int16_t* addr) { eax_imm(reg, reinterpret_cast<uint64_t>(addr), {0xa1}); }
+	x64_mov(x64_reg8_0  reg, int8_t*  addr) { eax_imm(reg, reinterpret_cast<uint64_t>(addr), {0xa0}); }
 
 	/* Move register into immediate address */
 	/* 64 bit pointers */
-	x64_mov(x64_addr_ptr<uint64_t*> addr, x64_reg64_0 reg) { eax_imm(reg, reinterpret_cast<uint64_t>(addr.ptr), {0xa3}); }
-	x64_mov(x64_addr_ptr<uint32_t*> addr, x64_reg32_0 reg) { eax_imm(reg, reinterpret_cast<uint64_t>(addr.ptr), {0xa3}); }
-	x64_mov(x64_addr_ptr<uint16_t*> addr, x64_reg16_0 reg) { eax_imm(reg, reinterpret_cast<uint64_t>(addr.ptr), {0xa3}); }
-	x64_mov(x64_addr_ptr<uint8_t*>  addr, x64_reg8_0 reg) { eax_imm(reg, reinterpret_cast<uint64_t>(addr.ptr), {0xa2}); }
+	x64_mov(uint64_t* addr, x64_reg64_0 reg) { eax_imm(reg, reinterpret_cast<uint64_t>(addr), {0xa3}); }
+	x64_mov(uint32_t* addr, x64_reg32_0 reg) { eax_imm(reg, reinterpret_cast<uint64_t>(addr), {0xa3}); }
+	x64_mov(uint16_t* addr, x64_reg16_0 reg) { eax_imm(reg, reinterpret_cast<uint64_t>(addr), {0xa3}); }
+	x64_mov(uint8_t*  addr, x64_reg8_0 reg)  { eax_imm(reg, reinterpret_cast<uint64_t>(addr), {0xa2}); }
+	x64_mov(int64_t* addr, x64_reg64_0 reg) { eax_imm(reg, reinterpret_cast<uint64_t>(addr), {0xa3}); }
+	x64_mov(int32_t* addr, x64_reg32_0 reg) { eax_imm(reg, reinterpret_cast<uint64_t>(addr), {0xa3}); }
+	x64_mov(int16_t* addr, x64_reg16_0 reg) { eax_imm(reg, reinterpret_cast<uint64_t>(addr), {0xa3}); }
+	x64_mov(int8_t*  addr, x64_reg8_0 reg)  { eax_imm(reg, reinterpret_cast<uint64_t>(addr), {0xa2}); }
 
 	virtual ~x64_mov() { }
 };
@@ -1200,9 +1002,9 @@ struct x64_mul  : public x64_single_op_base<0xf6, 0xf7, 4> { using x64_single_op
 struct x64_div  : public x64_single_op_base<0xf6, 0xf7, 6> { using x64_single_op_base::x64_single_op_base; };
 struct x64_idiv : public x64_single_op_base<0xf6, 0xf7, 7> { using x64_single_op_base::x64_single_op_base; };
 
-struct x64_imul : public x64_src_regdst_oper_base<0xae, 0xaf, 0xae, 0xaf, 0x0f>
+struct x64_imul : public x64_instruction
 {
-	using x64_src_regdst_oper_base<0xae, 0xaf, 0xae, 0xaf, 0x0f>::x64_src_regdst_oper_base;
+	using x64_instruction::x64_instruction;
 
 	x64_imul(x64_reg64 reg) { single_reg(reg, 5, {0xf7}, 3); }
 	x64_imul(x64_reg32 reg) { single_reg(reg, 5, {0xf7}, 3); }
@@ -1223,106 +1025,16 @@ struct x64_imul : public x64_src_regdst_oper_base<0xae, 0xaf, 0xae, 0xaf, 0x0f>
 	x64_imul(x64_reg32 dst, x64_reg32 src, int32_t n) { reg_reg(src, dst, {0x69}); set_imm(n); }
 	x64_imul(x64_reg16 dst, x64_reg16 src, int16_t n) { reg_reg(src, dst, {0x69}); set_imm(n); }
 
-
-
-
-
-	/* register pointer + 8 bit offset into register */
-	x64_imul(x64_reg64 reg, x64_reg_ptr64 addr, int8_t off, int8_t n) { reg_reg_ptr_off(reg, addr, {0x6b}, 1, off);  set_imm(n); }
-	x64_imul(x64_reg32 reg, x64_reg_ptr64 addr, int8_t off, int8_t n) { reg_reg_ptr_off(reg, addr, {0x6b}, 1, off);  set_imm(n); }
-	x64_imul(x64_reg16 reg, x64_reg_ptr64 addr, int8_t off, int8_t n) { reg_reg_ptr_off(reg, addr, {0x6b}, 1, off);  set_imm(n); }
-
-	x64_imul(x64_reg64 reg, x64_reg_ptr32 addr, int8_t off, int8_t n) { reg_reg_ptr_off(reg, addr, {0x6b}, 1, off);  set_imm(n); }
-	x64_imul(x64_reg32 reg, x64_reg_ptr32 addr, int8_t off, int8_t n) { reg_reg_ptr_off(reg, addr, {0x6b}, 1, off);  set_imm(n); }
-	x64_imul(x64_reg16 reg, x64_reg_ptr32 addr, int8_t off, int8_t n) { reg_reg_ptr_off(reg, addr, {0x6b}, 1, off);  set_imm(n); }
-
-	x64_imul(x64_reg64 reg, x64_reg_ptr64 addr, int8_t off, int32_t n) { reg_reg_ptr_off(reg, addr, {0x69}, 1, off);  set_imm(n); }
-	x64_imul(x64_reg32 reg, x64_reg_ptr64 addr, int8_t off, int32_t n) { reg_reg_ptr_off(reg, addr, {0x69}, 1, off);  set_imm(n); }
-	x64_imul(x64_reg16 reg, x64_reg_ptr64 addr, int8_t off, int32_t n) { reg_reg_ptr_off(reg, addr, {0x69}, 1, off);  set_imm(n); }
-
-	x64_imul(x64_reg64 reg, x64_reg_ptr32 addr, int8_t off, int32_t n) { reg_reg_ptr_off(reg, addr, {0x69}, 1, off);  set_imm(n); }
-	x64_imul(x64_reg32 reg, x64_reg_ptr32 addr, int8_t off, int32_t n) { reg_reg_ptr_off(reg, addr, {0x69}, 1, off);  set_imm(n); }
-	x64_imul(x64_reg16 reg, x64_reg_ptr32 addr, int8_t off, int32_t n) { reg_reg_ptr_off(reg, addr, {0x69}, 1, off);  set_imm(n); }
-//
-//	/* register pointer + 32 bit offset into register */
-//	x64_imul(x64_reg64 reg, x64_reg_ptr64 addr, int32_t off) { reg_reg_ptr_off(reg, addr, {std::forward<uint8_t>(Prefixes)..., D}, 2, off); }
-//	x64_imul(x64_reg32 reg, x64_reg_ptr64 addr, int32_t off) { reg_reg_ptr_off(reg, addr, {std::forward<uint8_t>(Prefixes)..., D}, 2, off); }
-//	x64_imul(x64_reg16 reg, x64_reg_ptr64 addr, int32_t off) { reg_reg_ptr_off(reg, addr, {std::forward<uint8_t>(Prefixes)..., D}, 2, off); }
-//
-//	x64_imul(x64_reg64 reg, x64_reg_ptr32 addr, int32_t off) { reg_reg_ptr_off(reg, addr, {std::forward<uint8_t>(Prefixes)..., D}, 2, off); }
-//	x64_imul(x64_reg32 reg, x64_reg_ptr32 addr, int32_t off) { reg_reg_ptr_off(reg, addr, {std::forward<uint8_t>(Prefixes)..., D}, 2, off); }
-//	x64_imul(x64_reg16 reg, x64_reg_ptr32 addr, int32_t off) { reg_reg_ptr_off(reg, addr, {std::forward<uint8_t>(Prefixes)..., D}, 2, off); }
-//
-//	/* immediate address into register */
-//	/* 32 bit pointers */
-//	x64_imul(x64_reg64 reg, x64_addr_ptr<int32_t> addr) { reg_imm_addr(reg, addr, {std::forward<uint8_t>(Prefixes)..., D}); }
-//	x64_imul(x64_reg32 reg, x64_addr_ptr<int32_t> addr) { reg_imm_addr(reg, addr, {std::forward<uint8_t>(Prefixes)..., D}); }
-//	x64_imul(x64_reg16 reg, x64_addr_ptr<int32_t> addr) { reg_imm_addr(reg, addr, {std::forward<uint8_t>(Prefixes)..., D}); }
-//
-//	/* 64 bit base address + index * scale into reg */
-//	x64_imul(x64_reg64 reg, x64_reg_ptr64 addr, x64_reg64 index, x64_sib_scale scale) { reg_reg_ptr_idx(reg, addr, index, scale, {std::forward<uint8_t>(Prefixes)..., D}); }
-//	x64_imul(x64_reg32 reg, x64_reg_ptr64 addr, x64_reg64 index, x64_sib_scale scale) { reg_reg_ptr_idx(reg, addr, index, scale, {std::forward<uint8_t>(Prefixes)..., D}); }
-//	x64_imul(x64_reg16 reg, x64_reg_ptr64 addr, x64_reg64 index, x64_sib_scale scale) { reg_reg_ptr_idx(reg, addr, index, scale, {std::forward<uint8_t>(Prefixes)..., D}); }
-//
-//	/* 32 bit base address + index * scale into reg */
-//	x64_imul(x64_reg64 reg, x64_reg_ptr32 addr, x64_reg32 index, x64_sib_scale scale) { reg_reg_ptr_idx(reg, addr, index, scale, {std::forward<uint8_t>(Prefixes)..., D}); }
-//	x64_imul(x64_reg32 reg, x64_reg_ptr32 addr, x64_reg32 index, x64_sib_scale scale) { reg_reg_ptr_idx(reg, addr, index, scale, {std::forward<uint8_t>(Prefixes)..., D}); }
-//	x64_imul(x64_reg16 reg, x64_reg_ptr32 addr, x64_reg32 index, x64_sib_scale scale) { reg_reg_ptr_idx(reg, addr, index, scale, {std::forward<uint8_t>(Prefixes)..., D}); }
-//
-//
-//	/* 64 bit base address + index * scale + 8 bit offset into reg */
-//	x64_imul(x64_reg64 reg, x64_reg_ptr64 addr, x64_reg64 index, x64_sib_scale scale, int8_t off) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, {std::forward<uint8_t>(Prefixes)..., D}, 1); }
-//	x64_imul(x64_reg32 reg, x64_reg_ptr64 addr, x64_reg64 index, x64_sib_scale scale, int8_t off) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, {std::forward<uint8_t>(Prefixes)..., D}, 1); }
-//	x64_imul(x64_reg16 reg, x64_reg_ptr64 addr, x64_reg64 index, x64_sib_scale scale, int8_t off) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, {std::forward<uint8_t>(Prefixes)..., D}, 1); }
-//
-//	/* 32 bit base address + index * scale + 8 bit offset  into reg */
-//	x64_imul(x64_reg64 reg, x64_reg_ptr32 addr, x64_reg32 index, x64_sib_scale scale, int8_t off) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, {std::forward<uint8_t>(Prefixes)..., D}, 1); }
-//	x64_imul(x64_reg32 reg, x64_reg_ptr32 addr, x64_reg32 index, x64_sib_scale scale, int8_t off) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, {std::forward<uint8_t>(Prefixes)..., D}, 1); }
-//	x64_imul(x64_reg16 reg, x64_reg_ptr32 addr, x64_reg32 index, x64_sib_scale scale, int8_t off) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, {std::forward<uint8_t>(Prefixes)..., D}, 1); }
-//
-//	/* 64 bit base address + index * scale + 32 bit offset into reg */
-//	x64_imul(x64_reg64 reg, x64_reg_ptr64 addr, x64_reg64 index, x64_sib_scale scale, int32_t off) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, {std::forward<uint8_t>(Prefixes)..., D}, 2); }
-//	x64_imul(x64_reg32 reg, x64_reg_ptr64 addr, x64_reg64 index, x64_sib_scale scale, int32_t off) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, {std::forward<uint8_t>(Prefixes)..., D}, 2); }
-//	x64_imul(x64_reg16 reg, x64_reg_ptr64 addr, x64_reg64 index, x64_sib_scale scale, int32_t off) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, {std::forward<uint8_t>(Prefixes)..., D}, 2); }
-//
-//	/* 32 bit base address + index * scale + 32 bit offset  into reg */
-//	x64_imul(x64_reg64 reg, x64_reg_ptr32 addr, x64_reg32 index, x64_sib_scale scale, int32_t off) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, {std::forward<uint8_t>(Prefixes)..., D}, 2); }
-//	x64_imul(x64_reg32 reg, x64_reg_ptr32 addr, x64_reg32 index, x64_sib_scale scale, int32_t off) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, {std::forward<uint8_t>(Prefixes)..., D}, 2); }
-//	x64_imul(x64_reg16 reg, x64_reg_ptr32 addr, x64_reg32 index, x64_sib_scale scale, int32_t off) { reg_reg_ptr_idx_off(reg, addr, index, scale, off, {std::forward<uint8_t>(Prefixes)..., D}, 2); }
-//
-//
-	/* Imul doesn't support these 8-bit operations */
-    x64_imul(x64_reg8  dst, x64_reg8  src) = delete;
-    x64_imul(x64_reg8h dst, x64_reg8  src) = delete;
-    x64_imul(x64_reg8  dst, x64_reg8h src) = delete;
-    x64_imul(x64_reg8h dst, x64_reg8h src) = delete;
-    x64_imul(x64_reg8  reg, x64_reg_ptr64 addr) = delete;
-    x64_imul(x64_reg8h reg, x64_reg_ptr64 addr) = delete;
-    x64_imul(x64_reg8  reg, x64_reg_ptr32 addr) = delete;
-    x64_imul(x64_reg8h reg, x64_reg_ptr32 addr) = delete;
-    x64_imul(x64_reg8  reg, x64_reg_ptr64 addr, int8_t off) = delete;
-    x64_imul(x64_reg8h reg, x64_reg_ptr64 addr, int8_t off) = delete;
-    x64_imul(x64_reg8  reg, x64_reg_ptr32 addr, int8_t off) = delete;
-    x64_imul(x64_reg8h reg, x64_reg_ptr32 addr, int8_t off) = delete;
-    x64_imul(x64_reg8  reg, x64_reg_ptr64 addr, int32_t off) = delete;
-    x64_imul(x64_reg8h reg, x64_reg_ptr64 addr, int32_t off) = delete;
-    x64_imul(x64_reg8  reg, x64_reg_ptr32 addr, int32_t off) = delete;
-    x64_imul(x64_reg8h reg, x64_reg_ptr32 addr, int32_t off) = delete;
-    x64_imul(x64_reg8  reg, x64_addr_ptr<int32_t> addr) = delete;
-    x64_imul(x64_reg8h reg, x64_addr_ptr<int32_t> addr) = delete;
-    x64_imul(x64_reg8  reg, x64_reg_ptr64 addr, x64_reg64 index, x64_sib_scale scale) = delete;
-    x64_imul(x64_reg8h reg, x64_reg_ptr64 addr, x64_reg64 index, x64_sib_scale scale) = delete;
-    x64_imul(x64_reg8  reg, x64_reg_ptr32 addr, x64_reg32 index, x64_sib_scale scale) = delete;
-    x64_imul(x64_reg8h reg, x64_reg_ptr32 addr, x64_reg32 index, x64_sib_scale scale) = delete;
-    x64_imul(x64_reg8  reg, x64_reg_ptr64 addr, x64_reg64 index, x64_sib_scale scale, int8_t off) = delete;
-    x64_imul(x64_reg8h reg, x64_reg_ptr64 addr, x64_reg64 index, x64_sib_scale scale, int8_t off) = delete;
-    x64_imul(x64_reg8  reg, x64_reg_ptr32 addr, x64_reg32 index, x64_sib_scale scale, int8_t off) = delete;
-    x64_imul(x64_reg8h reg, x64_reg_ptr32 addr, x64_reg32 index, x64_sib_scale scale, int8_t off) = delete;
-    x64_imul(x64_reg8  reg, x64_reg_ptr64 addr, x64_reg64 index, x64_sib_scale scale, int32_t off) = delete;
-    x64_imul(x64_reg8h reg, x64_reg_ptr64 addr, x64_reg64 index, x64_sib_scale scale, int32_t off) = delete;
-    x64_imul(x64_reg8  reg, x64_reg_ptr32 addr, x64_reg32 index, x64_sib_scale scale, int32_t off) = delete;
-    x64_imul(x64_reg8h reg, x64_reg_ptr32 addr, x64_reg32 index, x64_sib_scale scale, int32_t off) = delete;
+	x64_imul(x64_reg64 dst, const x64_address& src) { set_x64_reg_address(dst, src, {0x0f, 0xaf}); }
+	x64_imul(x64_reg32 dst, const x64_address& src) { set_x64_reg_address(dst, src, {0x0f, 0xaf}); }
+	x64_imul(x64_reg16 dst, const x64_address& src) { set_x64_reg_address(dst, src, {0x0f, 0xaf}); }
 };
+
+struct x64_imulq : public x64_imul { using x64_imul::x64_imul; x64_imulq(const x64_address& src) { set_x64_reg_address(x64_reg64(5), src, {0xf7}); } };
+struct x64_imull : public x64_imul { using x64_imul::x64_imul; x64_imull(const x64_address& src) { set_x64_reg_address(x64_reg32(5), src, {0xf7}); } };
+struct x64_imulw : public x64_imul { using x64_imul::x64_imul; x64_imulw(const x64_address& src) { set_x64_reg_address(x64_reg16(5), src, {0xf7}); } };
+struct x64_imulb : public x64_imul { using x64_imul::x64_imul; x64_imulb(const x64_address& src) { set_x64_reg_address(x64_reg8h(5), src, {0xf6}); } }; // x64_reg8h because it won't add a REX prefix
+
 
 template<uint8_t A>
 struct x64_pushpop : x64_instruction

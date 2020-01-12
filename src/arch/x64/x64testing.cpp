@@ -42,701 +42,701 @@ void x64_testing::run_tests()
 
 	cout << "OK!\n";
 }
-
-template<typename C, typename T>
-void x64_testing::direct_reg_reg(string inst_name, instruction_stream& s, vector<string>& expected_lines, int num_regs)
-{
-	for (auto i = 0; i < num_regs; i++)
-	{
-		for (auto j = 0; j < num_regs; j++)
-		{
-			auto inst = C(T(j), T(i));
-
-			stringstream stream;
-			add_to_strinstream(stream, s, inst);
-			stream << "\t" << inst_name << " " << T::names[j] << "," << T::names[i];
-
-			expected_lines.push_back(stream.str());
-
-			s << inst;
-		}
-	}
-}
-
-template<typename C, typename T, typename U, typename V>
-void x64_testing::regptr_reg(string inst_name, instruction_stream& s, vector<string>& expected_lines, string width_name, int nj, int ni)
-{
-	for (auto i = 0; i < ni; i++)
-	{
-		for (auto j = 0; j < nj; j++)
-		{
-			auto inst = C(V(T(j)), U(i));
-
-			stringstream stream;
-
-			add_to_strinstream(stream, s, inst);
-			string name = T::names[j];
-			if (T(j).is_bp() || T(j).is_r13())
-				name += "+0x0";
-			stream << "\t" << inst_name << " " << width_name << " PTR [" << name << "]," << U::names[i];
-			stream.flush();
-
-			expected_lines.push_back(stream.str());
-
-			s << inst;
-		}
-	}
-}
-
-template<typename C, typename T, typename U, typename V, typename W>
-void x64_testing::regptr_offs_reg(std::string inst_name, instruction_stream& s, vector<string>& expected_lines, string width_name, int nj, int ni)
-{
-	for (auto i = 0; i < ni; i++)
-	{
-		for (auto j = 0; j < nj; j++)
-		{
-			W offs = (j + 1) * 999 + (i + 1) * 333;
-			auto inst = C(V(T(j)), offs, U(i));
-
-			stringstream stream;
-
-			add_to_strinstream(stream, s, inst);
-			stream << "\t" << inst_name << " " << width_name << " PTR [" << T::names[j];
-
-			if (offs < 0)
-				stream << "-0x" << hex << setw(0) << (int(-offs));
-			else
-				stream << "+0x" << hex << setw(0) << (int(offs));
-
-			stream << "]," << U::names[i];
-			stream.flush();
-
-			expected_lines.push_back(stream.str());
-
-			s << inst;
-		}
-	}
-}
-
-template<typename C, typename T, typename U, typename V>
-void x64_testing::reg_regptr(std::string inst_name, instruction_stream& s, vector<string>& expected_lines, string width_name, int nj, int ni)
-{
-	for (auto i = 0; i < ni; i++)
-	{
-		for (auto j = 0; j < nj; j++)
-		{
-			auto inst = C(T(j), V(U(i)));
-
-			stringstream stream;
-
-			add_to_strinstream(stream, s, inst);
-			string name = U::names[i];
-			if (U(i).is_bp() || U(i).is_r13())
-				name += "+0x0";
-			stream << "\t" << inst_name << " " << T::names[j] << "," << width_name << " PTR [" << name << ']';
-			stream.flush();
-
-			expected_lines.push_back(stream.str());
-
-			s << inst;
-		}
-	}
-}
-
-template<typename C, typename T, typename U, typename V, typename W>
-void x64_testing::reg_regptr_offs(string inst_name, instruction_stream& s, vector<string>& expected_lines, string width_name, int nj, int ni)
-{
-	for (auto i = 0; i < ni; i++)
-	{
-		for (auto j = 0; j < nj; j++)
-		{
-			W offs = (j + 1) * 999 + (i + 1) * 333;
-			auto inst = C(T(j), V(U(i)), offs);
-
-			stringstream stream;
-
-			add_to_strinstream(stream, s, inst);
-			string name = U::names[i];
-			stream << "\t" << inst_name << " " << T::names[j] << "," << width_name << " PTR [" << name;
-			if (offs < 0)
-				stream << "-0x" << hex << setw(0) << (int(-offs));
-			else
-				stream << "+0x" << hex << setw(0) << (int(offs));
-			stream  << ']';
-			stream.flush();
-
-			expected_lines.push_back(stream.str());
-
-			s << inst;
-		}
-	}
-}
-
-template<typename C, typename T, typename U>
-void x64_testing::reg_imm(string inst_name, instruction_stream& s, vector<string>& expected_lines, int n)
-{
-	for (auto i = 0; i < n; i++)
-	{
-		U imm = (i + 1) * 0x6732409234657202;
-		auto inst = C(T(i), imm);
-
-		stringstream stream;
-
-		add_to_strinstream(stream, s, inst);
-		stream << "\t" << inst_name << ' ' << T::names[i] << ",0x" << hex << setw(0) << ((uint64_t)imm);
-		stream.flush();
-
-		expected_lines.push_back(stream.str());
-
-		s << inst;
-	}
-}
-
-template<typename C, typename T, typename U>
-void x64_testing::reg_imm_addr(string inst_name, instruction_stream& s, vector<string>& expected_lines, string width_name, int n)
-{
-	for (auto i = 0; i < n; i++)
-	{
-		U imm = U((i + 1) * 0x6732409234657202);
-		auto inst = C(T(i), x64_addr_ptr<U>(reinterpret_cast<U>(imm)));
-
-		stringstream stream;
-
-		add_to_strinstream(stream, s, inst);
-		stream << "\t" << inst_name << " " << T::names[i] << "," << width_name << " PTR ds:0x" << hex << setw(0) << ((int64_t)imm);
-		stream.flush();
-
-		expected_lines.push_back(stream.str());
-
-		s << inst;
-	}
-}
-
-template<typename C, typename T, typename U>
-void x64_testing::imm_addr_reg(string inst_name, instruction_stream& s, vector<string>& expected_lines, string width_name, int n)
-{
-	for (auto i = 0; i < n; i++)
-	{
-		T imm = (i + 1) * 0x6732409234657202;
-		auto inst = C(x64_addr_ptr<T>(reinterpret_cast<T>(imm)), U(i));
-
-		stringstream stream;
-
-		add_to_strinstream(stream, s, inst);
-		stream << "\t" << inst_name << " " << width_name << " PTR ds:0x" << hex << setw(0) << ((int64_t)imm) << ',' << U::names[i];
-		stream.flush();
-
-		expected_lines.push_back(stream.str());
-
-		s << inst;
-	}
-}
-
-template<typename T, typename U>
-void x64_testing::reg_ptr64(instruction_stream& s, vector<string>& expected_lines, T reg)
-{
-	auto inst = x64_mov(reg, x64_addr_ptr<U*>(reinterpret_cast<U*>(0x1122334455667788)));
-
-	stringstream stream;
-
-	add_to_strinstream(stream, s, inst);
-	stream << "\tmovabs " << T::names[0] << ",ds:0x1122334455667788";
-	stream.flush();
-
-	expected_lines.push_back(stream.str());
-
-	s << inst;
-}
-
-template<typename T, typename U>
-void x64_testing::ptr64_reg(instruction_stream& s, vector<string>& expected_lines, U reg)
-{
-	auto inst = x64_mov(x64_addr_ptr<T*>(reinterpret_cast<T*>(0x1122334455667788)), reg);
-
-	stringstream stream;
-
-	add_to_strinstream(stream, s, inst);
-	stream << "\tmovabs " << "ds:0x1122334455667788," << U::names[0] ;
-	stream.flush();
-
-	expected_lines.push_back(stream.str());
-
-	s << inst;
-}
-
-template<typename C, typename T, typename U, typename V>
-void x64_testing::reg_reg_ptr_idx(string inst_name, instruction_stream& s, std::vector<std::string>& expected_lines, std::string width_name, int ni, int nj)
-{
-	for (auto i = 0; i < ni; i++)
-	{
-		for (auto j = 0; j < nj; j++)
-		{
-			for (auto k = 0; k < nj; k++)
-			{
-				auto regidx = V(k);
-
-				if (regidx.is_sp())
-					continue;
-
-				auto dst = T(i);
-				auto regptr = U(V(j));
-
-				auto shift = (i + j + k) & 3;
-				int scale_fact = 1 << shift;
-				auto inst = C(dst, regptr, regidx, static_cast<x64_sib_scale>(shift));
-
-				stringstream stream;
-
-				add_to_strinstream(stream, s, inst);
-				stream << "\t" << inst_name << " " << T::names[i] << "," << width_name
-						<< " PTR [" << V::names[j] << '+'
-						<< V::names[k] << '*' << scale_fact;
-				if (regptr.ptr.is_bp() || regptr.ptr.is_r13())
-					stream << "+0x0";
-				stream << ']';
-				stream.flush();
-
-				expected_lines.push_back(stream.str());
-
-				s << inst;
-			}
-		}
-	}
-}
-
-template<typename C, typename T, typename U, typename V>
-void x64_testing::reg_ptr_idx_reg(string inst_name, instruction_stream& s, std::vector<std::string>& expected_lines, std::string width_name, int ni, int nj)
-{
-	for (auto i = 0; i < ni; i++)
-	{
-		for (auto j = 0; j < ni; j++)
-		{
-			for (auto k = 0; k < nj; k++)
-			{
-				auto regoff = U(j);
-
-				if (regoff.is_sp())
-					continue;
-
-				auto regptr = T(U(i));
-				auto src = V(k);
-
-				auto shift = (i + j + k) & 3;
-				int scale_fact = 1 << shift;
-				auto inst = C(regptr, regoff, static_cast<x64_sib_scale>(shift), src);
-
-				stringstream stream;
-
-				add_to_strinstream(stream, s, inst);
-				stream << "\t" << inst_name << " " << width_name
-						<< " PTR [" << U::names[i] << '+'
-						<< U::names[j] << '*' << scale_fact;
-				if (regptr.ptr.is_bp() || regptr.ptr.is_r13())
-					stream << "+0x0";
-				stream << "]," << V::names[k];
-				stream.flush();
-
-				expected_lines.push_back(stream.str());
-
-				s << inst;
-			}
-		}
-	}
-}
-
-template<typename C, typename T, typename U, typename V, typename W>
-void x64_testing::reg_reg_ptr_idx_off(string inst_name, instruction_stream& s, std::vector<std::string>& expected_lines, std::string width_name, int ni, int nj)
-{
-	for (auto i = 0; i < ni; i++)
-	{
-		for (auto j = 0; j < nj; j++)
-		{
-			for (auto k = 0; k < nj; k++)
-			{
-				auto regidx = V(k);
-
-				if (regidx.is_sp())
-					continue;
-
-				auto dst = T(i);
-				auto regptr = U(V(j));
-				W offs = (j + 1) * 999 + (i + 1) * 333 + (k + 1) * 234;
-				auto shift = (i + j + k) & 3;
-				int scale_fact = 1 << shift;
-				auto inst = C(dst, regptr, regidx, static_cast<x64_sib_scale>(shift), offs);
-
-				stringstream stream;
-
-				add_to_strinstream(stream, s, inst);
-				stream << "\t" << inst_name << " " << T::names[i] << "," << width_name
-						<< " PTR [" << V::names[j] << '+'
-						<< V::names[k] << '*' << scale_fact;
-				if (offs < 0)
-					stream << "-0x" << hex << setw(0) << (int(-offs));
-				else
-					stream << "+0x" << hex << setw(0) << (int(offs));
-				stream << ']';
-				stream.flush();
-
-				expected_lines.push_back(stream.str());
-
-				s << inst;
-			}
-		}
-	}
-}
-
-template<typename C, typename T, typename U, typename V, typename W>
-void x64_testing::reg_ptr_idx_off_reg(string inst_name, instruction_stream& s, std::vector<std::string>& expected_lines, std::string width_name, int ni, int nj)
-{
-	for (auto i = 0; i < ni; i++)
-	{
-		for (auto j = 0; j < ni; j++)
-		{
-			for (auto k = 0; k < nj; k++)
-			{
-				auto regoff = U(j);
-
-				if (regoff.is_sp())
-					continue;
-
-				auto regptr = T(U(i));
-				auto src = W(k);
-				V offs = (j + 1) * 999 + (i + 1) * 333 + (k + 1) * 234;
-				auto shift = (i + j + k) & 3;
-				int scale_fact = 1 << shift;
-				auto inst = C(regptr, regoff, static_cast<x64_sib_scale>(shift), offs, src);
-
-				stringstream stream;
-
-				add_to_strinstream(stream, s, inst);
-				stream << "\t" << inst_name << " " << width_name
-						<< " PTR [" << U::names[i] << '+'
-						<< U::names[j] << '*' << scale_fact;
-				if (offs < 0)
-					stream << "-0x" << hex << setw(0) << (int(-offs));
-				else
-					stream << "+0x" << hex << setw(0) << (int(offs));
-				stream << "]," << W::names[k];
-				stream.flush();
-
-				expected_lines.push_back(stream.str());
-
-				s << inst;
-			}
-		}
-	}
-}
-
-template<typename C>
-void x64_testing::jmpcall_reg(std::string inst_name, instruction_stream& s, std::vector<std::string>& expected_lines)
-{
-	for (auto i = 0; i < 16; i++)
-	{
-		auto inst = C(x64_reg64(i));
-		stringstream stream;
-
-		add_to_strinstream(stream, s, inst);
-		stream << "\t" << inst_name << " " << x64_reg64::names[i];
-		stream.flush();
-
-		expected_lines.push_back(stream.str());
-
-		s << inst;
-	}
-}
-
-template<typename C, typename T, typename U>
-void x64_testing::jmpcall_regptr(std::string inst_name, instruction_stream& s, std::vector<std::string>& expected_lines, int ni)
-{
-	for (auto i = 0; i < ni; i++)
-	{
-		auto inst = C(T(U(i)));
-		stringstream stream;
-
-		add_to_strinstream(stream, s, inst);
-		string name = U::names[i];
-		if (U(i).is_bp() || U(i).is_r13())
-			name += "+0x0";
-		stream << "\t" << inst_name << " QWORD PTR [" << name << ']';
-		stream.flush();
-
-		expected_lines.push_back(stream.str());
-
-		s << inst;
-	}
-}
-
-template<typename C, typename T, typename U>
-void x64_testing::jmpcall_regptr_idx(std::string inst_name, instruction_stream& s, std::vector<std::string>& expected_lines, int ni)
-{
-	for (auto i = 0; i < ni; i++)
-	{
-		for (auto j = 0; j < ni; j++)
-		{
-			if (U(j).is_sp() || U(j).is_r12())
-				continue;
-
-			auto shift = (i + j) & 3;
-			int scale_fact = 1 << shift;
-
-			auto inst = C(T(U(i)), U(j), (x64_sib_scale) shift);
-			stringstream stream;
-
-			add_to_strinstream(stream, s, inst);
-			string name = U::names[i];
-			stream << "\t" << inst_name << " QWORD PTR [" << name << '+' << U::names[j] << '*';
-			stream << scale_fact;
-			if (U(i).is_bp() || U(i).is_r13())
-				stream << "+0x0";
-			stream << ']';
-			stream.flush();
-
-			expected_lines.push_back(stream.str());
-
-			s << inst;
-		}
-	}
-}
-
-template<typename C, typename T, typename U, typename V>
-void x64_testing::jmpcall_regptr_idx_off(std::string inst_name, instruction_stream& s, std::vector<std::string>& expected_lines, int ni)
-{
-	for (auto i = 0; i < ni; i++)
-	{
-		for (auto j = 0; j < ni; j++)
-		{
-			if (U(j).is_sp() || U(j).is_r12())
-				continue;
-
-			V off = i * 234;
-
-			auto shift = (i + j) & 3;
-			int scale_fact = 1 << shift;
-
-			auto inst = C(T(U(i)), U(j), (x64_sib_scale) shift, off);
-			stringstream stream;
-
-			add_to_strinstream(stream, s, inst);
-			string name = U::names[i];
-			stream << "\t" << inst_name << " QWORD PTR [" << name << '+' << U::names[j] << '*';
-			stream << scale_fact;
-			if (off < 0)
-				stream  << "-0x" << hex << setw(0) << ((int) -off);
-			else
-				stream  << "+0x" << hex << setw(0) << ((int) off);
-			stream << ']';
-			stream.flush();
-
-			expected_lines.push_back(stream.str());
-
-			s << inst;
-		}
-	}
-}
-
-template<typename C, typename T, typename U, typename V>
-void x64_testing::jmpcall_regptr_off(std::string inst_name, instruction_stream& s, std::vector<std::string>& expected_lines, int ni)
-{
-	for (auto i = 0; i < ni; i++)
-	{
-		V off = i * 234;
-
-		auto inst = C(T(U(i)), off);
-		stringstream stream;
-
-		add_to_strinstream(stream, s, inst);
-		string name = U::names[i];
-		stream << "\t" << inst_name << " QWORD PTR [" << name;
-		if (off < 0)
-			stream  << "-0x" << hex << setw(0) << ((int) -off);
-		else
-			stream  << "+0x" << hex << setw(0) << ((int) off);
-		stream << ']';
-		stream.flush();
-
-		expected_lines.push_back(stream.str());
-
-		s << inst;
-	}
-}
-
-template<typename C>
-void x64_testing::test_srcdst_oper_base(std::string inst_name, instruction_stream& s, std::vector<std::string>& expected_lines)
-{
-	direct_reg_reg<C, x64_reg64>(inst_name, s, expected_lines, 16);
-	direct_reg_reg<C, x64_reg32>(inst_name, s, expected_lines, 16);
-	direct_reg_reg<C, x64_reg16>(inst_name, s, expected_lines, 16);
-	direct_reg_reg<C, x64_reg8>(inst_name, s, expected_lines, 16);
-
-	regptr_reg<C, x64_reg64, x64_reg64, x64_reg_ptr64>(inst_name, s, expected_lines, "QWORD", 16, 16);
-	regptr_reg<C, x64_reg64, x64_reg32, x64_reg_ptr64>(inst_name, s, expected_lines, "DWORD", 16, 8);
-	regptr_reg<C, x64_reg64, x64_reg16, x64_reg_ptr64>(inst_name, s, expected_lines, "WORD", 16, 8);
-	regptr_reg<C, x64_reg64, x64_reg8, x64_reg_ptr64>(inst_name, s, expected_lines, "BYTE", 16, 4);
-
-	regptr_reg<C, x64_reg32, x64_reg64, x64_reg_ptr32>(inst_name, s, expected_lines, "QWORD", 8, 16);
-	regptr_reg<C, x64_reg32, x64_reg32, x64_reg_ptr32>(inst_name, s, expected_lines, "DWORD", 8, 8);
-	regptr_reg<C, x64_reg32, x64_reg16, x64_reg_ptr32>(inst_name, s, expected_lines, "WORD", 8, 8);
-	regptr_reg<C, x64_reg32, x64_reg8, x64_reg_ptr32>(inst_name, s, expected_lines, "BYTE", 8, 4);
-
-	reg_regptr<C, x64_reg64, x64_reg64, x64_reg_ptr64>(inst_name, s, expected_lines, "QWORD", 16, 16);
-	reg_regptr<C, x64_reg32, x64_reg64, x64_reg_ptr64>(inst_name, s, expected_lines, "DWORD", 8, 16);
-	reg_regptr<C, x64_reg16, x64_reg64, x64_reg_ptr64>(inst_name, s, expected_lines, "WORD", 8, 16);
-	reg_regptr<C, x64_reg8, x64_reg64, x64_reg_ptr64>(inst_name, s, expected_lines, "BYTE", 4, 16);
-
-	reg_regptr<C, x64_reg64, x64_reg32, x64_reg_ptr32>(inst_name, s, expected_lines, "QWORD", 16, 8);
-	reg_regptr<C, x64_reg32, x64_reg32, x64_reg_ptr32>(inst_name, s, expected_lines, "DWORD", 8, 8);
-	reg_regptr<C, x64_reg16, x64_reg32, x64_reg_ptr32>(inst_name, s, expected_lines, "WORD", 8, 8);
-	reg_regptr<C, x64_reg8, x64_reg32, x64_reg_ptr32>(inst_name, s, expected_lines, "BYTE", 4, 8);
-
-
-	regptr_offs_reg<C, x64_reg64, x64_reg64, x64_reg_ptr64, int8_t>(inst_name, s, expected_lines, "QWORD", 16, 16);
-	regptr_offs_reg<C, x64_reg64, x64_reg32, x64_reg_ptr64, int8_t>(inst_name, s, expected_lines, "DWORD", 16, 8);
-	regptr_offs_reg<C, x64_reg64, x64_reg16, x64_reg_ptr64, int8_t>(inst_name, s, expected_lines, "WORD", 16, 8);
-	regptr_offs_reg<C, x64_reg64, x64_reg8, x64_reg_ptr64, int8_t>(inst_name, s, expected_lines, "BYTE", 16, 4);
-
-	regptr_offs_reg<C, x64_reg32, x64_reg64, x64_reg_ptr32, int8_t>(inst_name, s, expected_lines, "QWORD", 8, 16);
-	regptr_offs_reg<C, x64_reg32, x64_reg32, x64_reg_ptr32, int8_t>(inst_name, s, expected_lines, "DWORD", 8, 8);
-	regptr_offs_reg<C, x64_reg32, x64_reg16, x64_reg_ptr32, int8_t>(inst_name, s, expected_lines, "WORD", 8, 8);
-	regptr_offs_reg<C, x64_reg32, x64_reg8, x64_reg_ptr32, int8_t>(inst_name, s, expected_lines, "BYTE", 8, 4);
-
-
-	reg_regptr_offs<C, x64_reg64, x64_reg64, x64_reg_ptr64, int8_t>(inst_name, s, expected_lines, "QWORD", 16, 16);
-	reg_regptr_offs<C, x64_reg32, x64_reg64, x64_reg_ptr64, int8_t>(inst_name, s, expected_lines, "DWORD", 8, 16);
-	reg_regptr_offs<C, x64_reg16, x64_reg64, x64_reg_ptr64, int8_t>(inst_name, s, expected_lines, "WORD", 8, 16);
-	reg_regptr_offs<C, x64_reg8, x64_reg64, x64_reg_ptr64, int8_t>(inst_name, s, expected_lines, "BYTE", 4, 16);
-
-	reg_regptr_offs<C, x64_reg64, x64_reg32, x64_reg_ptr32, int8_t>(inst_name, s, expected_lines, "QWORD", 16, 8);
-	reg_regptr_offs<C, x64_reg32, x64_reg32, x64_reg_ptr32, int8_t>(inst_name, s, expected_lines, "DWORD", 8, 8);
-	reg_regptr_offs<C, x64_reg16, x64_reg32, x64_reg_ptr32, int8_t>(inst_name, s, expected_lines, "WORD", 8, 8);
-	reg_regptr_offs<C, x64_reg8, x64_reg32, x64_reg_ptr32, int8_t>(inst_name, s, expected_lines, "BYTE", 4, 8);
-
-	regptr_offs_reg<C, x64_reg64, x64_reg64, x64_reg_ptr64, int32_t>(inst_name, s, expected_lines, "QWORD", 16, 16);
-	regptr_offs_reg<C, x64_reg64, x64_reg32, x64_reg_ptr64, int32_t>(inst_name, s, expected_lines, "DWORD", 16, 8);
-	regptr_offs_reg<C, x64_reg64, x64_reg16, x64_reg_ptr64, int32_t>(inst_name, s, expected_lines, "WORD", 16, 8);
-	regptr_offs_reg<C, x64_reg64, x64_reg8, x64_reg_ptr64, int32_t>(inst_name, s, expected_lines, "BYTE", 16, 4);
-
-	regptr_offs_reg<C, x64_reg32, x64_reg64, x64_reg_ptr32, int32_t>(inst_name, s, expected_lines, "QWORD", 8, 16);
-	regptr_offs_reg<C, x64_reg32, x64_reg32, x64_reg_ptr32, int32_t>(inst_name, s, expected_lines, "DWORD", 8, 8);
-	regptr_offs_reg<C, x64_reg32, x64_reg16, x64_reg_ptr32, int32_t>(inst_name, s, expected_lines, "WORD", 8, 8);
-	regptr_offs_reg<C, x64_reg32, x64_reg8, x64_reg_ptr32, int32_t>(inst_name, s, expected_lines, "BYTE", 8, 4);
-
-
-	reg_regptr_offs<C, x64_reg64, x64_reg64, x64_reg_ptr64, int32_t>(inst_name, s, expected_lines, "QWORD", 16, 16);
-	reg_regptr_offs<C, x64_reg32, x64_reg64, x64_reg_ptr64, int32_t>(inst_name, s, expected_lines, "DWORD", 8, 16);
-	reg_regptr_offs<C, x64_reg16, x64_reg64, x64_reg_ptr64, int32_t>(inst_name, s, expected_lines, "WORD", 8, 16);
-	reg_regptr_offs<C, x64_reg8, x64_reg64, x64_reg_ptr64, int32_t>(inst_name, s, expected_lines, "BYTE", 4, 16);
-
-	reg_regptr_offs<C, x64_reg64, x64_reg32, x64_reg_ptr32, int32_t>(inst_name, s, expected_lines, "QWORD", 16, 8);
-	reg_regptr_offs<C, x64_reg32, x64_reg32, x64_reg_ptr32, int32_t>(inst_name, s, expected_lines, "DWORD", 8, 8);
-	reg_regptr_offs<C, x64_reg16, x64_reg32, x64_reg_ptr32, int32_t>(inst_name, s, expected_lines, "WORD", 8, 8);
-	reg_regptr_offs<C, x64_reg8, x64_reg32, x64_reg_ptr32, int32_t>(inst_name, s, expected_lines, "BYTE", 4, 8);
-
-	reg_imm<C, x64_reg32, uint32_t>(inst_name, s, expected_lines, 8);
-	reg_imm<C, x64_reg16, uint16_t>(inst_name, s, expected_lines, 8);
-	reg_imm<C, x64_reg8, uint8_t>(inst_name, s, expected_lines, 8);
-
-	reg_imm_addr<C, x64_reg64, int32_t>(inst_name, s, expected_lines, "QWORD", 16);
-	reg_imm_addr<C, x64_reg32, int32_t>(inst_name, s, expected_lines, "DWORD", 8);
-	reg_imm_addr<C, x64_reg16, int32_t>(inst_name, s, expected_lines, "WORD", 8);
-	reg_imm_addr<C, x64_reg8, int32_t>(inst_name, s, expected_lines, "BYTE", 8);
-
-	imm_addr_reg<C, int32_t, x64_reg64>(inst_name, s, expected_lines, "QWORD", 16);
-	imm_addr_reg<C, int32_t, x64_reg32>(inst_name, s, expected_lines, "DWORD", 8);
-	imm_addr_reg<C, int32_t, x64_reg16>(inst_name, s, expected_lines, "WORD", 8);
-	imm_addr_reg<C, int32_t, x64_reg8>(inst_name, s, expected_lines, "BYTE", 8);
-
-
-
-
-	reg_reg_ptr_idx<C, x64_reg64, x64_reg_ptr64, x64_reg64>(inst_name, s, expected_lines, "QWORD", 16, 16);
-	reg_reg_ptr_idx<C, x64_reg32, x64_reg_ptr64, x64_reg64>(inst_name, s, expected_lines, "DWORD", 8, 16);
-	reg_reg_ptr_idx<C, x64_reg16, x64_reg_ptr64, x64_reg64>(inst_name, s, expected_lines, "WORD", 8, 16);
-	reg_reg_ptr_idx<C, x64_reg8, x64_reg_ptr64, x64_reg64>(inst_name, s, expected_lines, "BYTE", 4, 16);
-
-	reg_reg_ptr_idx<C, x64_reg64, x64_reg_ptr32, x64_reg32>(inst_name, s, expected_lines, "QWORD", 16, 8);
-	reg_reg_ptr_idx<C, x64_reg32, x64_reg_ptr32, x64_reg32>(inst_name, s, expected_lines, "DWORD", 8, 8);
-	reg_reg_ptr_idx<C, x64_reg16, x64_reg_ptr32, x64_reg32>(inst_name, s, expected_lines, "WORD", 8, 8);
-	reg_reg_ptr_idx<C, x64_reg8, x64_reg_ptr32, x64_reg32>(inst_name, s, expected_lines, "BYTE", 4, 8);
-
-	reg_ptr_idx_reg<C, x64_reg_ptr64, x64_reg64, x64_reg64>(inst_name, s, expected_lines, "QWORD", 16, 16);
-	reg_ptr_idx_reg<C, x64_reg_ptr64, x64_reg64, x64_reg32>(inst_name, s, expected_lines, "DWORD", 16, 8);
-	reg_ptr_idx_reg<C, x64_reg_ptr64, x64_reg64, x64_reg16>(inst_name, s, expected_lines, "WORD", 16, 8);
-	reg_ptr_idx_reg<C, x64_reg_ptr64, x64_reg64, x64_reg8>(inst_name, s, expected_lines, "BYTE", 16, 4);
-
-	reg_ptr_idx_reg<C, x64_reg_ptr32, x64_reg32, x64_reg64>(inst_name, s, expected_lines, "QWORD", 8, 16);
-	reg_ptr_idx_reg<C, x64_reg_ptr32, x64_reg32, x64_reg32>(inst_name, s, expected_lines, "DWORD", 8, 8);
-	reg_ptr_idx_reg<C, x64_reg_ptr32, x64_reg32, x64_reg16>(inst_name, s, expected_lines, "WORD", 8, 8);
-	reg_ptr_idx_reg<C, x64_reg_ptr32, x64_reg32, x64_reg8>(inst_name, s, expected_lines, "BYTE", 8, 4);
-
-
-	reg_reg_ptr_idx_off<C, x64_reg64, x64_reg_ptr64, x64_reg64, int8_t>(inst_name, s, expected_lines, "QWORD", 16, 16);
-	reg_reg_ptr_idx_off<C, x64_reg32, x64_reg_ptr64, x64_reg64, int8_t>(inst_name, s, expected_lines, "DWORD", 8, 16);
-	reg_reg_ptr_idx_off<C, x64_reg16, x64_reg_ptr64, x64_reg64, int8_t>(inst_name, s, expected_lines, "WORD", 8, 16);
-	reg_reg_ptr_idx_off<C, x64_reg8, x64_reg_ptr64, x64_reg64, int8_t>(inst_name, s, expected_lines, "BYTE", 4, 16);
-
-	reg_reg_ptr_idx_off<C, x64_reg64, x64_reg_ptr32, x64_reg32, int8_t>(inst_name, s, expected_lines, "QWORD", 16, 8);
-	reg_reg_ptr_idx_off<C, x64_reg32, x64_reg_ptr32, x64_reg32, int8_t>(inst_name, s, expected_lines, "DWORD", 8, 8);
-	reg_reg_ptr_idx_off<C, x64_reg16, x64_reg_ptr32, x64_reg32, int8_t>(inst_name, s, expected_lines, "WORD", 8, 8);
-	reg_reg_ptr_idx_off<C, x64_reg8, x64_reg_ptr32, x64_reg32, int8_t>(inst_name, s, expected_lines, "BYTE", 4, 8);
-
-	reg_ptr_idx_off_reg<C, x64_reg_ptr64, x64_reg64, int8_t, x64_reg64>(inst_name, s, expected_lines, "QWORD", 16, 16);
-	reg_ptr_idx_off_reg<C, x64_reg_ptr64, x64_reg64, int8_t, x64_reg32>(inst_name, s, expected_lines, "DWORD", 16, 8);
-	reg_ptr_idx_off_reg<C, x64_reg_ptr64, x64_reg64, int8_t, x64_reg16>(inst_name, s, expected_lines, "WORD", 16, 8);
-	reg_ptr_idx_off_reg<C, x64_reg_ptr64, x64_reg64, int8_t, x64_reg8>(inst_name, s, expected_lines, "BYTE", 16, 4);
-
-	reg_ptr_idx_off_reg<C, x64_reg_ptr32, x64_reg32, int8_t, x64_reg64>(inst_name, s, expected_lines, "QWORD", 8, 16);
-	reg_ptr_idx_off_reg<C, x64_reg_ptr32, x64_reg32, int8_t, x64_reg32>(inst_name, s, expected_lines, "DWORD", 8, 8);
-	reg_ptr_idx_off_reg<C, x64_reg_ptr32, x64_reg32, int8_t, x64_reg16>(inst_name, s, expected_lines, "WORD", 8, 8);
-	reg_ptr_idx_off_reg<C, x64_reg_ptr32, x64_reg32, int8_t, x64_reg8>(inst_name, s, expected_lines, "BYTE", 8, 4);
-
-
-	reg_reg_ptr_idx_off<C, x64_reg64, x64_reg_ptr64, x64_reg64, int32_t>(inst_name, s, expected_lines, "QWORD", 16, 16);
-	reg_reg_ptr_idx_off<C, x64_reg32, x64_reg_ptr64, x64_reg64, int32_t>(inst_name, s, expected_lines, "DWORD", 8, 16);
-	reg_reg_ptr_idx_off<C, x64_reg16, x64_reg_ptr64, x64_reg64, int32_t>(inst_name, s, expected_lines, "WORD", 8, 16);
-	reg_reg_ptr_idx_off<C, x64_reg8, x64_reg_ptr64, x64_reg64, int32_t>(inst_name, s, expected_lines, "BYTE", 4, 16);
-
-	reg_reg_ptr_idx_off<C, x64_reg64, x64_reg_ptr32, x64_reg32, int32_t>(inst_name, s, expected_lines, "QWORD", 16, 8);
-	reg_reg_ptr_idx_off<C, x64_reg32, x64_reg_ptr32, x64_reg32, int32_t>(inst_name, s, expected_lines, "DWORD", 8, 8);
-	reg_reg_ptr_idx_off<C, x64_reg16, x64_reg_ptr32, x64_reg32, int32_t>(inst_name, s, expected_lines, "WORD", 8, 8);
-	reg_reg_ptr_idx_off<C, x64_reg8, x64_reg_ptr32, x64_reg32, int32_t>(inst_name, s, expected_lines, "BYTE", 4, 8);
-
-	reg_ptr_idx_off_reg<C, x64_reg_ptr64, x64_reg64, int32_t, x64_reg64>(inst_name, s, expected_lines, "QWORD", 16, 16);
-	reg_ptr_idx_off_reg<C, x64_reg_ptr64, x64_reg64, int32_t, x64_reg32>(inst_name, s, expected_lines, "DWORD", 16, 8);
-	reg_ptr_idx_off_reg<C, x64_reg_ptr64, x64_reg64, int32_t, x64_reg16>(inst_name, s, expected_lines, "WORD", 16, 8);
-	reg_ptr_idx_off_reg<C, x64_reg_ptr64, x64_reg64, int32_t, x64_reg8>(inst_name, s, expected_lines, "BYTE", 16, 4);
-
-	reg_ptr_idx_off_reg<C, x64_reg_ptr32, x64_reg32, int32_t, x64_reg64>(inst_name, s, expected_lines, "QWORD", 8, 16);
-	reg_ptr_idx_off_reg<C, x64_reg_ptr32, x64_reg32, int32_t, x64_reg32>(inst_name, s, expected_lines, "DWORD", 8, 8);
-	reg_ptr_idx_off_reg<C, x64_reg_ptr32, x64_reg32, int32_t, x64_reg16>(inst_name, s, expected_lines, "WORD", 8, 8);
-	reg_ptr_idx_off_reg<C, x64_reg_ptr32, x64_reg32, int32_t, x64_reg8>(inst_name, s, expected_lines, "BYTE", 8, 4);
-}
-
-template<typename C>
-void x64_testing::test_x64_jmpcall_base(std::string inst_name, instruction_stream& s, std::vector<std::string>& expected_lines)
-{
-	jmpcall_reg<C>(inst_name, s, expected_lines);
-	jmpcall_regptr<C, x64_reg_ptr64, x64_reg64>(inst_name, s, expected_lines, 16);
-	jmpcall_regptr<C, x64_reg_ptr32, x64_reg32>(inst_name, s, expected_lines, 8);
-	jmpcall_regptr_off<C, x64_reg_ptr64, x64_reg64, int8_t>(inst_name, s, expected_lines, 8);
-	jmpcall_regptr_off<C, x64_reg_ptr64, x64_reg64, int32_t>(inst_name, s, expected_lines, 8);
-	jmpcall_regptr_off<C, x64_reg_ptr32, x64_reg32, int8_t>(inst_name, s, expected_lines, 8);
-	jmpcall_regptr_off<C, x64_reg_ptr32, x64_reg32, int32_t>(inst_name, s, expected_lines, 8);
-	jmpcall_regptr_idx<C, x64_reg_ptr64, x64_reg64>(inst_name, s, expected_lines, 8);
-	jmpcall_regptr_idx<C, x64_reg_ptr32, x64_reg32>(inst_name, s, expected_lines, 8);
-	jmpcall_regptr_idx_off<C, x64_reg_ptr32, x64_reg32, int8_t>(inst_name, s, expected_lines, 8);
-	jmpcall_regptr_idx_off<C, x64_reg_ptr32, x64_reg32, int32_t>(inst_name, s, expected_lines, 8);
-
-	auto jmp_pos = s.pos();
-	int32_t off = 0x12345678;
-	auto inst = C(off);
-
-	stringstream stream;
-	add_to_strinstream(stream, s, inst);
-	stream << "\t" << inst_name << " 0x" << hex << setw(0) << (uint64_t(jmp_pos) + off + inst.size()) << flush;
-	expected_lines.push_back(stream.str());
-	s << inst;
-}
+//
+//template<typename C, typename T>
+//void x64_testing::direct_reg_reg(string inst_name, instruction_stream& s, vector<string>& expected_lines, int num_regs)
+//{
+//	for (auto i = 0; i < num_regs; i++)
+//	{
+//		for (auto j = 0; j < num_regs; j++)
+//		{
+//			auto inst = C(T(j), T(i));
+//
+//			stringstream stream;
+//			add_to_strinstream(stream, s, inst);
+//			stream << "\t" << inst_name << " " << T::names[j] << "," << T::names[i];
+//
+//			expected_lines.push_back(stream.str());
+//
+//			s << inst;
+//		}
+//	}
+//}
+//
+//template<typename C, typename T, typename U, typename V>
+//void x64_testing::regptr_reg(string inst_name, instruction_stream& s, vector<string>& expected_lines, string width_name, int nj, int ni)
+//{
+//	for (auto i = 0; i < ni; i++)
+//	{
+//		for (auto j = 0; j < nj; j++)
+//		{
+//			auto inst = C(V(T(j)), U(i));
+//
+//			stringstream stream;
+//
+//			add_to_strinstream(stream, s, inst);
+//			string name = T::names[j];
+//			if (T(j).is_bp() || T(j).is_r13())
+//				name += "+0x0";
+//			stream << "\t" << inst_name << " " << width_name << " PTR [" << name << "]," << U::names[i];
+//			stream.flush();
+//
+//			expected_lines.push_back(stream.str());
+//
+//			s << inst;
+//		}
+//	}
+//}
+//
+//template<typename C, typename T, typename U, typename V, typename W>
+//void x64_testing::regptr_offs_reg(std::string inst_name, instruction_stream& s, vector<string>& expected_lines, string width_name, int nj, int ni)
+//{
+//	for (auto i = 0; i < ni; i++)
+//	{
+//		for (auto j = 0; j < nj; j++)
+//		{
+//			W offs = (j + 1) * 999 + (i + 1) * 333;
+//			auto inst = C(V(T(j)), offs, U(i));
+//
+//			stringstream stream;
+//
+//			add_to_strinstream(stream, s, inst);
+//			stream << "\t" << inst_name << " " << width_name << " PTR [" << T::names[j];
+//
+//			if (offs < 0)
+//				stream << "-0x" << hex << setw(0) << (int(-offs));
+//			else
+//				stream << "+0x" << hex << setw(0) << (int(offs));
+//
+//			stream << "]," << U::names[i];
+//			stream.flush();
+//
+//			expected_lines.push_back(stream.str());
+//
+//			s << inst;
+//		}
+//	}
+//}
+//
+//template<typename C, typename T, typename U, typename V>
+//void x64_testing::reg_regptr(std::string inst_name, instruction_stream& s, vector<string>& expected_lines, string width_name, int nj, int ni)
+//{
+//	for (auto i = 0; i < ni; i++)
+//	{
+//		for (auto j = 0; j < nj; j++)
+//		{
+//			auto inst = C(T(j), V(U(i)));
+//
+//			stringstream stream;
+//
+//			add_to_strinstream(stream, s, inst);
+//			string name = U::names[i];
+//			if (U(i).is_bp() || U(i).is_r13())
+//				name += "+0x0";
+//			stream << "\t" << inst_name << " " << T::names[j] << "," << width_name << " PTR [" << name << ']';
+//			stream.flush();
+//
+//			expected_lines.push_back(stream.str());
+//
+//			s << inst;
+//		}
+//	}
+//}
+//
+//template<typename C, typename T, typename U, typename V, typename W>
+//void x64_testing::reg_regptr_offs(string inst_name, instruction_stream& s, vector<string>& expected_lines, string width_name, int nj, int ni)
+//{
+//	for (auto i = 0; i < ni; i++)
+//	{
+//		for (auto j = 0; j < nj; j++)
+//		{
+//			W offs = (j + 1) * 999 + (i + 1) * 333;
+//			auto inst = C(T(j), V(U(i)), offs);
+//
+//			stringstream stream;
+//
+//			add_to_strinstream(stream, s, inst);
+//			string name = U::names[i];
+//			stream << "\t" << inst_name << " " << T::names[j] << "," << width_name << " PTR [" << name;
+//			if (offs < 0)
+//				stream << "-0x" << hex << setw(0) << (int(-offs));
+//			else
+//				stream << "+0x" << hex << setw(0) << (int(offs));
+//			stream  << ']';
+//			stream.flush();
+//
+//			expected_lines.push_back(stream.str());
+//
+//			s << inst;
+//		}
+//	}
+//}
+//
+//template<typename C, typename T, typename U>
+//void x64_testing::reg_imm(string inst_name, instruction_stream& s, vector<string>& expected_lines, int n)
+//{
+//	for (auto i = 0; i < n; i++)
+//	{
+//		U imm = (i + 1) * 0x6732409234657202;
+//		auto inst = C(T(i), imm);
+//
+//		stringstream stream;
+//
+//		add_to_strinstream(stream, s, inst);
+//		stream << "\t" << inst_name << ' ' << T::names[i] << ",0x" << hex << setw(0) << ((uint64_t)imm);
+//		stream.flush();
+//
+//		expected_lines.push_back(stream.str());
+//
+//		s << inst;
+//	}
+//}
+//
+//template<typename C, typename T, typename U>
+//void x64_testing::reg_imm_addr(string inst_name, instruction_stream& s, vector<string>& expected_lines, string width_name, int n)
+//{
+//	for (auto i = 0; i < n; i++)
+//	{
+//		U imm = U((i + 1) * 0x6732409234657202);
+//		auto inst = C(T(i), x64_addr_ptr<U>(reinterpret_cast<U>(imm)));
+//
+//		stringstream stream;
+//
+//		add_to_strinstream(stream, s, inst);
+//		stream << "\t" << inst_name << " " << T::names[i] << "," << width_name << " PTR ds:0x" << hex << setw(0) << ((int64_t)imm);
+//		stream.flush();
+//
+//		expected_lines.push_back(stream.str());
+//
+//		s << inst;
+//	}
+//}
+//
+//template<typename C, typename T, typename U>
+//void x64_testing::imm_addr_reg(string inst_name, instruction_stream& s, vector<string>& expected_lines, string width_name, int n)
+//{
+//	for (auto i = 0; i < n; i++)
+//	{
+//		T imm = (i + 1) * 0x6732409234657202;
+//		auto inst = C(x64_addr_ptr<T>(reinterpret_cast<T>(imm)), U(i));
+//
+//		stringstream stream;
+//
+//		add_to_strinstream(stream, s, inst);
+//		stream << "\t" << inst_name << " " << width_name << " PTR ds:0x" << hex << setw(0) << ((int64_t)imm) << ',' << U::names[i];
+//		stream.flush();
+//
+//		expected_lines.push_back(stream.str());
+//
+//		s << inst;
+//	}
+//}
+//
+//template<typename T, typename U>
+//void x64_testing::reg_ptr64(instruction_stream& s, vector<string>& expected_lines, T reg)
+//{
+//	auto inst = x64_mov(reg, x64_addr_ptr<U*>(reinterpret_cast<U*>(0x1122334455667788)));
+//
+//	stringstream stream;
+//
+//	add_to_strinstream(stream, s, inst);
+//	stream << "\tmovabs " << T::names[0] << ",ds:0x1122334455667788";
+//	stream.flush();
+//
+//	expected_lines.push_back(stream.str());
+//
+//	s << inst;
+//}
+//
+//template<typename T, typename U>
+//void x64_testing::ptr64_reg(instruction_stream& s, vector<string>& expected_lines, U reg)
+//{
+//	auto inst = x64_mov(x64_addr_ptr<T*>(reinterpret_cast<T*>(0x1122334455667788)), reg);
+//
+//	stringstream stream;
+//
+//	add_to_strinstream(stream, s, inst);
+//	stream << "\tmovabs " << "ds:0x1122334455667788," << U::names[0] ;
+//	stream.flush();
+//
+//	expected_lines.push_back(stream.str());
+//
+//	s << inst;
+//}
+//
+//template<typename C, typename T, typename U, typename V>
+//void x64_testing::reg_reg_ptr_idx(string inst_name, instruction_stream& s, std::vector<std::string>& expected_lines, std::string width_name, int ni, int nj)
+//{
+//	for (auto i = 0; i < ni; i++)
+//	{
+//		for (auto j = 0; j < nj; j++)
+//		{
+//			for (auto k = 0; k < nj; k++)
+//			{
+//				auto regidx = V(k);
+//
+//				if (regidx.is_sp())
+//					continue;
+//
+//				auto dst = T(i);
+//				auto regptr = U(V(j));
+//
+//				auto shift = (i + j + k) & 3;
+//				int scale_fact = 1 << shift;
+//				auto inst = C(dst, regptr, regidx, static_cast<x64_sib_scale>(shift));
+//
+//				stringstream stream;
+//
+//				add_to_strinstream(stream, s, inst);
+//				stream << "\t" << inst_name << " " << T::names[i] << "," << width_name
+//						<< " PTR [" << V::names[j] << '+'
+//						<< V::names[k] << '*' << scale_fact;
+//				if (regptr.ptr.is_bp() || regptr.ptr.is_r13())
+//					stream << "+0x0";
+//				stream << ']';
+//				stream.flush();
+//
+//				expected_lines.push_back(stream.str());
+//
+//				s << inst;
+//			}
+//		}
+//	}
+//}
+//
+//template<typename C, typename T, typename U, typename V>
+//void x64_testing::reg_ptr_idx_reg(string inst_name, instruction_stream& s, std::vector<std::string>& expected_lines, std::string width_name, int ni, int nj)
+//{
+//	for (auto i = 0; i < ni; i++)
+//	{
+//		for (auto j = 0; j < ni; j++)
+//		{
+//			for (auto k = 0; k < nj; k++)
+//			{
+//				auto regoff = U(j);
+//
+//				if (regoff.is_sp())
+//					continue;
+//
+//				auto regptr = T(U(i));
+//				auto src = V(k);
+//
+//				auto shift = (i + j + k) & 3;
+//				int scale_fact = 1 << shift;
+//				auto inst = C(regptr, regoff, static_cast<x64_sib_scale>(shift), src);
+//
+//				stringstream stream;
+//
+//				add_to_strinstream(stream, s, inst);
+//				stream << "\t" << inst_name << " " << width_name
+//						<< " PTR [" << U::names[i] << '+'
+//						<< U::names[j] << '*' << scale_fact;
+//				if (regptr.ptr.is_bp() || regptr.ptr.is_r13())
+//					stream << "+0x0";
+//				stream << "]," << V::names[k];
+//				stream.flush();
+//
+//				expected_lines.push_back(stream.str());
+//
+//				s << inst;
+//			}
+//		}
+//	}
+//}
+//
+//template<typename C, typename T, typename U, typename V, typename W>
+//void x64_testing::reg_reg_ptr_idx_off(string inst_name, instruction_stream& s, std::vector<std::string>& expected_lines, std::string width_name, int ni, int nj)
+//{
+//	for (auto i = 0; i < ni; i++)
+//	{
+//		for (auto j = 0; j < nj; j++)
+//		{
+//			for (auto k = 0; k < nj; k++)
+//			{
+//				auto regidx = V(k);
+//
+//				if (regidx.is_sp())
+//					continue;
+//
+//				auto dst = T(i);
+//				auto regptr = U(V(j));
+//				W offs = (j + 1) * 999 + (i + 1) * 333 + (k + 1) * 234;
+//				auto shift = (i + j + k) & 3;
+//				int scale_fact = 1 << shift;
+//				auto inst = C(dst, regptr, regidx, static_cast<x64_sib_scale>(shift), offs);
+//
+//				stringstream stream;
+//
+//				add_to_strinstream(stream, s, inst);
+//				stream << "\t" << inst_name << " " << T::names[i] << "," << width_name
+//						<< " PTR [" << V::names[j] << '+'
+//						<< V::names[k] << '*' << scale_fact;
+//				if (offs < 0)
+//					stream << "-0x" << hex << setw(0) << (int(-offs));
+//				else
+//					stream << "+0x" << hex << setw(0) << (int(offs));
+//				stream << ']';
+//				stream.flush();
+//
+//				expected_lines.push_back(stream.str());
+//
+//				s << inst;
+//			}
+//		}
+//	}
+//}
+//
+//template<typename C, typename T, typename U, typename V, typename W>
+//void x64_testing::reg_ptr_idx_off_reg(string inst_name, instruction_stream& s, std::vector<std::string>& expected_lines, std::string width_name, int ni, int nj)
+//{
+//	for (auto i = 0; i < ni; i++)
+//	{
+//		for (auto j = 0; j < ni; j++)
+//		{
+//			for (auto k = 0; k < nj; k++)
+//			{
+//				auto regoff = U(j);
+//
+//				if (regoff.is_sp())
+//					continue;
+//
+//				auto regptr = T(U(i));
+//				auto src = W(k);
+//				V offs = (j + 1) * 999 + (i + 1) * 333 + (k + 1) * 234;
+//				auto shift = (i + j + k) & 3;
+//				int scale_fact = 1 << shift;
+//				auto inst = C(regptr, regoff, static_cast<x64_sib_scale>(shift), offs, src);
+//
+//				stringstream stream;
+//
+//				add_to_strinstream(stream, s, inst);
+//				stream << "\t" << inst_name << " " << width_name
+//						<< " PTR [" << U::names[i] << '+'
+//						<< U::names[j] << '*' << scale_fact;
+//				if (offs < 0)
+//					stream << "-0x" << hex << setw(0) << (int(-offs));
+//				else
+//					stream << "+0x" << hex << setw(0) << (int(offs));
+//				stream << "]," << W::names[k];
+//				stream.flush();
+//
+//				expected_lines.push_back(stream.str());
+//
+//				s << inst;
+//			}
+//		}
+//	}
+//}
+//
+//template<typename C>
+//void x64_testing::jmpcall_reg(std::string inst_name, instruction_stream& s, std::vector<std::string>& expected_lines)
+//{
+//	for (auto i = 0; i < 16; i++)
+//	{
+//		auto inst = C(x64_reg64(i));
+//		stringstream stream;
+//
+//		add_to_strinstream(stream, s, inst);
+//		stream << "\t" << inst_name << " " << x64_reg64::names[i];
+//		stream.flush();
+//
+//		expected_lines.push_back(stream.str());
+//
+//		s << inst;
+//	}
+//}
+//
+//template<typename C, typename T, typename U>
+//void x64_testing::jmpcall_regptr(std::string inst_name, instruction_stream& s, std::vector<std::string>& expected_lines, int ni)
+//{
+//	for (auto i = 0; i < ni; i++)
+//	{
+//		auto inst = C(T(U(i)));
+//		stringstream stream;
+//
+//		add_to_strinstream(stream, s, inst);
+//		string name = U::names[i];
+//		if (U(i).is_bp() || U(i).is_r13())
+//			name += "+0x0";
+//		stream << "\t" << inst_name << " QWORD PTR [" << name << ']';
+//		stream.flush();
+//
+//		expected_lines.push_back(stream.str());
+//
+//		s << inst;
+//	}
+//}
+//
+//template<typename C, typename T, typename U>
+//void x64_testing::jmpcall_regptr_idx(std::string inst_name, instruction_stream& s, std::vector<std::string>& expected_lines, int ni)
+//{
+//	for (auto i = 0; i < ni; i++)
+//	{
+//		for (auto j = 0; j < ni; j++)
+//		{
+//			if (U(j).is_sp() || U(j).is_r12())
+//				continue;
+//
+//			auto shift = (i + j) & 3;
+//			int scale_fact = 1 << shift;
+//
+//			auto inst = C(T(U(i)), U(j), (x64_sib_scale) shift);
+//			stringstream stream;
+//
+//			add_to_strinstream(stream, s, inst);
+//			string name = U::names[i];
+//			stream << "\t" << inst_name << " QWORD PTR [" << name << '+' << U::names[j] << '*';
+//			stream << scale_fact;
+//			if (U(i).is_bp() || U(i).is_r13())
+//				stream << "+0x0";
+//			stream << ']';
+//			stream.flush();
+//
+//			expected_lines.push_back(stream.str());
+//
+//			s << inst;
+//		}
+//	}
+//}
+//
+//template<typename C, typename T, typename U, typename V>
+//void x64_testing::jmpcall_regptr_idx_off(std::string inst_name, instruction_stream& s, std::vector<std::string>& expected_lines, int ni)
+//{
+//	for (auto i = 0; i < ni; i++)
+//	{
+//		for (auto j = 0; j < ni; j++)
+//		{
+//			if (U(j).is_sp() || U(j).is_r12())
+//				continue;
+//
+//			V off = i * 234;
+//
+//			auto shift = (i + j) & 3;
+//			int scale_fact = 1 << shift;
+//
+//			auto inst = C(T(U(i)), U(j), (x64_sib_scale) shift, off);
+//			stringstream stream;
+//
+//			add_to_strinstream(stream, s, inst);
+//			string name = U::names[i];
+//			stream << "\t" << inst_name << " QWORD PTR [" << name << '+' << U::names[j] << '*';
+//			stream << scale_fact;
+//			if (off < 0)
+//				stream  << "-0x" << hex << setw(0) << ((int) -off);
+//			else
+//				stream  << "+0x" << hex << setw(0) << ((int) off);
+//			stream << ']';
+//			stream.flush();
+//
+//			expected_lines.push_back(stream.str());
+//
+//			s << inst;
+//		}
+//	}
+//}
+//
+//template<typename C, typename T, typename U, typename V>
+//void x64_testing::jmpcall_regptr_off(std::string inst_name, instruction_stream& s, std::vector<std::string>& expected_lines, int ni)
+//{
+//	for (auto i = 0; i < ni; i++)
+//	{
+//		V off = i * 234;
+//
+//		auto inst = C(T(U(i)), off);
+//		stringstream stream;
+//
+//		add_to_strinstream(stream, s, inst);
+//		string name = U::names[i];
+//		stream << "\t" << inst_name << " QWORD PTR [" << name;
+//		if (off < 0)
+//			stream  << "-0x" << hex << setw(0) << ((int) -off);
+//		else
+//			stream  << "+0x" << hex << setw(0) << ((int) off);
+//		stream << ']';
+//		stream.flush();
+//
+//		expected_lines.push_back(stream.str());
+//
+//		s << inst;
+//	}
+//}
+//
+//template<typename C>
+//void x64_testing::test_srcdst_oper_base(std::string inst_name, instruction_stream& s, std::vector<std::string>& expected_lines)
+//{
+//	direct_reg_reg<C, x64_reg64>(inst_name, s, expected_lines, 16);
+//	direct_reg_reg<C, x64_reg32>(inst_name, s, expected_lines, 16);
+//	direct_reg_reg<C, x64_reg16>(inst_name, s, expected_lines, 16);
+//	direct_reg_reg<C, x64_reg8>(inst_name, s, expected_lines, 16);
+//
+//	regptr_reg<C, x64_reg64, x64_reg64, x64_reg_ptr64>(inst_name, s, expected_lines, "QWORD", 16, 16);
+//	regptr_reg<C, x64_reg64, x64_reg32, x64_reg_ptr64>(inst_name, s, expected_lines, "DWORD", 16, 8);
+//	regptr_reg<C, x64_reg64, x64_reg16, x64_reg_ptr64>(inst_name, s, expected_lines, "WORD", 16, 8);
+//	regptr_reg<C, x64_reg64, x64_reg8, x64_reg_ptr64>(inst_name, s, expected_lines, "BYTE", 16, 4);
+//
+//	regptr_reg<C, x64_reg32, x64_reg64, x64_reg_ptr32>(inst_name, s, expected_lines, "QWORD", 8, 16);
+//	regptr_reg<C, x64_reg32, x64_reg32, x64_reg_ptr32>(inst_name, s, expected_lines, "DWORD", 8, 8);
+//	regptr_reg<C, x64_reg32, x64_reg16, x64_reg_ptr32>(inst_name, s, expected_lines, "WORD", 8, 8);
+//	regptr_reg<C, x64_reg32, x64_reg8, x64_reg_ptr32>(inst_name, s, expected_lines, "BYTE", 8, 4);
+//
+//	reg_regptr<C, x64_reg64, x64_reg64, x64_reg_ptr64>(inst_name, s, expected_lines, "QWORD", 16, 16);
+//	reg_regptr<C, x64_reg32, x64_reg64, x64_reg_ptr64>(inst_name, s, expected_lines, "DWORD", 8, 16);
+//	reg_regptr<C, x64_reg16, x64_reg64, x64_reg_ptr64>(inst_name, s, expected_lines, "WORD", 8, 16);
+//	reg_regptr<C, x64_reg8, x64_reg64, x64_reg_ptr64>(inst_name, s, expected_lines, "BYTE", 4, 16);
+//
+//	reg_regptr<C, x64_reg64, x64_reg32, x64_reg_ptr32>(inst_name, s, expected_lines, "QWORD", 16, 8);
+//	reg_regptr<C, x64_reg32, x64_reg32, x64_reg_ptr32>(inst_name, s, expected_lines, "DWORD", 8, 8);
+//	reg_regptr<C, x64_reg16, x64_reg32, x64_reg_ptr32>(inst_name, s, expected_lines, "WORD", 8, 8);
+//	reg_regptr<C, x64_reg8, x64_reg32, x64_reg_ptr32>(inst_name, s, expected_lines, "BYTE", 4, 8);
+//
+//
+//	regptr_offs_reg<C, x64_reg64, x64_reg64, x64_reg_ptr64, int8_t>(inst_name, s, expected_lines, "QWORD", 16, 16);
+//	regptr_offs_reg<C, x64_reg64, x64_reg32, x64_reg_ptr64, int8_t>(inst_name, s, expected_lines, "DWORD", 16, 8);
+//	regptr_offs_reg<C, x64_reg64, x64_reg16, x64_reg_ptr64, int8_t>(inst_name, s, expected_lines, "WORD", 16, 8);
+//	regptr_offs_reg<C, x64_reg64, x64_reg8, x64_reg_ptr64, int8_t>(inst_name, s, expected_lines, "BYTE", 16, 4);
+//
+//	regptr_offs_reg<C, x64_reg32, x64_reg64, x64_reg_ptr32, int8_t>(inst_name, s, expected_lines, "QWORD", 8, 16);
+//	regptr_offs_reg<C, x64_reg32, x64_reg32, x64_reg_ptr32, int8_t>(inst_name, s, expected_lines, "DWORD", 8, 8);
+//	regptr_offs_reg<C, x64_reg32, x64_reg16, x64_reg_ptr32, int8_t>(inst_name, s, expected_lines, "WORD", 8, 8);
+//	regptr_offs_reg<C, x64_reg32, x64_reg8, x64_reg_ptr32, int8_t>(inst_name, s, expected_lines, "BYTE", 8, 4);
+//
+//
+//	reg_regptr_offs<C, x64_reg64, x64_reg64, x64_reg_ptr64, int8_t>(inst_name, s, expected_lines, "QWORD", 16, 16);
+//	reg_regptr_offs<C, x64_reg32, x64_reg64, x64_reg_ptr64, int8_t>(inst_name, s, expected_lines, "DWORD", 8, 16);
+//	reg_regptr_offs<C, x64_reg16, x64_reg64, x64_reg_ptr64, int8_t>(inst_name, s, expected_lines, "WORD", 8, 16);
+//	reg_regptr_offs<C, x64_reg8, x64_reg64, x64_reg_ptr64, int8_t>(inst_name, s, expected_lines, "BYTE", 4, 16);
+//
+//	reg_regptr_offs<C, x64_reg64, x64_reg32, x64_reg_ptr32, int8_t>(inst_name, s, expected_lines, "QWORD", 16, 8);
+//	reg_regptr_offs<C, x64_reg32, x64_reg32, x64_reg_ptr32, int8_t>(inst_name, s, expected_lines, "DWORD", 8, 8);
+//	reg_regptr_offs<C, x64_reg16, x64_reg32, x64_reg_ptr32, int8_t>(inst_name, s, expected_lines, "WORD", 8, 8);
+//	reg_regptr_offs<C, x64_reg8, x64_reg32, x64_reg_ptr32, int8_t>(inst_name, s, expected_lines, "BYTE", 4, 8);
+//
+//	regptr_offs_reg<C, x64_reg64, x64_reg64, x64_reg_ptr64, int32_t>(inst_name, s, expected_lines, "QWORD", 16, 16);
+//	regptr_offs_reg<C, x64_reg64, x64_reg32, x64_reg_ptr64, int32_t>(inst_name, s, expected_lines, "DWORD", 16, 8);
+//	regptr_offs_reg<C, x64_reg64, x64_reg16, x64_reg_ptr64, int32_t>(inst_name, s, expected_lines, "WORD", 16, 8);
+//	regptr_offs_reg<C, x64_reg64, x64_reg8, x64_reg_ptr64, int32_t>(inst_name, s, expected_lines, "BYTE", 16, 4);
+//
+//	regptr_offs_reg<C, x64_reg32, x64_reg64, x64_reg_ptr32, int32_t>(inst_name, s, expected_lines, "QWORD", 8, 16);
+//	regptr_offs_reg<C, x64_reg32, x64_reg32, x64_reg_ptr32, int32_t>(inst_name, s, expected_lines, "DWORD", 8, 8);
+//	regptr_offs_reg<C, x64_reg32, x64_reg16, x64_reg_ptr32, int32_t>(inst_name, s, expected_lines, "WORD", 8, 8);
+//	regptr_offs_reg<C, x64_reg32, x64_reg8, x64_reg_ptr32, int32_t>(inst_name, s, expected_lines, "BYTE", 8, 4);
+//
+//
+//	reg_regptr_offs<C, x64_reg64, x64_reg64, x64_reg_ptr64, int32_t>(inst_name, s, expected_lines, "QWORD", 16, 16);
+//	reg_regptr_offs<C, x64_reg32, x64_reg64, x64_reg_ptr64, int32_t>(inst_name, s, expected_lines, "DWORD", 8, 16);
+//	reg_regptr_offs<C, x64_reg16, x64_reg64, x64_reg_ptr64, int32_t>(inst_name, s, expected_lines, "WORD", 8, 16);
+//	reg_regptr_offs<C, x64_reg8, x64_reg64, x64_reg_ptr64, int32_t>(inst_name, s, expected_lines, "BYTE", 4, 16);
+//
+//	reg_regptr_offs<C, x64_reg64, x64_reg32, x64_reg_ptr32, int32_t>(inst_name, s, expected_lines, "QWORD", 16, 8);
+//	reg_regptr_offs<C, x64_reg32, x64_reg32, x64_reg_ptr32, int32_t>(inst_name, s, expected_lines, "DWORD", 8, 8);
+//	reg_regptr_offs<C, x64_reg16, x64_reg32, x64_reg_ptr32, int32_t>(inst_name, s, expected_lines, "WORD", 8, 8);
+//	reg_regptr_offs<C, x64_reg8, x64_reg32, x64_reg_ptr32, int32_t>(inst_name, s, expected_lines, "BYTE", 4, 8);
+//
+//	reg_imm<C, x64_reg32, uint32_t>(inst_name, s, expected_lines, 8);
+//	reg_imm<C, x64_reg16, uint16_t>(inst_name, s, expected_lines, 8);
+//	reg_imm<C, x64_reg8, uint8_t>(inst_name, s, expected_lines, 8);
+//
+//	reg_imm_addr<C, x64_reg64, int32_t>(inst_name, s, expected_lines, "QWORD", 16);
+//	reg_imm_addr<C, x64_reg32, int32_t>(inst_name, s, expected_lines, "DWORD", 8);
+//	reg_imm_addr<C, x64_reg16, int32_t>(inst_name, s, expected_lines, "WORD", 8);
+//	reg_imm_addr<C, x64_reg8, int32_t>(inst_name, s, expected_lines, "BYTE", 8);
+//
+//	imm_addr_reg<C, int32_t, x64_reg64>(inst_name, s, expected_lines, "QWORD", 16);
+//	imm_addr_reg<C, int32_t, x64_reg32>(inst_name, s, expected_lines, "DWORD", 8);
+//	imm_addr_reg<C, int32_t, x64_reg16>(inst_name, s, expected_lines, "WORD", 8);
+//	imm_addr_reg<C, int32_t, x64_reg8>(inst_name, s, expected_lines, "BYTE", 8);
+//
+//
+//
+//
+//	reg_reg_ptr_idx<C, x64_reg64, x64_reg_ptr64, x64_reg64>(inst_name, s, expected_lines, "QWORD", 16, 16);
+//	reg_reg_ptr_idx<C, x64_reg32, x64_reg_ptr64, x64_reg64>(inst_name, s, expected_lines, "DWORD", 8, 16);
+//	reg_reg_ptr_idx<C, x64_reg16, x64_reg_ptr64, x64_reg64>(inst_name, s, expected_lines, "WORD", 8, 16);
+//	reg_reg_ptr_idx<C, x64_reg8, x64_reg_ptr64, x64_reg64>(inst_name, s, expected_lines, "BYTE", 4, 16);
+//
+//	reg_reg_ptr_idx<C, x64_reg64, x64_reg_ptr32, x64_reg32>(inst_name, s, expected_lines, "QWORD", 16, 8);
+//	reg_reg_ptr_idx<C, x64_reg32, x64_reg_ptr32, x64_reg32>(inst_name, s, expected_lines, "DWORD", 8, 8);
+//	reg_reg_ptr_idx<C, x64_reg16, x64_reg_ptr32, x64_reg32>(inst_name, s, expected_lines, "WORD", 8, 8);
+//	reg_reg_ptr_idx<C, x64_reg8, x64_reg_ptr32, x64_reg32>(inst_name, s, expected_lines, "BYTE", 4, 8);
+//
+//	reg_ptr_idx_reg<C, x64_reg_ptr64, x64_reg64, x64_reg64>(inst_name, s, expected_lines, "QWORD", 16, 16);
+//	reg_ptr_idx_reg<C, x64_reg_ptr64, x64_reg64, x64_reg32>(inst_name, s, expected_lines, "DWORD", 16, 8);
+//	reg_ptr_idx_reg<C, x64_reg_ptr64, x64_reg64, x64_reg16>(inst_name, s, expected_lines, "WORD", 16, 8);
+//	reg_ptr_idx_reg<C, x64_reg_ptr64, x64_reg64, x64_reg8>(inst_name, s, expected_lines, "BYTE", 16, 4);
+//
+//	reg_ptr_idx_reg<C, x64_reg_ptr32, x64_reg32, x64_reg64>(inst_name, s, expected_lines, "QWORD", 8, 16);
+//	reg_ptr_idx_reg<C, x64_reg_ptr32, x64_reg32, x64_reg32>(inst_name, s, expected_lines, "DWORD", 8, 8);
+//	reg_ptr_idx_reg<C, x64_reg_ptr32, x64_reg32, x64_reg16>(inst_name, s, expected_lines, "WORD", 8, 8);
+//	reg_ptr_idx_reg<C, x64_reg_ptr32, x64_reg32, x64_reg8>(inst_name, s, expected_lines, "BYTE", 8, 4);
+//
+//
+//	reg_reg_ptr_idx_off<C, x64_reg64, x64_reg_ptr64, x64_reg64, int8_t>(inst_name, s, expected_lines, "QWORD", 16, 16);
+//	reg_reg_ptr_idx_off<C, x64_reg32, x64_reg_ptr64, x64_reg64, int8_t>(inst_name, s, expected_lines, "DWORD", 8, 16);
+//	reg_reg_ptr_idx_off<C, x64_reg16, x64_reg_ptr64, x64_reg64, int8_t>(inst_name, s, expected_lines, "WORD", 8, 16);
+//	reg_reg_ptr_idx_off<C, x64_reg8, x64_reg_ptr64, x64_reg64, int8_t>(inst_name, s, expected_lines, "BYTE", 4, 16);
+//
+//	reg_reg_ptr_idx_off<C, x64_reg64, x64_reg_ptr32, x64_reg32, int8_t>(inst_name, s, expected_lines, "QWORD", 16, 8);
+//	reg_reg_ptr_idx_off<C, x64_reg32, x64_reg_ptr32, x64_reg32, int8_t>(inst_name, s, expected_lines, "DWORD", 8, 8);
+//	reg_reg_ptr_idx_off<C, x64_reg16, x64_reg_ptr32, x64_reg32, int8_t>(inst_name, s, expected_lines, "WORD", 8, 8);
+//	reg_reg_ptr_idx_off<C, x64_reg8, x64_reg_ptr32, x64_reg32, int8_t>(inst_name, s, expected_lines, "BYTE", 4, 8);
+//
+//	reg_ptr_idx_off_reg<C, x64_reg_ptr64, x64_reg64, int8_t, x64_reg64>(inst_name, s, expected_lines, "QWORD", 16, 16);
+//	reg_ptr_idx_off_reg<C, x64_reg_ptr64, x64_reg64, int8_t, x64_reg32>(inst_name, s, expected_lines, "DWORD", 16, 8);
+//	reg_ptr_idx_off_reg<C, x64_reg_ptr64, x64_reg64, int8_t, x64_reg16>(inst_name, s, expected_lines, "WORD", 16, 8);
+//	reg_ptr_idx_off_reg<C, x64_reg_ptr64, x64_reg64, int8_t, x64_reg8>(inst_name, s, expected_lines, "BYTE", 16, 4);
+//
+//	reg_ptr_idx_off_reg<C, x64_reg_ptr32, x64_reg32, int8_t, x64_reg64>(inst_name, s, expected_lines, "QWORD", 8, 16);
+//	reg_ptr_idx_off_reg<C, x64_reg_ptr32, x64_reg32, int8_t, x64_reg32>(inst_name, s, expected_lines, "DWORD", 8, 8);
+//	reg_ptr_idx_off_reg<C, x64_reg_ptr32, x64_reg32, int8_t, x64_reg16>(inst_name, s, expected_lines, "WORD", 8, 8);
+//	reg_ptr_idx_off_reg<C, x64_reg_ptr32, x64_reg32, int8_t, x64_reg8>(inst_name, s, expected_lines, "BYTE", 8, 4);
+//
+//
+//	reg_reg_ptr_idx_off<C, x64_reg64, x64_reg_ptr64, x64_reg64, int32_t>(inst_name, s, expected_lines, "QWORD", 16, 16);
+//	reg_reg_ptr_idx_off<C, x64_reg32, x64_reg_ptr64, x64_reg64, int32_t>(inst_name, s, expected_lines, "DWORD", 8, 16);
+//	reg_reg_ptr_idx_off<C, x64_reg16, x64_reg_ptr64, x64_reg64, int32_t>(inst_name, s, expected_lines, "WORD", 8, 16);
+//	reg_reg_ptr_idx_off<C, x64_reg8, x64_reg_ptr64, x64_reg64, int32_t>(inst_name, s, expected_lines, "BYTE", 4, 16);
+//
+//	reg_reg_ptr_idx_off<C, x64_reg64, x64_reg_ptr32, x64_reg32, int32_t>(inst_name, s, expected_lines, "QWORD", 16, 8);
+//	reg_reg_ptr_idx_off<C, x64_reg32, x64_reg_ptr32, x64_reg32, int32_t>(inst_name, s, expected_lines, "DWORD", 8, 8);
+//	reg_reg_ptr_idx_off<C, x64_reg16, x64_reg_ptr32, x64_reg32, int32_t>(inst_name, s, expected_lines, "WORD", 8, 8);
+//	reg_reg_ptr_idx_off<C, x64_reg8, x64_reg_ptr32, x64_reg32, int32_t>(inst_name, s, expected_lines, "BYTE", 4, 8);
+//
+//	reg_ptr_idx_off_reg<C, x64_reg_ptr64, x64_reg64, int32_t, x64_reg64>(inst_name, s, expected_lines, "QWORD", 16, 16);
+//	reg_ptr_idx_off_reg<C, x64_reg_ptr64, x64_reg64, int32_t, x64_reg32>(inst_name, s, expected_lines, "DWORD", 16, 8);
+//	reg_ptr_idx_off_reg<C, x64_reg_ptr64, x64_reg64, int32_t, x64_reg16>(inst_name, s, expected_lines, "WORD", 16, 8);
+//	reg_ptr_idx_off_reg<C, x64_reg_ptr64, x64_reg64, int32_t, x64_reg8>(inst_name, s, expected_lines, "BYTE", 16, 4);
+//
+//	reg_ptr_idx_off_reg<C, x64_reg_ptr32, x64_reg32, int32_t, x64_reg64>(inst_name, s, expected_lines, "QWORD", 8, 16);
+//	reg_ptr_idx_off_reg<C, x64_reg_ptr32, x64_reg32, int32_t, x64_reg32>(inst_name, s, expected_lines, "DWORD", 8, 8);
+//	reg_ptr_idx_off_reg<C, x64_reg_ptr32, x64_reg32, int32_t, x64_reg16>(inst_name, s, expected_lines, "WORD", 8, 8);
+//	reg_ptr_idx_off_reg<C, x64_reg_ptr32, x64_reg32, int32_t, x64_reg8>(inst_name, s, expected_lines, "BYTE", 8, 4);
+//}
+//
+//template<typename C>
+//void x64_testing::test_x64_jmpcall_base(std::string inst_name, instruction_stream& s, std::vector<std::string>& expected_lines)
+//{
+//	jmpcall_reg<C>(inst_name, s, expected_lines);
+//	jmpcall_regptr<C, x64_reg_ptr64, x64_reg64>(inst_name, s, expected_lines, 16);
+//	jmpcall_regptr<C, x64_reg_ptr32, x64_reg32>(inst_name, s, expected_lines, 8);
+//	jmpcall_regptr_off<C, x64_reg_ptr64, x64_reg64, int8_t>(inst_name, s, expected_lines, 8);
+//	jmpcall_regptr_off<C, x64_reg_ptr64, x64_reg64, int32_t>(inst_name, s, expected_lines, 8);
+//	jmpcall_regptr_off<C, x64_reg_ptr32, x64_reg32, int8_t>(inst_name, s, expected_lines, 8);
+//	jmpcall_regptr_off<C, x64_reg_ptr32, x64_reg32, int32_t>(inst_name, s, expected_lines, 8);
+//	jmpcall_regptr_idx<C, x64_reg_ptr64, x64_reg64>(inst_name, s, expected_lines, 8);
+//	jmpcall_regptr_idx<C, x64_reg_ptr32, x64_reg32>(inst_name, s, expected_lines, 8);
+//	jmpcall_regptr_idx_off<C, x64_reg_ptr32, x64_reg32, int8_t>(inst_name, s, expected_lines, 8);
+//	jmpcall_regptr_idx_off<C, x64_reg_ptr32, x64_reg32, int32_t>(inst_name, s, expected_lines, 8);
+//
+//	auto jmp_pos = s.pos();
+//	int32_t off = 0x12345678;
+//	auto inst = C(off);
+//
+//	stringstream stream;
+//	add_to_strinstream(stream, s, inst);
+//	stream << "\t" << inst_name << " 0x" << hex << setw(0) << (uint64_t(jmp_pos) + off + inst.size()) << flush;
+//	expected_lines.push_back(stream.str());
+//	s << inst;
+//}
 
 //int eval(const expression& exp)
 //{

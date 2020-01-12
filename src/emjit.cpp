@@ -255,7 +255,7 @@ int main()
 //	s << x64_mov(x64_regs::r15, x64_reg_addr(x64_regs::rax), (int32_t) -0x42);
 //	s << x64_mov(x64_regs::rax, x64_reg_addr(x64_regs::r15), (int32_t) -0x42);
 //	s << x64_mov(x64_regs::r15, x64_reg_addr(x64_regs::r15), (int32_t) -0x42);
-	s << x64_mov(x64_regs::ebx, x64_reg_addr(x64_regs::rax), (int32_t) -0x42);
+	s << x64_mov(x64_regs::ebx, x64_address(x64_regs::rax, (int32_t) -0x42));
 //	s << x64_mov(x64_regs::ebx, x64_reg_addr(x64_regs::r15), (int32_t) -0x42);
 //	s << x64_mov(x64_regs::cx, x64_reg_addr(x64_regs::rax), (int32_t) -0x42);
 //	s << x64_mov(x64_regs::cx, x64_reg_addr(x64_regs::r15), (int32_t) -0x42);

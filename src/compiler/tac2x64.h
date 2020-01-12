@@ -63,18 +63,18 @@ private:
 	void stack_to_reg(x64_reg32 dst, int32_t src_offset)
 	{
 		if (src_offset < -128 || src_offset > 127)
-			inst_stream << T(dst, x64_reg_addr(x64_regs::rsp), src_offset);
+			inst_stream << T(dst, x64_address(x64_regs::rsp, src_offset));
 		else
-			inst_stream << T(dst, x64_reg_addr(x64_regs::rsp), static_cast<int8_t>(src_offset));
+			inst_stream << T(dst, x64_address(x64_regs::rsp, static_cast<int8_t>(src_offset)));
 	}
 
 	template<typename T>
 	void reg_to_stack(int32_t dst_offset, x64_reg32 src)
 	{
 		if (dst_offset < -128 || dst_offset > 127)
-			inst_stream << T(x64_reg_addr(x64_regs::rsp), dst_offset, src);
+			inst_stream << T(x64_address(x64_regs::rsp, dst_offset), src);
 		else
-			inst_stream << T(x64_reg_addr(x64_regs::rsp), static_cast<int8_t>(dst_offset), src);
+			inst_stream << T(x64_address(x64_regs::rsp, static_cast<int8_t>(dst_offset)), src);
 	}
 
 	template<typename T>
