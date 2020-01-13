@@ -103,7 +103,7 @@ struct x64_reg8h   : public x64_reg_base8h
 	constexpr static int n = 4;
 	static const std::string names[n];
 
-	// XXX: This is a bit of a hack to make
+	// XXX: This is a bit of a hack to make ah, bh. ch and dh a little easier to encode
 	inline x64_reg8h shift() const { return x64_reg8h(value + 4); }
 
 	inline constexpr x64_reg8h(const x64_reg8& reg) : x64_reg8h(reg.value) { }
@@ -465,14 +465,9 @@ public:
 	 : has_modrm(true), has_sib(true), sib(s)
 	{ }
 
-	x64_instruction(uint8_t  imm) : imm_size(sizeof(uint8_t)),  imm64(static_cast<uint64_t>(from_or_to_little(imm))) { }
-	x64_instruction(uint16_t imm) : imm_size(sizeof(uint16_t)), imm64(static_cast<uint64_t>(from_or_to_little(imm))) { }
-	x64_instruction(uint32_t imm) : imm_size(sizeof(uint32_t)), imm64(static_cast<uint64_t>(from_or_to_little(imm))) { }
-	x64_instruction(uint64_t imm) : imm_size(sizeof(uint64_t)), imm64(static_cast<uint64_t>(from_or_to_little(imm))) { }
-	x64_instruction(int8_t   imm) : imm_size(sizeof(int8_t)),   imm64(static_cast<uint64_t>(from_or_to_little(imm))) { }
-	x64_instruction(int16_t  imm) : imm_size(sizeof(int16_t)),  imm64(static_cast<uint64_t>(from_or_to_little(imm))) { }
-	x64_instruction(int32_t  imm) : imm_size(sizeof(int32_t)),  imm64(static_cast<uint64_t>(from_or_to_little(imm))) { }
-	x64_instruction(int64_t  imm) : imm_size(sizeof(int64_t)),  imm64(static_cast<uint64_t>(from_or_to_little(imm))) { }
+	template<typename IMM_TYPE>
+	x64_instruction(IMM_TYPE  imm)
+	: imm_size(sizeof(IMM_TYPE)),  imm64(static_cast<uint64_t>(from_or_to_little(imm))) { }
 
 	inline std::size_t size() const override
 	{
@@ -835,8 +830,6 @@ private:
 template<uint8_t A, uint8_t B, uint8_t C, uint8_t... Prefixes>
 struct x64_jmpcall_base : public x64_instruction
 {
-	using x64_instruction::x64_instruction;
-
 	x64_jmpcall_base(const x64_address& src) { set_x64_reg_address(x64_reg32(C), src, {std::forward<uint8_t>(Prefixes)..., A}); }
 	x64_jmpcall_base(int32_t off) : x64_instruction( {std::forward<uint8_t>(Prefixes)..., B}, off) { }
 	x64_jmpcall_base(x64_reg64 reg) { single_reg64(reg, C, {std::forward<uint8_t>(Prefixes)..., A}, 3); }
@@ -845,6 +838,8 @@ struct x64_jmpcall_base : public x64_instruction
 template<uint8_t A, uint8_t B, uint8_t C, uint8_t... Prefixes>
 struct x64_single_op_base : x64_instruction
 {
+	using x64_instruction::x64_instruction;
+
 	x64_single_op_base(x64_reg64 reg) { single_reg(reg, C, {std::forward<uint8_t>(Prefixes)..., B}, 3); }
 	x64_single_op_base(x64_reg32 reg) { single_reg(reg, C, {std::forward<uint8_t>(Prefixes)..., B}, 3); }
 	x64_single_op_base(x64_reg16 reg) { single_reg(reg, C, {std::forward<uint8_t>(Prefixes)..., B}, 3); }
@@ -950,10 +945,10 @@ public:
 	x64_mov(x64_reg32_0 reg, uint32_t* addr) { eax_imm(reg, reinterpret_cast<uint64_t>(addr), {0xa1}); }
 	x64_mov(x64_reg16_0 reg, uint16_t* addr) { eax_imm(reg, reinterpret_cast<uint64_t>(addr), {0xa1}); }
 	x64_mov(x64_reg8_0  reg, uint8_t*  addr) { eax_imm(reg, reinterpret_cast<uint64_t>(addr), {0xa0}); }
-	x64_mov(x64_reg64_0 reg, int64_t* addr) { eax_imm(reg, reinterpret_cast<uint64_t>(addr), {0xa1}); }
-	x64_mov(x64_reg32_0 reg, int32_t* addr) { eax_imm(reg, reinterpret_cast<uint64_t>(addr), {0xa1}); }
-	x64_mov(x64_reg16_0 reg, int16_t* addr) { eax_imm(reg, reinterpret_cast<uint64_t>(addr), {0xa1}); }
-	x64_mov(x64_reg8_0  reg, int8_t*  addr) { eax_imm(reg, reinterpret_cast<uint64_t>(addr), {0xa0}); }
+	x64_mov(x64_reg64_0 reg, int64_t*  addr) { eax_imm(reg, reinterpret_cast<uint64_t>(addr), {0xa1}); }
+	x64_mov(x64_reg32_0 reg, int32_t*  addr) { eax_imm(reg, reinterpret_cast<uint64_t>(addr), {0xa1}); }
+	x64_mov(x64_reg16_0 reg, int16_t*  addr) { eax_imm(reg, reinterpret_cast<uint64_t>(addr), {0xa1}); }
+	x64_mov(x64_reg8_0  reg, int8_t*   addr) { eax_imm(reg, reinterpret_cast<uint64_t>(addr), {0xa0}); }
 
 	/* Move register into immediate address */
 	/* 64 bit pointers */
@@ -961,46 +956,59 @@ public:
 	x64_mov(uint32_t* addr, x64_reg32_0 reg) { eax_imm(reg, reinterpret_cast<uint64_t>(addr), {0xa3}); }
 	x64_mov(uint16_t* addr, x64_reg16_0 reg) { eax_imm(reg, reinterpret_cast<uint64_t>(addr), {0xa3}); }
 	x64_mov(uint8_t*  addr, x64_reg8_0 reg)  { eax_imm(reg, reinterpret_cast<uint64_t>(addr), {0xa2}); }
-	x64_mov(int64_t* addr, x64_reg64_0 reg) { eax_imm(reg, reinterpret_cast<uint64_t>(addr), {0xa3}); }
-	x64_mov(int32_t* addr, x64_reg32_0 reg) { eax_imm(reg, reinterpret_cast<uint64_t>(addr), {0xa3}); }
-	x64_mov(int16_t* addr, x64_reg16_0 reg) { eax_imm(reg, reinterpret_cast<uint64_t>(addr), {0xa3}); }
-	x64_mov(int8_t*  addr, x64_reg8_0 reg)  { eax_imm(reg, reinterpret_cast<uint64_t>(addr), {0xa2}); }
+	x64_mov(int64_t*  addr, x64_reg64_0 reg) { eax_imm(reg, reinterpret_cast<uint64_t>(addr), {0xa3}); }
+	x64_mov(int32_t*  addr, x64_reg32_0 reg) { eax_imm(reg, reinterpret_cast<uint64_t>(addr), {0xa3}); }
+	x64_mov(int16_t*  addr, x64_reg16_0 reg) { eax_imm(reg, reinterpret_cast<uint64_t>(addr), {0xa3}); }
+	x64_mov(int8_t*   addr, x64_reg8_0 reg)  { eax_imm(reg, reinterpret_cast<uint64_t>(addr), {0xa2}); }
 
 	virtual ~x64_mov() { }
 };
 
 
-struct x64_add: public x64_arith_base<0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0>
-{ using x64_arith_base::x64_arith_base; };
+struct x64_add: public x64_arith_base<0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0> { using x64_arith_base::x64_arith_base; };
+struct x64_or : public x64_arith_base<0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 1> { using x64_arith_base::x64_arith_base; };
+struct x64_adc: public x64_arith_base<0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 2> { using x64_arith_base::x64_arith_base; };
+struct x64_sbb: public x64_arith_base<0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 3> { using x64_arith_base::x64_arith_base; };
+struct x64_and: public x64_arith_base<0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 4> { using x64_arith_base::x64_arith_base; };
+struct x64_sub: public x64_arith_base<0x28, 0x29, 0x2a, 0x2b, 0x2c, 0x2d, 5> { using x64_arith_base::x64_arith_base; };
+struct x64_xor: public x64_arith_base<0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 6> { using x64_arith_base::x64_arith_base; };
+struct x64_cmp: public x64_arith_base<0x38, 0x39, 0x3a, 0x3b, 0x3c, 0x3d, 7> { using x64_arith_base::x64_arith_base; };
 
-struct x64_or: public x64_arith_base<0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 1>
-{ using x64_arith_base::x64_arith_base; };
+struct x64_inc   : public x64_single_op_base<0xfe, 0xff, 0> { using x64_single_op_base::x64_single_op_base; };
+struct x64_incq  : public x64_inc { using x64_inc::x64_inc; x64_incq(const x64_address& src) { set_x64_reg_address(x64_reg64(0), src, {0xff}); } };
+struct x64_incl  : public x64_inc { using x64_inc::x64_inc; x64_incl(const x64_address& src) { set_x64_reg_address(x64_reg32(0), src, {0xff}); } };
+struct x64_incw  : public x64_inc { using x64_inc::x64_inc; x64_incw(const x64_address& src) { set_x64_reg_address(x64_reg16(0), src, {0xff}); } };
+struct x64_incb  : public x64_inc { using x64_inc::x64_inc; x64_incb(const x64_address& src) { set_x64_reg_address(x64_reg8h(0), src, {0xfe}); } };
 
-struct x64_adc: public x64_arith_base<0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 2>
-{ using x64_arith_base::x64_arith_base; };
+struct x64_dec   : public x64_single_op_base<0xfe, 0xff, 1> { using x64_single_op_base::x64_single_op_base; };
+struct x64_decq  : public x64_dec { using x64_dec::x64_dec; x64_decq(const x64_address& src) { set_x64_reg_address(x64_reg64(1), src, {0xff}); } };
+struct x64_decl  : public x64_dec { using x64_dec::x64_dec; x64_decl(const x64_address& src) { set_x64_reg_address(x64_reg32(1), src, {0xff}); } };
+struct x64_decw  : public x64_dec { using x64_dec::x64_dec; x64_decw(const x64_address& src) { set_x64_reg_address(x64_reg16(1), src, {0xff}); } };
+struct x64_decb  : public x64_dec { using x64_dec::x64_dec; x64_decb(const x64_address& src) { set_x64_reg_address(x64_reg8h(1), src, {0xfe}); } };
 
-struct x64_sbb: public x64_arith_base<0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 3>
-{ using x64_arith_base::x64_arith_base; };
+struct x64_neg   : public x64_single_op_base<0xf6, 0xf7, 3> { using x64_single_op_base::x64_single_op_base; };
+struct x64_negq  : public x64_neg { using x64_neg::x64_neg; x64_negq(const x64_address& src) { set_x64_reg_address(x64_reg64(3), src, {0xf7}); } };
+struct x64_negl  : public x64_neg { using x64_neg::x64_neg; x64_negl(const x64_address& src) { set_x64_reg_address(x64_reg32(3), src, {0xf7}); } };
+struct x64_negw  : public x64_neg { using x64_neg::x64_neg; x64_negw(const x64_address& src) { set_x64_reg_address(x64_reg16(3), src, {0xf7}); } };
+struct x64_negb  : public x64_neg { using x64_neg::x64_neg; x64_negb(const x64_address& src) { set_x64_reg_address(x64_reg8h(3), src, {0xf6}); } };
 
-struct x64_and: public x64_arith_base<0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 4>
-{ using x64_arith_base::x64_arith_base; };
+struct x64_mul   : public x64_single_op_base<0xf6, 0xf7, 4> { using x64_single_op_base::x64_single_op_base; };
+struct x64_mulq  : public x64_mul { using x64_mul::x64_mul; x64_mulq(const x64_address& src) { set_x64_reg_address(x64_reg64(4), src, {0xf7}); } };
+struct x64_mull  : public x64_mul { using x64_mul::x64_mul; x64_mull(const x64_address& src) { set_x64_reg_address(x64_reg32(4), src, {0xf7}); } };
+struct x64_mulw  : public x64_mul { using x64_mul::x64_mul; x64_mulw(const x64_address& src) { set_x64_reg_address(x64_reg16(4), src, {0xf7}); } };
+struct x64_mulb  : public x64_mul { using x64_mul::x64_mul; x64_mulb(const x64_address& src) { set_x64_reg_address(x64_reg8h(4), src, {0xf6}); } };
 
-struct x64_sub: public x64_arith_base<0x28, 0x29, 0x2a, 0x2b, 0x2c, 0x2d, 5>
-{ using x64_arith_base::x64_arith_base; };
+struct x64_div   : public x64_single_op_base<0xf6, 0xf7, 6> { using x64_single_op_base::x64_single_op_base; };
+struct x64_divq  : public x64_div { using x64_div::x64_div; x64_divq(const x64_address& src) { set_x64_reg_address(x64_reg64(6), src, {0xf7}); } };
+struct x64_divl  : public x64_div { using x64_div::x64_div; x64_divl(const x64_address& src) { set_x64_reg_address(x64_reg32(6), src, {0xf7}); } };
+struct x64_divw  : public x64_div { using x64_div::x64_div; x64_divw(const x64_address& src) { set_x64_reg_address(x64_reg16(6), src, {0xf7}); } };
+struct x64_divb  : public x64_div { using x64_div::x64_div; x64_divb(const x64_address& src) { set_x64_reg_address(x64_reg8h(6), src, {0xf6}); } };
 
-struct x64_xor: public x64_arith_base<0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 6>
-{ using x64_arith_base::x64_arith_base; };
-
-struct x64_cmp: public x64_arith_base<0x38, 0x39, 0x3a, 0x3b, 0x3c, 0x3d, 7>
-{ using x64_arith_base::x64_arith_base; };
-
-
-struct x64_inc  : public x64_single_op_base<0xfe, 0xff, 0> { using x64_single_op_base::x64_single_op_base; };
-struct x64_dec  : public x64_single_op_base<0xfe, 0xff, 1> { using x64_single_op_base::x64_single_op_base; };
-struct x64_neg  : public x64_single_op_base<0xf6, 0xf7, 3> { using x64_single_op_base::x64_single_op_base; };
-struct x64_mul  : public x64_single_op_base<0xf6, 0xf7, 4> { using x64_single_op_base::x64_single_op_base; };
-struct x64_div  : public x64_single_op_base<0xf6, 0xf7, 6> { using x64_single_op_base::x64_single_op_base; };
-struct x64_idiv : public x64_single_op_base<0xf6, 0xf7, 7> { using x64_single_op_base::x64_single_op_base; };
+struct x64_idiv  : public x64_single_op_base<0xf6, 0xf7, 7> { using x64_single_op_base::x64_single_op_base; };
+struct x64_idivq : public x64_idiv { using x64_idiv::x64_idiv; x64_idivq(const x64_address& src) { set_x64_reg_address(x64_reg64(7), src, {0xf7}); } };
+struct x64_idivl : public x64_idiv { using x64_idiv::x64_idiv; x64_idivl(const x64_address& src) { set_x64_reg_address(x64_reg32(7), src, {0xf7}); } };
+struct x64_idivw : public x64_idiv { using x64_idiv::x64_idiv; x64_idivw(const x64_address& src) { set_x64_reg_address(x64_reg16(7), src, {0xf7}); } };
+struct x64_idivb : public x64_idiv { using x64_idiv::x64_idiv; x64_idivb(const x64_address& src) { set_x64_reg_address(x64_reg8h(7), src, {0xf6}); } };
 
 struct x64_imul : public x64_instruction
 {
@@ -1044,6 +1052,6 @@ struct x64_pushpop : x64_instruction
 };
 
 struct x64_push : public x64_pushpop<0x50> { using x64_pushpop::x64_pushpop; };
-struct x64_pop : public x64_pushpop<0x58> { using x64_pushpop::x64_pushpop; };
+struct x64_pop  : public x64_pushpop<0x58> { using x64_pushpop::x64_pushpop; };
 
 #endif /* X64INSTRUCTION_H_ */
