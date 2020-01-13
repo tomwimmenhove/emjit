@@ -52,6 +52,12 @@ private:
 		var(const var&) = default;
 		var(variable_type type, int32_t i) : type(type), i(i) { }
 
+		template<typename T>
+		inline T reg() const { return T(type == variable_type::reg ? i : -1); }
+
+		template<typename T>
+		inline bool is_reg(const T& reg) const { return type == variable_type::reg && i == reg.value; }
+
 		variable_type type = variable_type::reg;
 		int32_t i = 0;
 	};
@@ -63,19 +69,29 @@ private:
 	void stack_to_reg(x64_reg32 dst, int32_t src_offset)
 	{
 		if (src_offset < -128 || src_offset > 127)
-			inst_stream << T(dst, x64_address(x64_regs::rsp, src_offset));
+			inst_stream << T(dst, x64_address(x64_regs::rbp, src_offset));
 		else
-			inst_stream << T(dst, x64_address(x64_regs::rsp, static_cast<int8_t>(src_offset)));
+			inst_stream << T(dst, x64_address(x64_regs::rbp, static_cast<int8_t>(src_offset)));
 	}
 
 	template<typename T>
 	void reg_to_stack(int32_t dst_offset, x64_reg32 src)
 	{
 		if (dst_offset < -128 || dst_offset > 127)
-			inst_stream << T(x64_address(x64_regs::rsp, dst_offset), src);
+			inst_stream << T(x64_address(x64_regs::rbp, dst_offset), src);
 		else
-			inst_stream << T(x64_address(x64_regs::rsp, static_cast<int8_t>(dst_offset)), src);
+			inst_stream << T(x64_address(x64_regs::rbp, static_cast<int8_t>(dst_offset)), src);
 	}
+
+	template<typename T>
+	void single_op_stack(int32_t dst_offset)
+	{
+		if (dst_offset < -128 || dst_offset > 127)
+			inst_stream << T(x64_address(x64_regs::rbp, dst_offset));
+		else
+			inst_stream << T(x64_address(x64_regs::rbp, static_cast<int8_t>(dst_offset)));
+	}
+
 
 	template<typename T>
 	void div(x64_reg32 dst, x64_reg32 divident, x64_reg32 divisor)
@@ -125,6 +141,70 @@ private:
 		/* Do we need to restore edx ? */
 		if (divisor.value == x64_regs::edx.value && dr.is_used(x64_regs::edx))
 			inst_stream << x64_mov(divisor, tmp.reg());
+	}
+
+
+	/* X64 IDIV instruction:
+	 * Result (dst) _always_ in EAX
+	 * Dividend is _always_ in EAX
+	 * Divisor can be either a register or memory
+	 * EDX will be set to zero before issueing the instruction
+	 */
+	template<typename T>
+	void div(const var& dst, const var& dividend, const var& divisor)
+	{
+		/* Careful: order matters! */
+		x64_tmp_reg<x64_reg32> tmp(inst_stream, dr);
+		x64_steal_reg<x64_reg32> steal_edx(inst_stream, dr);
+		x64_steal_reg<x64_reg32> steal_eax(inst_stream, dr);
+
+		int divisor_idx;
+		/* Check if we need to use a temporary register for the divisor */
+		if (divisor.type == variable_type::constant || divisor.is_reg(x64_regs::edx))
+		{
+			/* Make sure we don't end up with our tmp in edx :) */
+			auto tmp_reg = tmp.take({x64_regs::edx, x64_regs::eax,
+				dst.reg<x64_reg32>(), dividend.reg<x64_reg32>()});
+
+			/* Move the divisor into our tmp register.
+			 * We can safely do this, because it won't use any temporaries */
+			src_dest<x64_mov>(var(variable_type::reg, tmp_reg.value), divisor);
+			divisor_idx = tmp_reg.value;
+		}
+		else
+		{
+			/* Otherwise, take edx so that we can safely set it to 0 within this scope*/
+			steal_edx.take(x64_regs::edx, {dst.reg<x64_reg32>(), x64_regs::edx});
+			divisor_idx = divisor.i;
+		}
+
+		/* Zero edx */
+		inst_stream << x64_xor(x64_regs::edx, x64_regs::edx);
+
+		/* Move the divident into eax. Store it if we have to */
+		if (!dividend.is_reg(x64_regs::eax))
+		{
+			if (!dst.is_reg(x64_regs::eax))
+				steal_eax.take(x64_regs::eax, {dst.reg<x64_reg32>(), x64_regs::eax});
+
+			src_dest<x64_mov>(var(variable_type::reg, x64_regs::eax.value), dividend);
+		}
+
+		/* IDIV supports either dividing by a register, or address */
+		if (divisor.type == variable_type::stack)
+			single_op_stack<T>(divisor.i);
+			//inst_stream << T(x64_address(x64_regs::rbp, divisor.i));
+			//inst_stream << x64_idivl(x64_address(x64_regs::rbp, divisor.i));
+		else
+			inst_stream << T(x64_reg32(divisor_idx));
+
+		/* Move the result into the correct register, if not already there */
+		if (!dst.is_reg(x64_regs::eax))
+			src_dest<x64_mov>(dst, var(variable_type::reg, x64_regs::eax.value));
+
+		/* Do we need to restore edx ? */
+		if (divisor.is_reg(x64_regs::edx) && dr.is_used(x64_regs::edx))
+			inst_stream << x64_mov(divisor.reg<x64_reg32>(), tmp.reg());
 	}
 
 

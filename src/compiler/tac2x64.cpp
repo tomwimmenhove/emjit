@@ -68,105 +68,96 @@ void tac2x64::compile_expression(const tac& t)
 	{
 		dr.use(i);
 	}
-	inst_stream << x64_mov(x64_regs::eax, 42);
 
-	src_dest<x64_mov>(
-			var(variable_type::reg, x64_regs::eax.value),
-			var(variable_type::stack, 12));
-	src_dest<x64_mov>(
-			var(variable_type::reg, x64_regs::eax.value),
-			var(variable_type::stack, 0x1200));
-	src_dest<x64_mov>(
-			var(variable_type::reg, x64_regs::eax.value),
-			var(variable_type::constant, 0x1200));
+	auto program = inst_stream.entry_point<int()>();
+
+//	inst_stream << x64_mov(x64_regs::eax, 42);
+//
+//	src_dest<x64_mov>(
+//			var(variable_type::reg, x64_regs::eax.value),
+//			var(variable_type::stack, 12));
+//	src_dest<x64_mov>(
+//			var(variable_type::reg, x64_regs::eax.value),
+//			var(variable_type::stack, 0x1200));
+//	src_dest<x64_mov>(
+//			var(variable_type::reg, x64_regs::eax.value),
+//			var(variable_type::constant, 0x1200));
+//
+//
+//	src_dest<x64_mov>(
+//			var(variable_type::stack, 0x1200),
+//			var(variable_type::reg, x64_regs::eax.value)
+//			);
+//
+//	inst_stream << x64_nop1();
+//
+//	src_dest<x64_mov>(
+//			var(variable_type::stack, 0x1200),
+//			var(variable_type::reg, x64_regs::eax.value)
+//			);
+//
+//	inst_stream << x64_nop1();
+//
+//	src_dest<x64_mov>(
+//			var(variable_type::stack, 0x1200),
+//			var(variable_type::constant, 0x1211)
+//			);
+//
+//	inst_stream << x64_nop1();
+//
+//	src_dest<x64_mov>(
+//			var(variable_type::stack, 0x1200),
+//			var(variable_type::stack, 0x1211)
+//			);
 
 
-	src_dest<x64_mov>(
-			var(variable_type::stack, 0x1200),
-			var(variable_type::reg, x64_regs::eax.value)
-			);
+	prologue(0);
 
-	inst_stream << x64_nop1();
-
-	src_dest<x64_mov>(
-			var(variable_type::stack, 0x1200),
-			var(variable_type::reg, x64_regs::eax.value)
-			);
-
-	inst_stream << x64_nop1();
-
-	src_dest<x64_mov>(
-			var(variable_type::stack, 0x1200),
-			var(variable_type::constant, 0x1211)
-			);
-
-	inst_stream << x64_nop1();
-
-	src_dest<x64_mov>(
-			var(variable_type::stack, 0x1200),
-			var(variable_type::stack, 0x1211)
-			);
-
+	/* Push all registers and set them to 42 */
 	for (int i = 0; i < x64_reg32::n; i++)
 	{
 		auto reg = x64_reg64(i);
-		if (reg.is_sp() || reg.value == x64_regs::eax.value)
+		if (reg.is_sp() || reg.is_bp() || reg.value == x64_regs::eax.value)
 			continue;
 		inst_stream << x64_push(reg);
 		inst_stream << x64_mov(reg, (uint32_t) 42);
 	}
 
-	inst_stream << x64_nop1();
-	prologue(0);
-	inst_stream << x64_nop1();
+	auto result = var(variable_type::stack,  -64 + 0);
+	auto dvidend = var(variable_type::stack, -64 + 8);
+	auto divisor = var(variable_type::stack, -64 + 16);
 
+	src_dest<x64_mov>(dvidend, var(variable_type::constant, 1000));
+	src_dest<x64_mov>(divisor, var(variable_type::constant, 100));
 
-	inst_stream << x64_mov(x64_regs::ecx, 1000);
-	inst_stream << x64_mov(x64_regs::edx, 100);
-
-	inst_stream << x64_nop1();
-
-	div<x64_div>(x64_regs::ebx, x64_regs::ecx, x64_regs::edx);
+	div<x64_idivl>(result, dvidend, divisor);
 
 	inst_stream << x64_nop1();
 
-	inst_stream << x64_mov(x64_regs::eax, x64_regs::ebx);
+	src_dest<x64_mov>(var(variable_type::reg, x64_regs::eax.value), result);
 
-
-	inst_stream << x64_nop1();
-	epilogue();
-	inst_stream << x64_nop1();
-
+	/* Restore all register */
 	for (int i = 0; i < x64_reg32::n; i++)
 	{
 		auto reg = x64_reg64(x64_reg32::n - i - 1);
-		if (reg.is_sp() || reg.value == x64_regs::eax.value)
+		if (reg.is_sp() || reg.is_bp() || reg.value == x64_regs::eax.value)
 			continue;
 		inst_stream << x64_pop(reg);
 	}
 
+	epilogue();
+
 	inst_stream << x64_ret();
 
-
-	auto div_fn = inst_stream.entry_point<int(int, int)>();
-	div<x64_div>(x64_regs::eax, x64_regs::edi, x64_regs::esi);
-	inst_stream << x64_ret();
-
-	cout << "bla: " << div_fn(42 * 3, 3) << '\n';
+	auto res = program();
+	cout << "Result: " << res << '\n';
 
 
-
-
-	//inst_stream << x64_call(x64_address(x64_regs::eax));
-	//inst_stream << x64_call(x64_address(x64_regs::r8d));
-	inst_stream << x64_call(x64_address(x64_regs::rax));
-	inst_stream << x64_call(x64_regs::rax);
-
-	uint32_t bla;
-
-	inst_stream << x64_mov(x64_regs::eax, &bla);
-
-	//inst_stream << x64_call(x64_address(x64_regs::r8));
+//	auto div_fn = inst_stream.entry_point<int(int, int)>();
+//	div<x64_div>(x64_regs::eax, x64_regs::edi, x64_regs::esi);
+//	inst_stream << x64_ret();
+//
+//	cout << "bla: " << div_fn(42 * 3, 3) << '\n';
 
 
 
