@@ -9,6 +9,8 @@
 
 #include "tac2x64.h"
 
+#include "../arch/x64/x64disassembler.h"
+
 using namespace std;
 
 void tac2x64::prologue(int32_t stack_size)
@@ -149,9 +151,10 @@ void tac2x64::compile_expression(const tac& t)
 
 	inst_stream << x64_ret();
 
+	cout << x64_disassembler::disassemble(inst_stream, "intel", true);
+
 	auto res = program();
 	cout << "Result: " << res << '\n';
-
 
 //	auto div_fn = inst_stream.entry_point<int(int, int)>();
 //	div<x64_div>(x64_regs::eax, x64_regs::edi, x64_regs::esi);

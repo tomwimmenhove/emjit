@@ -50,7 +50,7 @@ int main()
 
 	t2e.compile_expression(t);
 
-	cout << x64_disassembler::disassemble(s, "intel", true);
+	//cout << x64_disassembler::disassemble(s, "intel", true);
 
 	/* Run it! */
 //	auto res = program(42, 10);

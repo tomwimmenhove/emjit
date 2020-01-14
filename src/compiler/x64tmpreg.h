@@ -62,36 +62,22 @@ template<typename T>
 class x64_tmp_reg
 {
 public:
-	x64_tmp_reg(instruction_stream& s, used_register<T>& dr)
-	 : s(s), dr(dr), push_pop(s)
+	x64_tmp_reg(instruction_stream& s, used_register<T>& dr, locked_registers<T>& lr)
+	 : s(s), dr(dr), lr(lr), locked(lr), push_pop(s)
 	{ }
 
-	T take(T default_reg = T(0))
+	T take()
 	{
 		auto tmp = dr.get();
-		if (tmp.value == -1)
-		{
-			/* No free register. Store the default_reg and use that */
-			push_pop.push(default_reg);
-			reg_idx = default_reg.value;
-		}
-		else
-			reg_idx = tmp.value;
-
-		return T(reg_idx);
-	}
-
-	T take(std::initializer_list<T> exclude)
-	{
-		auto tmp = dr.get(exclude);
 		if (tmp.value == -1)
 		{
 			for (int i = 0; i < T::n; i++)
 			{
 				auto reg = T(i);
-				if (used_register<T>::is_exluced(exclude, reg) ||
-						dr.is_illegal(reg))
+				if (lr.locked(reg))
 					continue;
+
+				locked.lock(reg);
 
 				push_pop.push(reg);
 				reg_idx = reg.value;
@@ -106,15 +92,16 @@ public:
 		return T(reg_idx);
 	}
 
-	void release() { push_pop.pop(); }
-
 	inline T reg() { return T(reg_idx); }
+	inline void release() { push_pop.pop(); locked.unlock(); }
 
 	virtual ~x64_tmp_reg() { release(); }
 
 private:
 	instruction_stream& s;
 	used_register<T>& dr;
+	locked_registers<T>& lr;
+	lock_register<T> locked;
 
 	x64_push_pop_reg<T> push_pop;
 	int reg_idx = 0;
@@ -124,24 +111,24 @@ template<typename T>
 class x64_steal_reg
 {
 public:
-	x64_steal_reg(instruction_stream& s, used_register<T>& dr)
-	 : s(s), dr(dr), push_pop(s)
+	x64_steal_reg(instruction_stream& s, used_register<T>& dr, locked_registers<T>& lr)
+	 : s(s), dr(dr), lr(lr), locked(lr), push_pop(s)
 	{ }
 
-	x64_steal_reg(instruction_stream& s, used_register<T>& dr, T reg)
-	 : s(s), dr(dr), push_pop(s)
+	x64_steal_reg(instruction_stream& s, used_register<T>& dr, locked_registers<T>& lr, T reg)
+	 : s(s), dr(dr), lr(lr), locked(lr), push_pop(s)
 	{
 		take(reg);
 	}
 
-	void take(T reg, std::initializer_list<T> exclude)
+	void take(T reg)
 	{
 		reg_idx = reg.value;
 		used = dr.is_used(reg_idx);
 		if (used)
 		{
 			/* Can we temporarily store it somewhere else? */
-			auto tmp_reg = dr.get(exclude);
+			auto tmp_reg = dr.get();
 			tmp_reg_idx = tmp_reg.value;
 			if (tmp_reg_idx != -1)
 				/* Yes. Just store it in some temporary register */
@@ -149,6 +136,9 @@ public:
 			else
 				/* Nope. We'll have to push it */
 				push_pop.push(reg);
+
+			/* Don't use it again until we're done with it! */
+			locked.lock(reg);
 		}
 		else
 		{
@@ -183,6 +173,8 @@ public:
 private:
 	instruction_stream& s;
 	used_register<T>& dr;
+	locked_registers<T>& lr;
+	lock_register<T> locked;
 
 	int reg_idx = 0;
 	bool stolen = 0;
