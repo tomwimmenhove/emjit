@@ -74,7 +74,7 @@ public:
 			for (int i = 0; i < T::n; i++)
 			{
 				auto reg = T(i);
-				if (lr.locked(reg))
+				if (lr.is_locked(reg))
 					continue;
 
 				locked.lock(reg);

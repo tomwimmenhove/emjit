@@ -125,13 +125,14 @@ void tac2x64::compile_expression(const tac& t)
 		inst_stream << x64_mov(reg, (uint32_t) 42);
 	}
 
-//	auto result = var(variable_type::stack,  -64 + 0);
-//	auto dvidend = var(variable_type::stack, -64 + 8);
-//	auto divisor = var(variable_type::stack, -64 + 16);
+	inst_stream << x64_nop1();
+	auto result = var(variable_type::stack,  -64 + 0);
+	auto dvidend = var(variable_type::stack, -64 + 8);
+	auto divisor = var(variable_type::stack, -64 + 16);
 
-	auto result = var(variable_type::reg,  x64_regs::eax.value);
-	auto dvidend = var(variable_type::reg, x64_regs::eax.value);
-	auto divisor = var(variable_type::reg, x64_regs::ecx.value);
+//	auto result = var(variable_type::reg,  x64_regs::eax.value);
+//	auto dvidend = var(variable_type::reg, x64_regs::edx.value);
+//	auto divisor = var(variable_type::reg, x64_regs::ecx.value);
 
 
 	src_dest<x64_mov>(dvidend, var(variable_type::constant, 1000));

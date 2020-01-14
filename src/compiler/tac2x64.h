@@ -159,37 +159,14 @@ private:
 		x64_steal_reg<x64_reg32> steal_edx(inst_stream, dr, lr);
 		x64_steal_reg<x64_reg32> steal_eax(inst_stream, dr, lr);
 
-		/* Lock variables that we can't use as temporaries */
-		lock_register<x64_reg32> lock_dst(lr); // Avoid dst being user as temp, in case it might be stored, and popped when done
-		lock_register<x64_reg32> lock_dividend(lr);
-		lock_register<x64_reg32> lock_divisor(lr);
+		/* Lock variables that we can't use as temporaries. dst is added here because if it's not locked, it
+		 * might get popped at the end (when going out of scope), overwriting the result. We also can't check if it's in
+		 * use because, if it's not, it might be used as a temporary later. */
+		lock_register<x64_reg32> lock_dst(lr, dst.reg<x64_reg32>(),dst.type == variable_type::reg);
+		lock_register<x64_reg32> lock_dividend(lr, dividend.reg<x64_reg32>(), dividend.type == variable_type::reg);
+		lock_register<x64_reg32> lock_divisor(lr,  divisor.reg<x64_reg32>(),  divisor.type == variable_type::reg);
 		lock_register<x64_reg32> lock_eax(lr, x64_regs::eax);
-		lock_register<x64_reg32> lock_edx(lr);
-		if (dst.type == variable_type::reg)			lock_dst.lock(dst.reg<x64_reg32>());
-		if (dividend.type == variable_type::reg)	lock_dst.lock(dividend.reg<x64_reg32>());
-		if (divisor.type == variable_type::reg)		lock_dst.lock(divisor.reg<x64_reg32>());
-
-		int divisor_idx;
-		/* Check if we need to use a temporary register for the divisor */
-		if (divisor.type == variable_type::constant || divisor.is_reg(x64_regs::edx))
-		{
-			lock_edx.lock(x64_regs::edx);
-			auto tmp_reg = tmp.take();
-
-			/* Move the divisor into our tmp register.
-			 * We can safely do this, because it won't use any temporaries */
-			src_dest<x64_mov>(var(variable_type::reg, tmp_reg.value), divisor);
-			divisor_idx = tmp_reg.value;
-		}
-		else
-		{
-			/* Otherwise, take edx so that we can safely set it to 0 within this scope*/
-			steal_edx.take(x64_regs::edx);
-			divisor_idx = divisor.i;
-		}
-
-		/* Zero edx */
-		inst_stream << x64_xor(x64_regs::edx, x64_regs::edx);
+		lock_register<x64_reg32> lock_edx(lr, x64_regs::edx);
 
 		/* Move the dividend into eax. Store it if we have to */
 		if (!dividend.is_reg(x64_regs::eax))
@@ -199,6 +176,25 @@ private:
 
 			src_dest<x64_mov>(var(variable_type::reg, x64_regs::eax.value), dividend);
 		}
+
+		/* Check if we need to use a temporary register for the divisor */
+		int divisor_idx;
+		if (divisor.type == variable_type::constant || divisor.is_reg(x64_regs::edx))
+		{
+			auto tmp_reg = tmp.take();
+
+			/* Move the divisor into our tmp register. */
+			src_dest<x64_mov>(var(variable_type::reg, tmp_reg.value), divisor);
+			divisor_idx = tmp_reg.value;
+		}
+		else /* Otherwise, take edx so that we can safely set it to 0 within this scope*/
+		{
+			steal_edx.take(x64_regs::edx);
+			divisor_idx = divisor.i;
+		}
+
+		/* Zero edx */
+		inst_stream << x64_xor(x64_regs::edx, x64_regs::edx);
 
 		/* IDIV supports either dividing by a register, or address */
 		if (divisor.type == variable_type::stack)

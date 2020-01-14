@@ -30,9 +30,9 @@ public:
 			this->locks[x.value]++;
 	}
 
-	inline void lock  (const T& reg) { locks[reg.value]++; }
-	inline void unlock(const T& reg) { locks[reg.value]--; }
-	inline bool locked(const T& reg) const { return locks[reg.value] != 0; }
+	inline void lock     (const T& reg) { locks[reg.value]++; }
+	inline void unlock   (const T& reg) { locks[reg.value]--; }
+	inline bool is_locked(const T& reg) const { return locks[reg.value] != 0; }
 
 	void debug()
 	{
@@ -53,10 +53,11 @@ public:
 	 : lr(lr)
 	{ }
 
-	lock_register(locked_registers<T>& lr, const T& reg)
+	lock_register(locked_registers<T>& lr, const T& reg, bool condition = true)
 	 : lock_register(lr)
 	{
-		lock(reg);
+		if (condition)
+			lock(reg);
 	}
 
 	inline void lock(const T& reg)
@@ -99,7 +100,7 @@ public:
 	inline void use(T reg) { used[reg.value] = true; }
 	inline void release(T reg) { used[reg.value] = false; }
 	inline bool is_used(T reg) { return used[reg.value]; }
-	inline bool is_free(T reg) { return !used[reg.value] && !lr.locked(reg); }
+	inline bool is_free(T reg) { return !used[reg.value] && !lr.is_locked(reg); }
 
 	T get()
 	{
