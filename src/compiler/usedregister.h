@@ -87,10 +87,10 @@ private:
 };
 
 template<typename T>
-class used_register
+class used_registers
 {
 public:
-	used_register(int n, const locked_registers<T>& lr)
+	used_registers(int n, const locked_registers<T>& lr)
 	 : lr(lr)
 	{
 		used.resize(n, false);
@@ -115,7 +115,7 @@ public:
 		return T(-1);
 	}
 
-	virtual ~used_register() { }
+	virtual ~used_registers() { }
 
 private:
 	std::vector<bool> used;

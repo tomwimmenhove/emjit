@@ -33,7 +33,7 @@ private:
 	void add_tac_var(const tac_var& var);
 
 	locked_registers<x64_reg32> lr{ x64_reg32::n, { x64_regs::esp, x64_regs::ebp }};
-	used_register<x64_reg32> dr{ x64_reg32::n, lr};
+	used_registers<x64_reg32> dr{ x64_reg32::n, lr};
 
 	instruction_stream& inst_stream;
 
@@ -160,7 +160,7 @@ private:
 		x64_steal_reg<x64_reg32> steal_eax(inst_stream, dr, lr);
 
 		/* Lock variables that we can't use as temporaries */
-		lock_register<x64_reg32> lock_dst(lr);
+		lock_register<x64_reg32> lock_dst(lr); // Avoid dst being user as temp, in case it might be stored, and popped when done
 		lock_register<x64_reg32> lock_dividend(lr);
 		lock_register<x64_reg32> lock_divisor(lr);
 		lock_register<x64_reg32> lock_eax(lr, x64_regs::eax);

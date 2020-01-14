@@ -62,7 +62,7 @@ template<typename T>
 class x64_tmp_reg
 {
 public:
-	x64_tmp_reg(instruction_stream& s, used_register<T>& dr, locked_registers<T>& lr)
+	x64_tmp_reg(instruction_stream& s, used_registers<T>& dr, locked_registers<T>& lr)
 	 : s(s), dr(dr), lr(lr), locked(lr), push_pop(s)
 	{ }
 
@@ -99,7 +99,7 @@ public:
 
 private:
 	instruction_stream& s;
-	used_register<T>& dr;
+	used_registers<T>& dr;
 	locked_registers<T>& lr;
 	lock_register<T> locked;
 
@@ -111,11 +111,11 @@ template<typename T>
 class x64_steal_reg
 {
 public:
-	x64_steal_reg(instruction_stream& s, used_register<T>& dr, locked_registers<T>& lr)
+	x64_steal_reg(instruction_stream& s, used_registers<T>& dr, locked_registers<T>& lr)
 	 : s(s), dr(dr), lr(lr), locked(lr), push_pop(s)
 	{ }
 
-	x64_steal_reg(instruction_stream& s, used_register<T>& dr, locked_registers<T>& lr, T reg)
+	x64_steal_reg(instruction_stream& s, used_registers<T>& dr, locked_registers<T>& lr, T reg)
 	 : s(s), dr(dr), lr(lr), locked(lr), push_pop(s)
 	{
 		take(reg);
@@ -172,7 +172,7 @@ public:
 
 private:
 	instruction_stream& s;
-	used_register<T>& dr;
+	used_registers<T>& dr;
 	locked_registers<T>& lr;
 	lock_register<T> locked;
 
