@@ -49,6 +49,8 @@ enum class tac_type
 	sub,
 	mul,
 	div,
+
+	ret,
 };
 
 struct tac_entry
@@ -59,6 +61,8 @@ struct tac_entry
 	tac_entry(tac_type type, tac_var a) : type(type), a(a) { }
 	tac_entry(tac_type type, tac_var a, tac_var b) : type(type), a(a), b(b){ }
 	tac_entry(tac_type type, tac_var a, tac_var b, tac_var c) : type(type), a(a), b(b), c(c) { }
+
+	std::vector<bool> live_vars;
 };
 
 class tac
@@ -80,6 +84,7 @@ public:
 
 private:
 	int add_from_exp(const expression& exp);
+	void add_live_range(int id, int from, int to);
 
 	int next_varid = 0;
 	std::vector<tac_entry> entries;

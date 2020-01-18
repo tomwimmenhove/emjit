@@ -103,15 +103,14 @@ void tac2x64::handler(int, siginfo_t*, void* context_p)
 
 void tac2x64::prologue(int32_t stack_size)
 {
-	inst_stream << x64_push(x64_regs::rbp);
-	inst_stream << x64_mov(x64_regs::rbp, x64_regs::rsp);
+	inst_stream << x64_push(x64_regs::rbp) << x64_mov(x64_regs::rbp, x64_regs::rsp);
 	if (stack_size)
 		inst_stream << x64_sub(x64_regs::rsp, static_cast<uint32_t>(stack_size));
 }
 
 void tac2x64::epilogue()
 {
-	inst_stream << x64_leave();
+	inst_stream << x64_leave() << x64_ret();
 }
 
 void tac2x64::add_tac_var(const tac_var& tv)
@@ -245,62 +244,118 @@ void tac2x64::div_test(const var& dst, const var& dividend, const var& divisor, 
 //
 //}
 
-void tac2x64::op_assign(get_reg<x64_reg32>& gr, vector<tac_entry>::const_iterator at, vector<tac_entry>::const_iterator to)
+void tac2x64::op_assign(get_reg<x64_reg32>& gr, const tac_entry& entry)
 {
-	if (at->b.type != tac_var_type::constant)
+	if (entry.b.type != tac_var_type::constant)
 		throw invalid_argument("Assignments of non-constants not yet supported");
 
-	auto reg = gr.reg_for_var(at->a.id, at, to);
+	auto reg = gr.reg_for_var(entry.a.id, entry);
 
-	inst_stream << x64_mov(reg, at->b.value);
+	inst_stream << x64_mov(reg, entry.b.value);
 }
 
-void tac2x64::op_add(get_reg<x64_reg32>& gr, vector<tac_entry>::const_iterator at, vector<tac_entry>::const_iterator to)
+void tac2x64::op_add(get_reg<x64_reg32>& gr, const tac_entry& entry)
 {
-	auto regb = gr.reg_for_var(at->b.id, at, to);
-	auto regc = gr.reg_for_var(at->c.id, at, to);
+	auto regb = gr.reg_for_var(entry.b.id, entry);
+	auto regc = gr.reg_for_var(entry.c.id, entry);
+
+	/* TODO:
+	 *  Always just do: x64_add(regb, regc);
+	 *  AFTER calling some "we're storing this this in register x", that
+	 *  function can then decide wether to move the old storage place to
+	 *  some new register, or memory
+	 *
+	 *  ALSO:
+	 *  reg_for_var() should be able to get spilled registers back into registers
+	 *
+	 *  ^^ Fuck all that. Implement: https://www.youtube.com/watch?v=4eHdo8GaICY&list=PLEUhcCFlouiXsqOfvZlQ6ORkQZ7GwAab9&index=16&t=0s
+	 */
 
 	/* Can we use b to store the result? */
-	if (!gr.will_be_read(at->b.id, next(at), to))
+	if (!entry.live_vars[entry.b.id])
 	{
 		inst_stream << x64_add(regb, regc);
-		gr.store_var_in(at->a.id, regb); /* Result (a) is now in regb */
+		gr.store_var_in(entry.a.id, regb); /* Result (a) is now in regb */
 		return;
 	}
 
 	/* Can we use c to store the result? */
-	if (!gr.will_be_read(at->c.id, next(at), to))
+	if (!entry.live_vars[entry.c.id])
 	{
 		inst_stream << x64_add(regc, regb);
-		gr.store_var_in(at->a.id, regb); /* Result (a) is now in regc */
+		gr.store_var_in(entry.a.id, regc); /* Result (a) is now in regc */
 		return;
 	}
 
-	auto rega = gr.reg_for_var(at->a.id, at, to);
-	inst_stream << x64_mov(rega, regb);
-	inst_stream << x64_add(rega, regc);
+	auto rega = gr.reg_for_var(entry.a.id, entry);
+	inst_stream << x64_mov(rega, regb) << x64_add(rega, regc);
 }
 
-void tac2x64::op_sub(get_reg<x64_reg32>& gr, vector<tac_entry>::const_iterator at, vector<tac_entry>::const_iterator to)
+void tac2x64::op_sub(get_reg<x64_reg32>& gr, const tac_entry& entry)
 {
+	auto regb = gr.reg_for_var(entry.b.id, entry);
+	auto regc = gr.reg_for_var(entry.c.id, entry);
 
+	if (!entry.live_vars[entry.b.id])
+	{
+		inst_stream << x64_sub(regb, regc);
+		gr.store_var_in(entry.a.id, regb); /* Result (a) is now in regb */
+		return;
+	}
+
+	auto rega = gr.reg_for_var(entry.a.id, entry);
+	inst_stream << x64_mov(rega, regb) << x64_sub(rega, regc);
 }
 
-void tac2x64::op_mul(get_reg<x64_reg32>& gr, vector<tac_entry>::const_iterator at, vector<tac_entry>::const_iterator to)
+void tac2x64::op_mul(get_reg<x64_reg32>& gr, const tac_entry& entry)
 {
+	auto regb = gr.reg_for_var(entry.b.id, entry);
+	auto regc = gr.reg_for_var(entry.c.id, entry);
 
+	if (!entry.live_vars[entry.b.id])
+	{
+		inst_stream << x64_imul(regb, regc);
+		gr.store_var_in(entry.a.id, regb); /* Result (a) is now in regb */
+		return;
+	}
+
+	auto rega = gr.reg_for_var(entry.a.id, entry);
+	inst_stream << x64_mov(rega, regb) << x64_imul(rega, regc);
 }
 
-void tac2x64::op_div(get_reg<x64_reg32>& gr, vector<tac_entry>::const_iterator at, vector<tac_entry>::const_iterator to)
+void tac2x64::op_div(get_reg<x64_reg32>& gr, const tac_entry& entry)
 {
+	auto rega = gr.reg_for_var(entry.a.id, entry);
+	auto regb = gr.reg_for_var(entry.b.id, entry);
+	auto regc = gr.reg_for_var(entry.c.id, entry);
 
+	inst_stream << x64_mov(x64_regs::eax, regb) << x64_xor(x64_regs::edx, x64_regs::edx)
+			<< x64_idiv(regc) << x64_mov(rega, x64_regs::eax);
 }
+
+void tac2x64::op_ret(get_reg<x64_reg32>& gr, const tac_entry& entry)
+{
+	if (entry.b.id != -1)
+	{
+		auto result_reg = gr.reg_for_var(entry.b.id, entry);
+		if (result_reg.value != x64_regs::eax.value)
+			inst_stream << x64_mov(x64_regs::eax, result_reg);
+	}
+	epilogue();
+}
+
 
 void tac2x64::compile_expression(const tac& t)
 {
-	//auto program = inst_stream.entry_point<void(int, int, int, int, int, int, int, int, int)>();
+	auto program = inst_stream.entry_point<int(int, int, int, int, int, int, int, int, int)>();
 
-//	dr.use(0);
+//	dr.use(x64_regs::eax);
+//	dr.use(x64_regs::edx);
+
+	/* For now, to make mul/div simple */
+	lr.lock(x64_regs::eax);
+	lr.lock(x64_regs::edx);
+
 //
 //	for (auto i = 3; i < 16; i++)
 //	{
@@ -338,28 +393,42 @@ void tac2x64::compile_expression(const tac& t)
 //
 //	return;
 
-	for(auto it = entries.begin(); it != entries.end(); ++it)
+	prologue(0);
+
+	bool last_was_ret;
+
+	//for(auto it = entries.begin(); it != entries.end(); ++it)
+	for(auto& entry: entries)
 	{
-		switch(it->type)
+		last_was_ret = false;
+
+		switch(entry.type)
 		{
 		case tac_type::assign:
-			op_assign(gr, it, entries.end());
+			op_assign(gr, entry);
 			break;
 		case tac_type::add:
-			op_add(gr, it, entries.end());
+			op_add(gr, entry);
 			break;
 		case tac_type::sub:
-			op_sub(gr, it, entries.end());
+			op_sub(gr, entry);
 			break;
 		case tac_type::mul:
-			op_mul(gr, it, entries.end());
+			op_mul(gr, entry);
 			break;
 		case tac_type::div:
-			op_div(gr, it, entries.end());
+			op_div(gr, entry);
 			break;
+		case tac_type::ret:
+			op_ret(gr, entry);
+			last_was_ret = true;
+		break;
 		}
 	}
-//
+	if (!last_was_ret)
+		epilogue();
+
+	//
 //	for (auto it = entries.begin(); it != entries.end(); ++it)
 //	{
 //		cout << '@' << (it - entries.begin()) << ": \n";
@@ -381,6 +450,9 @@ void tac2x64::compile_expression(const tac& t)
 //	}
 
 	cout << x64_disassembler::disassemble(inst_stream, "intel", true);
+
+	auto res = program(42, 42, 42, 42, 42, 42, 0, 0, 0);
+	cout << "Result: " << dec << res << '\n';
 
 	return;
 
@@ -494,11 +566,11 @@ void tac2x64::compile_expression(const tac& t)
 //	epilogue();
 //
 //	inst_stream << x64_ret();
-	auto program = inst_stream.entry_point<void(int, int, int, int, int, int, int, int, int)>();
+	//auto program = inst_stream.entry_point<void(int, int, int, int, int, int, int, int, int)>();
 
 
 
-	program = inst_stream.entry_point<void(int, int, int, int, int, int, int, int, int)>();
+	program = inst_stream.entry_point<int(int, int, int, int, int, int, int, int, int)>();
 	div_test(var(variable_type::stack,  32), var(variable_type::stack, 16), var(variable_type::stack, 24), 1000, 100);
 	program(42, 42, 42, 42, 42, 42, 0, 0, 0);
 
@@ -508,7 +580,7 @@ void tac2x64::compile_expression(const tac& t)
 		if (reg.is_sp() || reg.is_bp())// || reg.value == x64_regs::eax.value)
 			continue;
 
-		program = inst_stream.entry_point<void(int, int, int, int, int, int, int, int, int)>();
+		program = inst_stream.entry_point<int(int, int, int, int, int, int, int, int, int)>();
 		div_test(var(variable_type::stack,  32), var(variable_type::stack, 16), reg, 1000, 100);
 		program(42, 42, 42, 42, 42, 42, 0, 0, 0);
 	}

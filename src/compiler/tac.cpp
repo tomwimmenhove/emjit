@@ -17,11 +17,28 @@ using namespace std;
 
 tac::tac(const expression& exp)
 {
-	experiments();
-	//add_from_exp(exp);
+	//experiments();
+	int id = add_from_exp(exp);
+
+	// HACK!
+	entries.push_back(tac_entry(tac_type::ret, tac_var(/*void*/), tac_var(tac_var_type::temp, id)));
+
 	debug_print();
 
 	calculate_life_times();
+}
+
+void tac::add_live_range(int id, int from, int to)
+{
+	if (from == -1)
+	{
+		from = 0;
+		cerr << "Warning: varid" << id << " is being used uninitialized.\n";
+	}
+	cout << "Life time of t" << id << ": " << from << ".." << to << '\n';
+
+	for (int i = from; i < to; i++)
+		entries[i].live_vars[id] = true;
 }
 
 void tac::calculate_life_times()
@@ -31,26 +48,30 @@ void tac::calculate_life_times()
 	memset(last_write, 0xff, next_varid * sizeof(int));
 	memset(last_read, 0xff, next_varid * sizeof(int));
 
-	//for(auto& entry: entries)
 	for(size_t i = 0; i < entries.size(); i++)
 	{
 		auto& entry = entries[i];
 
-		if (entry.a.type == tac_var_type::temp)
+		entry.live_vars.resize(next_varid, false);
+
+		//if (entry.a.type == tac_var_type::temp)
+		if (entry.a.id != -1)
 		{
 			if (last_read[entry.a.id] != -1)
 			{
-				cout << "Life time of t" << entry.a.id << ": " << last_write[entry.a.id] << ".." << last_read[entry.a.id] << '\n';
+				add_live_range(i, last_write[entry.a.id] + 1, last_read[entry.a.id]);
 				last_read[entry.a.id] = -1;
 			}
 			last_write[entry.a.id] = i;
-			continue;
+			//continue;
 		}
 
-		if (entry.b.type == tac_var_type::temp)
+		//if (entry.b.type == tac_var_type::temp)
+		if (entry.b.id != -1)
 			last_read[entry.b.id] = i;
 
-		if (entry.c.type == tac_var_type::temp)
+		//if (entry.c.type == tac_var_type::temp)
+		if (entry.c.id != -1)
 			last_read[entry.c.id] = i;
 	}
 
@@ -58,7 +79,7 @@ void tac::calculate_life_times()
 	{
 		if (last_read[i] != -1)
 		{
-			cout << "Life time of t" << i << ": " << last_write[i] << ".." << last_read[i] << '\n';
+			add_live_range(i, last_write[i] + 1, last_read[i]);
 			last_read[i] = -1;
 		}
 	}
@@ -104,25 +125,28 @@ void tac::debug_print()
 //		if (entry.b.id != -1) cout << "Rt" << entry.b.id << ' ';
 //		if (entry.c.id != -1) cout << "Rt" << entry.c.id << ' ';
 
-		cout << '@' << i << ": " << entry.a.var_to_string() << " = ";
+		cout << '@' << i << ": ";
 
 		switch(entry.type)
 		{
 		case tac_type::assign:
-			cout << entry.b.var_to_string() << '\n';
+			cout << entry.a.var_to_string() << " = " << entry.b.var_to_string() << '\n';
 			break;
 		case tac_type::add:
-			cout << entry.b.var_to_string() << " + " << entry.c.var_to_string() << '\n';
+			cout << entry.a.var_to_string() << " = " << entry.b.var_to_string() << " + " << entry.c.var_to_string() << '\n';
 			break;
 		case tac_type::sub:
-			cout << entry.b.var_to_string() << " - " << entry.c.var_to_string() << '\n';
+			cout << entry.a.var_to_string() << " = " << entry.b.var_to_string() << " - " << entry.c.var_to_string() << '\n';
 			break;
 		case tac_type::mul:
-			cout << entry.b.var_to_string() << " * " << entry.c.var_to_string() << '\n';
+			cout << entry.a.var_to_string() << " = " << entry.b.var_to_string() << " * " << entry.c.var_to_string() << '\n';
 			break;
 		case tac_type::div:
-			cout << entry.b.var_to_string() << " / " << entry.c.var_to_string() << '\n';
+			cout << entry.a.var_to_string() << " = " << entry.b.var_to_string() << " / " << entry.c.var_to_string() << '\n';
 			break;
+
+		case tac_type::ret:
+			cout << "return " << entry.b.var_to_string() << '\n';
 		}
 	}
 }
@@ -138,6 +162,10 @@ void tac::experiments()
 	entries.push_back(tac_entry(tac_type::assign, tac_var(tac_var_type::temp, 1), tac_var(tac_var_type::constant, 0x200)));
 	entries.push_back(tac_entry(tac_type::add, tac_var(tac_var_type::temp, 2), tac_var(tac_var_type::temp, 1), tac_var(tac_var_type::temp, 0)));
 	entries.push_back(tac_entry(tac_type::add, tac_var(tac_var_type::temp, 3), tac_var(tac_var_type::temp, 1), tac_var(tac_var_type::temp, 2)));
+
+	entries.push_back(tac_entry(tac_type::add, tac_var(tac_var_type::temp, 4), tac_var(tac_var_type::temp, 1), tac_var(tac_var_type::temp, 2)));
+
+	entries.push_back(tac_entry(tac_type::ret, tac_var(/*void*/), tac_var(tac_var_type::temp, 4)));
 
 
 

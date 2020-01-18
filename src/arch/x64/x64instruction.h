@@ -1022,9 +1022,9 @@ struct x64_imul : public x64_instruction
 	x64_imul(x64_reg8h reg) { single_reg(reg.shift(), 5, {0xf6}, 3); }
 
 	// XXX: What is this reversed register madness?!
-	x64_imul(x64_reg64 dst, x64_reg64 src) { reg_reg(src, dst, {0xaf}); }
-	x64_imul(x64_reg32 dst, x64_reg32 src) { reg_reg(src, dst, {0xaf}); }
-	x64_imul(x64_reg16 dst, x64_reg16 src) { reg_reg(src, dst, {0xaf}); }
+	x64_imul(x64_reg64 dst, x64_reg64 src) { reg_reg(src, dst, {0x0f, 0xaf}); }
+	x64_imul(x64_reg32 dst, x64_reg32 src) { reg_reg(src, dst, {0x0f, 0xaf}); }
+	x64_imul(x64_reg16 dst, x64_reg16 src) { reg_reg(src, dst, {0x0f, 0xaf}); }
 
 	x64_imul(x64_reg64 dst, x64_reg64 src, int8_t n) { reg_reg(src, dst, {0x6b}); set_imm(n); }
 	x64_imul(x64_reg32 dst, x64_reg32 src, int8_t n) { reg_reg(src, dst, {0x6b}); set_imm(n); }

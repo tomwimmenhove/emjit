@@ -78,7 +78,8 @@ public:
 		regs[id] = reg.value;
 	}
 
-	T reg_for_var(int id, std::vector<tac_entry>::const_iterator from, std::vector<tac_entry>::const_iterator to)
+	//T reg_for_var(int id, std::vector<tac_entry>::const_iterator from, std::vector<tac_entry>::const_iterator to)
+	T reg_for_var(int id, const tac_entry& entry)
 	{
 		/* If it's already in the map, return that */
 		auto it = regs.find(id);
@@ -96,7 +97,8 @@ public:
 		/* Still nothing? Let's see if there's anything in the map that we can re-use */
 		for(auto it = regs.begin(); it != regs.end(); ++it)
 		{
-			if (!will_be_read(regs[it->first], from, to))
+			//if (!will_be_read(regs[it->first], from, to))
+			if (!entry.live_vars[it->first])
 			{
 				/* This guy won't be used. We'll steal it's register */
 				int red_idx = it->second;
@@ -112,22 +114,22 @@ public:
 		throw std::exception();
 	}
 
-	bool will_be_read(int id, std::vector<tac_entry>::const_iterator from, std::vector<tac_entry>::const_iterator to)
-	{
-		for(auto it = from; it != to; ++it)
-		{
-			/* If the next access is a write, we're good */
-			if (it->a.type == type && it->a.id == id)
-				return false;
-
-			/* If it's a read, we can't use is */
-			if ((it->b.type == type && it->b.id == id) ||
-					(it->c.type == type && it->c.id == id))
-				return true;
-		}
-
-		return false;
-	}
+//	bool will_be_read(int id, std::vector<tac_entry>::const_iterator from, std::vector<tac_entry>::const_iterator to)
+//	{
+//		for(auto it = from; it != to; ++it)
+//		{
+//			/* If the next access is a write, we're good */
+//			if (it->a.type == type && it->a.id == id)
+//				return false;
+//
+//			/* If it's a read, we can't use is */
+//			if ((it->b.type == type && it->b.id == id) ||
+//					(it->c.type == type && it->c.id == id))
+//				return true;
+//		}
+//
+//		return false;
+//	}
 
 private:
 	used_registers<T>& ur;
@@ -185,11 +187,12 @@ private:
 		int32_t i = 0;
 	};
 
-	void op_assign(get_reg<x64_reg32>& gr, std::vector<tac_entry>::const_iterator at, std::vector<tac_entry>::const_iterator to);
-	void op_add(get_reg<x64_reg32>& gr, std::vector<tac_entry>::const_iterator at, std::vector<tac_entry>::const_iterator to);
-	void op_sub(get_reg<x64_reg32>& gr, std::vector<tac_entry>::const_iterator at, std::vector<tac_entry>::const_iterator to);
-	void op_mul(get_reg<x64_reg32>& gr, std::vector<tac_entry>::const_iterator at, std::vector<tac_entry>::const_iterator to);
-	void op_div(get_reg<x64_reg32>& gr, std::vector<tac_entry>::const_iterator at, std::vector<tac_entry>::const_iterator to);
+	void op_assign(get_reg<x64_reg32>& gr, const tac_entry& entry);
+	void op_add(get_reg<x64_reg32>& gr, const tac_entry& entry);
+	void op_sub(get_reg<x64_reg32>& gr, const tac_entry& entry);
+	void op_mul(get_reg<x64_reg32>& gr, const tac_entry& entry);
+	void op_div(get_reg<x64_reg32>& gr, const tac_entry& entry);
+	void op_ret(get_reg<x64_reg32>& gr, const tac_entry& entry);
 
 	std::map<int, var> var_map;
 	int stack_pos = 0;
