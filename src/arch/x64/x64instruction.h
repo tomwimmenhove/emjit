@@ -849,6 +849,7 @@ struct x64_single_op_base : x64_instruction
 
 /********** ACTUAL INSTRUCTIONS FOLLOW **********/
 
+struct x64_int3	: public x64_instruction{x64_int3()	: x64_instruction({ 0xcc }) {} };
 struct x64_nop1	: public x64_instruction{x64_nop1()	: x64_instruction({ 0x90 }) {} };
 struct x64_leave: public x64_instruction{x64_leave(): x64_instruction({ 0xc9 }) {} };
 struct x64_ret	: public x64_instruction{x64_ret()	: x64_instruction({ 0xc3 }) {} };
@@ -895,18 +896,18 @@ struct x64_js   : x64_jmp_cond { x64_js(int8_t off)   : x64_jmp_cond(x64_cond::s
 struct x64_jns  : x64_jmp_cond { x64_jns(int8_t off)  : x64_jmp_cond(x64_cond::not_sign, off) { } };
 struct x64_je   : x64_jmp_cond { x64_je(int8_t off)   : x64_jmp_cond(x64_cond::equal, off) { } };
 struct x64_jz   : x64_jmp_cond { x64_jz(int8_t off)   : x64_jmp_cond(x64_cond::zero, off) { } };
-struct x64_ne   : x64_jmp_cond { x64_ne(int8_t off)   : x64_jmp_cond(x64_cond::not_equal, off) { } };
-struct x64_nz   : x64_jmp_cond { x64_nz(int8_t off)   : x64_jmp_cond(x64_cond::not_zero, off) { } };
+struct x64_jne  : x64_jmp_cond { x64_jne(int8_t off)   : x64_jmp_cond(x64_cond::not_equal, off) { } };
+struct x64_jnz  : x64_jmp_cond { x64_jnz(int8_t off)   : x64_jmp_cond(x64_cond::not_zero, off) { } };
 struct x64_jb   : x64_jmp_cond { x64_jb(int8_t off)   : x64_jmp_cond(x64_cond::below, off) { } };
 struct x64_jnae : x64_jmp_cond { x64_jnae(int8_t off) : x64_jmp_cond(x64_cond::not_above_or_equal, off) { } };
-struct x64_c    : x64_jmp_cond { x64_c(int8_t off)    : x64_jmp_cond(x64_cond::carry, off) { } };
-struct x64_nb   : x64_jmp_cond { x64_nb(int8_t off)   : x64_jmp_cond(x64_cond::not_below, off) { } };
-struct x64_ae   : x64_jmp_cond { x64_ae(int8_t off)   : x64_jmp_cond(x64_cond::above_or_equal, off) { } };
+struct x64_jc   : x64_jmp_cond { x64_jc(int8_t off)    : x64_jmp_cond(x64_cond::carry, off) { } };
+struct x64_jnb  : x64_jmp_cond { x64_jnb(int8_t off)   : x64_jmp_cond(x64_cond::not_below, off) { } };
+struct x64_jae  : x64_jmp_cond { x64_jae(int8_t off)   : x64_jmp_cond(x64_cond::above_or_equal, off) { } };
 struct x64_jnc  : x64_jmp_cond { x64_jnc(int8_t off)  : x64_jmp_cond(x64_cond::not_carry, off) { } };
-struct x64_be   : x64_jmp_cond { x64_be(int8_t off)   : x64_jmp_cond(x64_cond::below_or_equal, off) { } };
-struct x64_na   : x64_jmp_cond { x64_na(int8_t off)   : x64_jmp_cond(x64_cond::not_above, off) { } };
+struct x64_jbe  : x64_jmp_cond { x64_jbe(int8_t off)   : x64_jmp_cond(x64_cond::below_or_equal, off) { } };
+struct x64_jna  : x64_jmp_cond { x64_jna(int8_t off)   : x64_jmp_cond(x64_cond::not_above, off) { } };
 struct x64_ja   : x64_jmp_cond { x64_ja(int8_t off)   : x64_jmp_cond(x64_cond::above, off) { } };
-struct x64_nbe  : x64_jmp_cond { x64_nbe(int8_t off)  : x64_jmp_cond(x64_cond::not_below_or_equal, off) { } };
+struct x64_jnbe : x64_jmp_cond { x64_jnbe(int8_t off)  : x64_jmp_cond(x64_cond::not_below_or_equal, off) { } };
 struct x64_jl   : x64_jmp_cond { x64_jl(int8_t off)   : x64_jmp_cond(x64_cond::less, off) { } };
 struct x64_jnge : x64_jmp_cond { x64_jnge(int8_t off) : x64_jmp_cond(x64_cond::not_greater_or_equal, off) { } };
 struct x64_jge  : x64_jmp_cond { x64_jge(int8_t off)  : x64_jmp_cond(x64_cond::greater_or_equal, off) { } };
