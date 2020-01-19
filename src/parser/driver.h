@@ -18,10 +18,6 @@ class driver
 public:
 	driver ();
 
-	void add_decl(std::string identifier, const expression& exp);
-
-	std::vector<declaration> declarations;
-
 	std::vector<statement> statements;
 
 	int decl_var_id(std::string identifier);

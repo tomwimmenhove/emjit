@@ -349,9 +349,6 @@ void tac2x64::compile_expression(const tac& t)
 {
 	auto program = inst_stream.entry_point<int(int, int, int, int, int, int, int, int, int)>();
 
-//	dr.use(x64_regs::eax);
-//	dr.use(x64_regs::edx);
-
 	/* For now, to make mul/div simple */
 	lr.lock(x64_regs::eax);
 	lr.lock(x64_regs::edx);
@@ -365,39 +362,10 @@ void tac2x64::compile_expression(const tac& t)
 	get_reg<x64_reg32> gr(dr, tac_var_type::temp);
 
 	auto& entries = t.get_entries();
-//
-//
-//	{
-//	auto at = entries.begin();
-//	auto rega0 = gr.reg_for_var(at->a.id, at, entries.end());
-//	cout << "var: " << at->a.var_to_string() << " in " << x64_reg32::names[rega0.value] << '\n';
-//
-//	++at;
-//
-//	auto rega1 = gr.reg_for_var(at->a.id, at, entries.end());
-//	cout << "var: " << at->a.var_to_string() << " in " << x64_reg32::names[rega1.value] << '\n';
-//	}
-//	{
-//		++at;
-//
-//		auto rega0 = gr.reg_for_var(at->a.id, at, entries.end());
-//		cout << "var: " << at->a.var_to_string() << " in " << x64_reg32::names[rega0.value] << '\n';
-//
-//		++at;
-//
-//		auto rega1 = gr.reg_for_var(at->a.id, at, entries.end());
-//		cout << "var: " << at->a.var_to_string() << " in " << x64_reg32::names[rega1.value] << '\n';
-//
-//	}
-//
-//
-//	return;
 
 	prologue(0);
 
 	bool last_was_ret;
-
-	//for(auto it = entries.begin(); it != entries.end(); ++it)
 	for(auto& entry: entries)
 	{
 		last_was_ret = false;
@@ -428,195 +396,12 @@ void tac2x64::compile_expression(const tac& t)
 	if (!last_was_ret)
 		epilogue();
 
-	//
-//	for (auto it = entries.begin(); it != entries.end(); ++it)
-//	{
-//		cout << '@' << (it - entries.begin()) << ": \n";
-//		if (it->a.type == tac_var_type::temp && it->a.id != -1)
-//		{
-//			x64_reg32 rega = gr.reg_for_var(it->a.id, it, entries.end());
-//			cout << "var: " << it->a.var_to_string() << " in " << x64_reg32::names[rega.value] << '\n';
-//		}
-//		if (it->b.type == tac_var_type::temp && it->b.id != -1)
-//		{
-//			x64_reg32 regb = gr.reg_for_var(it->b.id, it, entries.end());
-//			cout << "var: " << it->b.var_to_string() << " in " << x64_reg32::names[regb.value] << '\n';
-//		}
-//		if (it->c.type == tac_var_type::temp && it->c.id != -1)
-//		{
-//			x64_reg32 regc = gr.reg_for_var(it->c.id, it, entries.end());
-//			cout << "var: " << it->c.var_to_string() << " in " << x64_reg32::names[regc.value] << '\n';
-//		}
-//	}
-
 	cout << x64_disassembler::disassemble(inst_stream, "intel", true);
 
 	auto res = program(42, 42, 42, 42, 42, 42, 0, 0, 0);
 	cout << "Result: " << dec << res << '\n';
 
-	return;
-
-//	for(auto entry: entries)
-//	{
-//
-//
-//	}
-
-
-//	auto program = inst_stream.entry_point<int(int, int, int, int, int, int, int, int, int)>();
-
-//	inst_stream << x64_mov(x64_regs::eax, 42);
-//
-//	src_dest<x64_mov>(
-//			var(variable_type::reg, x64_regs::eax.value),
-//			var(variable_type::stack, 12));
-//	src_dest<x64_mov>(
-//			var(variable_type::reg, x64_regs::eax.value),
-//			var(variable_type::stack, 0x1200));
-//	src_dest<x64_mov>(
-//			var(variable_type::reg, x64_regs::eax.value),
-//			var(variable_type::constant, 0x1200));
-//
-//
-//	src_dest<x64_mov>(
-//			var(variable_type::stack, 0x1200),
-//			var(variable_type::reg, x64_regs::eax.value)
-//			);
-//
-//	inst_stream << x64_nop1();
-//
-//	src_dest<x64_mov>(
-//			var(variable_type::stack, 0x1200),
-//			var(variable_type::reg, x64_regs::eax.value)
-//			);
-//
-//	inst_stream << x64_nop1();
-//
-//	src_dest<x64_mov>(
-//			var(variable_type::stack, 0x1200),
-//			var(variable_type::constant, 0x1211)
-//			);
-//
-//	inst_stream << x64_nop1();
-//
-//	src_dest<x64_mov>(
-//			var(variable_type::stack, 0x1200),
-//			var(variable_type::stack, 0x1211)
-//			);
-
-
-//	prologue(0);
-//
-//	/* Push all registers and set them to 42 */
-//	for (int i = 0; i < x64_reg32::n; i++)
-//	{
-//		auto reg = x64_reg64(i);
-//		if (reg.is_sp() || reg.is_bp() || reg.value == x64_regs::eax.value)
-//			continue;
-//		inst_stream << x64_push(reg);
-//		inst_stream << x64_mov(reg, (uint32_t) 42);
-//	}
-//
-//	/* Setup a test for the register dump */
-//	registers_dump test;
-//	for (int i = 0; i < x64_reg32::n; i++)
-//		test[i] = 42;
-//	test.rax = 0x0a;
-//	expected_registers = &test;
-//
-//
-//	inst_stream << x64_nop1() << x64_nop1() << x64_nop1() << x64_nop1();
-//	auto result = var(variable_type::stack,  -64 + 0);
-//	auto dvidend = var(variable_type::stack, 16);//-64 + 8);
-//	auto divisor = var(variable_type::stack, 24);
-//
-//	inst_stream << x64_nop1() << x64_nop1() << x64_nop1() << x64_nop1();
-//	div<x64_idivl>(result, dvidend, divisor);
-//	inst_stream << x64_nop1() << x64_nop1() << x64_nop1() << x64_nop1();
-//
-//
-//	src_dest<x64_cmp>(dvidend, var(variable_type::constant, 1000));
-//	inst_stream << x64_jz(12);
-//	inst_stream << x64_mov(x64_regs::rax, reinterpret_cast<uint64_t>(&breakout_and_die));
-//	inst_stream << x64_call(x64_regs::rax);
-//
-//	src_dest<x64_cmp>(divisor, var(variable_type::constant, 100));
-//	inst_stream << x64_jz(12);
-//	inst_stream << x64_mov(x64_regs::rax, reinterpret_cast<uint64_t>(&breakout_and_die));
-//	inst_stream << x64_call(x64_regs::rax);
-//
-//	src_dest<x64_cmp>(result, var(variable_type::constant, 10));
-//	inst_stream << x64_jz(12);
-//	inst_stream << x64_mov(x64_regs::rax, reinterpret_cast<uint64_t>(&breakout_and_die));
-//	inst_stream << x64_call(x64_regs::rax);
-//
-//	src_dest<x64_mov>(var(variable_type::reg, x64_regs::eax.value), result);
-//
-//	inst_stream << x64_int3(); // Dump registers
-//
-//	/* Restore all register */
-//	for (int i = 0; i < x64_reg32::n; i++)
-//	{
-//		auto reg = x64_reg64(x64_reg32::n - i - 1);
-//		if (reg.is_sp() || reg.is_bp() || reg.value == x64_regs::eax.value)
-//			continue;
-//		inst_stream << x64_pop(reg);
-//	}
-//
-//	epilogue();
-//
-//	inst_stream << x64_ret();
-	//auto program = inst_stream.entry_point<void(int, int, int, int, int, int, int, int, int)>();
-
-
-
-	program = inst_stream.entry_point<int(int, int, int, int, int, int, int, int, int)>();
-	div_test(var(variable_type::stack,  32), var(variable_type::stack, 16), var(variable_type::stack, 24), 1000, 100);
-	program(42, 42, 42, 42, 42, 42, 0, 0, 0);
-
-	for (int i = 0; i < x64_reg32::n; i++)
-	{
-		auto reg = x64_reg32(i);
-		if (reg.is_sp() || reg.is_bp())// || reg.value == x64_regs::eax.value)
-			continue;
-
-		program = inst_stream.entry_point<int(int, int, int, int, int, int, int, int, int)>();
-		div_test(var(variable_type::stack,  32), var(variable_type::stack, 16), reg, 1000, 100);
-		program(42, 42, 42, 42, 42, 42, 0, 0, 0);
-	}
-//
-//
-//	for (int i = 0; i < x64_reg32::n; i++)
-//	{
-//		auto reg = x64_reg32(i);
-//		if (reg.is_sp() || reg.is_bp())// || reg.value == x64_regs::eax.value)
-//			continue;
-//
-//		program = inst_stream.entry_point<void(int, int, int, int, int, int, int, int, int)>();
-//		div_test(var(variable_type::stack,  32), reg, var(variable_type::stack, 16), 1000, 100);
-//		program(42, 42, 42, 42, 42, 42, 0, 0, 0);
-//	}
-
-//	program = inst_stream.entry_point<void(int, int, int, int, int, int, int, int, int)>();
-//	div_test(var(variable_type::stack,  32), x64_regs::eax, var(variable_type::stack, 16), 1000, 100);
-//	program(42, 42, 42, 42, 42, 42, 0, 0, 0);
-
-
-	cout << x64_disassembler::disassemble(inst_stream, "intel", true);
-
-//	auto res = program(42, 42, 42, 42, 42, 42, 0, 0, 0);
-//	cout << "Result: " << dec << res << '\n';
-
-//	auto div_fn = inst_stream.entry_point<int(int, int)>();
-//	div<x64_div>(x64_regs::eax, x64_regs::edi, x64_regs::esi);
-//	inst_stream << x64_ret();
-//
-//	cout << "bla: " << div_fn(42 * 3, 3) << '\n';
-
-
 	cout << "Made it out alive\n";
-
-
 }
 
 

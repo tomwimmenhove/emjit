@@ -18,9 +18,6 @@ using namespace std;
 tac::tac(const driver& drv)
  :drv(drv)
 {
-	//experiments();
-	//int id = add_from_exp(drv.declarations[0].exp);
-
 	for(auto& stmt: drv.statements)
 	{
 		switch(stmt.type)
@@ -37,35 +34,6 @@ tac::tac(const driver& drv)
 	}
 
 	debug_print();
-
-	calculate_life_times();
-
-	return;
-
-
-//	int id = 0;
-	for(auto& decl: drv.declarations)
-	{
-//		if (decl.result_var != -1 && decl.exp.type == expr_type::num)
-//		{
-//			entries.push_back(tac_entry(tac_type::assign,
-//					tac_var(tac_var_type::local, decl.result_var),
-//					tac_var(tac_var_type::constant, decl.exp.num)));
-//			continue;
-//		}
-		add_from_exp(tac_var(tac_var_type::local, decl.result_var), decl.exp);
-//
-//		if (decl.result_var != -1)
-//			entries.push_back(tac_entry(tac_type::assign,
-//					tac_var(tac_var_type::local, decl.result_var),
-//					tac_var(tac_var_type::temp, id)));
-	}
-
-	// HACK!
-//	entries.push_back(tac_entry(tac_type::ret, tac_var(/*void*/), tac_var(tac_var_type::temp, id)));
-
-	debug_print();
-
 	calculate_life_times();
 }
 

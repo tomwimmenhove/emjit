@@ -35,12 +35,6 @@ struct tac_var
 	tac_var(const tac_var& other) : id(other.id), type(other.type), value(other.value) { }
 	tac_var(tac_var_type type, int32_t i)
 	 : id(type != tac_var_type::constant ? i : -1), type(type), value(type == tac_var_type::constant ? i : 0) { }
-	//tac_var(tac_var_type type, int id) : id(id), type(type), value(0) { }
-	//tac_var(tac_var_type type, int id, int32_t value) : id(id), type(type), value(value) { }
-
-	//bool will_be_read(std::vector<tac_entry>::iterator from, std::vector<tac_entry>::iterator to);
-
-	//std::string var_to_string() const;
 };
 
 enum class tac_type

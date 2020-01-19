@@ -43,13 +43,6 @@ string driver::get_var_name(int id) const
 	throw invalid_argument("Internal error: Unknown variable name");
 }
 
-void driver::add_decl(string identifier, const expression& exp)
-{
-	auto var_id = decl_var_id(identifier);
-
-	declarations.push_back(declaration{var_id, exp});
-}
-
 int driver::decl_var_id(std::string identifier)
 {
 	auto it = var_map.find(identifier);

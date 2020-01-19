@@ -58,7 +58,7 @@ statement : declaration				{ drv.statements.push_back(statement($1)); }
           | "return" exp ";"		{ drv.statements.push_back(statement($2)); }
           ;
           
-declaration : IDENTIFIER "=" exp ";" { $$ = declaration{drv.decl_var_id($1), $3}; drv.add_decl($1, $3); drv.expression_result = $3; std::cout << "Got an expression\n"; }
+declaration : IDENTIFIER "=" exp ";" { $$ = declaration{drv.decl_var_id($1), $3}; drv.expression_result = $3; std::cout << "Got an expression\n"; }
             ;
 
 %left "+" "-";

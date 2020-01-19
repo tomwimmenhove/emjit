@@ -78,7 +78,6 @@ public:
 		regs[id] = reg.value;
 	}
 
-	//T reg_for_var(int id, std::vector<tac_entry>::const_iterator from, std::vector<tac_entry>::const_iterator to)
 	T reg_for_var(int id, const tac_entry& entry)
 	{
 		/* If it's already in the map, return that */
@@ -97,7 +96,6 @@ public:
 		/* Still nothing? Let's see if there's anything in the map that we can re-use */
 		for(auto it = regs.begin(); it != regs.end(); ++it)
 		{
-			//if (!will_be_read(regs[it->first], from, to))
 			if (!entry.live_vars[it->first])
 			{
 				/* This guy won't be used. We'll steal it's register */
@@ -113,23 +111,6 @@ public:
 		/* For now, give up. We should request a temporary register here */
 		throw std::exception();
 	}
-
-//	bool will_be_read(int id, std::vector<tac_entry>::const_iterator from, std::vector<tac_entry>::const_iterator to)
-//	{
-//		for(auto it = from; it != to; ++it)
-//		{
-//			/* If the next access is a write, we're good */
-//			if (it->a.type == type && it->a.id == id)
-//				return false;
-//
-//			/* If it's a read, we can't use is */
-//			if ((it->b.type == type && it->b.id == id) ||
-//					(it->c.type == type && it->c.id == id))
-//				return true;
-//		}
-//
-//		return false;
-//	}
 
 private:
 	used_registers<T>& ur;
