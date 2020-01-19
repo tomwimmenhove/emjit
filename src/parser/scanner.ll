@@ -48,6 +48,7 @@ blank [ \t]
 ")"      return yy::parser::make_RPAREN    (loc);
 "="      return yy::parser::make_ASSIGN    (loc);
 ";"      return yy::parser::make_SEMICOLON (loc);
+"return" return yy::parser::make_RETURN    (loc);
 
 {int}	{
 			errno = 0;

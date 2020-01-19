@@ -21,6 +21,28 @@ tac::tac(const driver& drv)
 	//experiments();
 	//int id = add_from_exp(drv.declarations[0].exp);
 
+	for(auto& stmt: drv.statements)
+	{
+		switch(stmt.type)
+		{
+		case statement_type::decl:
+			add_from_exp(tac_var(tac_var_type::local, stmt.decl.result_var), stmt.decl.exp);
+			break;
+
+		case statement_type::ret:
+			auto ret_exp = add_from_exp(tac_var(tac_var_type::temp, -1), stmt.ret_exp);
+			entries.push_back(tac_entry(tac_type::ret, tac_var(/* void */), ret_exp));
+			break;
+		}
+	}
+
+	debug_print();
+
+	calculate_life_times();
+
+	return;
+
+
 //	int id = 0;
 	for(auto& decl: drv.declarations)
 	{
@@ -191,52 +213,49 @@ void tac::experiments()
 	next_varid = 100;
 }
 
-void tac::add_from_exp(const tac_var& result, const expression& exp)
+tac_var tac::add_from_exp(const tac_var& result, const expression& exp)
 {
 	if (exp.type == expr_type::invalid)
 		throw invalid_argument("Internal error: invalid expression type");
 
-	tac_var b, c;
+	/* Are we placing it in a temporary, or a variable? */
+	auto r = exp.type != expr_type::var && result.id == -1 ?
+			tac_var(tac_var_type::temp, next_varid++) :
+			result;
 
-	if (exp.type != expr_type::num && exp.type != expr_type::var)
-	{
-		b = tac_var(tac_var_type::temp, next_varid++);
-		c = tac_var(tac_var_type::temp, next_varid++);
-
-		add_from_exp(b, exp.expressions[0]);
-		add_from_exp(c, exp.expressions[1]);
-	}
-
-	if (exp.type == expr_type::var)
-		cout << "Got a var\n";
-
-	//int a = next_varid++;
-	//tac_var a;
 	switch(exp.type)
 	{
 	case expr_type::var:
-		entries.push_back(tac_entry(tac_type::assign, result, tac_var(tac_var_type::local, exp.num)));
-		//throw invalid_argument("Not implemented yet");
-
-		break;
+		return tac_var(tac_var_type::local, exp.num);
 	case expr_type::num:
-		entries.push_back(tac_entry(tac_type::assign, result, tac_var(tac_var_type::constant, exp.num)));
+		entries.push_back(tac_entry(tac_type::assign, r,
+				tac_var(tac_var_type::constant, exp.num)));
 		break;
 	case expr_type::add:
-		entries.push_back(tac_entry(tac_type::add, result, b, c));
+		entries.push_back(tac_entry(tac_type::add, r,
+				add_from_exp(tac_var(tac_var_type::temp, -1), exp.expressions[0]),
+				add_from_exp(tac_var(tac_var_type::temp, -1), exp.expressions[1])));
 		break;
 	case expr_type::sub:
-		entries.push_back(tac_entry(tac_type::sub, result, b, c));
+		entries.push_back(tac_entry(tac_type::sub, r,
+				add_from_exp(tac_var(tac_var_type::temp, -1), exp.expressions[0]),
+				add_from_exp(tac_var(tac_var_type::temp, -1), exp.expressions[1])));
 		break;
 	case expr_type::mul:
-		entries.push_back(tac_entry(tac_type::mul, result, b, c));
+		entries.push_back(tac_entry(tac_type::mul, r,
+				add_from_exp(tac_var(tac_var_type::temp, -1), exp.expressions[0]),
+				add_from_exp(tac_var(tac_var_type::temp, -1), exp.expressions[1])));
 		break;
 	case expr_type::div:
-		entries.push_back(tac_entry(tac_type::div, result, b, c));
+		entries.push_back(tac_entry(tac_type::div, r,
+				add_from_exp(tac_var(tac_var_type::temp, -1), exp.expressions[0]),
+				add_from_exp(tac_var(tac_var_type::temp, -1), exp.expressions[1])));
 		break;
 
 	case expr_type::invalid: throw invalid_argument("Internal error: Invalid expression.");
 	}
+
+	return r;
 }
 
 

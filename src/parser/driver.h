@@ -22,6 +22,10 @@ public:
 
 	std::vector<declaration> declarations;
 
+	std::vector<statement> statements;
+
+	int decl_var_id(std::string identifier);
+
 	int get_var_id(std::string identifier) const;
 	std::string get_var_name(int id) const;
 
@@ -46,7 +50,5 @@ private:
 	int var_id = 0;
 	std::map<std::string, int> var_map;
 	std::map<int, std::string> rev_var_map;
-
-	int decl_var_id(std::string identifier);
 };
 #endif // ! DRIVER_HH

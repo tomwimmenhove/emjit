@@ -28,10 +28,10 @@ int driver::get_var_id(std::string identifier) const
 	if (it != var_map.end())
 		return it->second;
 
-	cerr << location << ": Undeclared identifier '" << identifier << "'\n";
-
-	exit(1);
-	return -1;
+	throw yy::parser::syntax_error(location, "Undeclared identifier: " + identifier);
+//	cerr << location << ": Undeclared identifier '" << identifier << "'\n";
+//	exit(1);
+//	return -1;
 }
 
 string driver::get_var_name(int id) const

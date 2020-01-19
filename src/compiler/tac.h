@@ -89,7 +89,7 @@ public:
 private:
 	const driver& drv;
 
-	void add_from_exp(const tac_var& result, const expression& exp);
+	tac_var add_from_exp(const tac_var& result, const expression& exp);
 	void add_live_range(int id, int from, int to);
 
 	int next_varid = 0;

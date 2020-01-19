@@ -48,5 +48,26 @@ struct declaration
 	expression exp;
 };
 
+enum class statement_type
+{
+	decl,
+	ret,
+};
+
+struct statement
+{
+	//statement() { }
+	statement(const declaration& decl) : type(statement_type::decl), decl(decl) { }
+	statement(const expression& ret_exp) : type(statement_type::ret), ret_exp(ret_exp) { }
+
+	statement_type type;
+
+	//union
+	//{
+		declaration decl;
+		expression ret_exp;
+	//};
+};
+
 
 #endif /* EXPRESSION_H */

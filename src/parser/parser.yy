@@ -36,23 +36,29 @@
   LPAREN    "("
   RPAREN    ")"
   SEMICOLON ";"
+  RETURN	"return"
 ;
 
 %token <std::string> IDENTIFIER "identifier"
 %token <int> NUMBER "number"
 %type  <expression> exp
+%type  <declaration> declaration
 
 %printer { yyoutput << $$; } <int>;
 %printer { yyoutput << ($$).eval(); } <expression>;
 
 %%
-%start declarations;
+%start statements;
 
-declarations : declaration
-             | declarations declaration
-             ; 
+statements : statement
+           | statements statement
+           ;
 
-declaration : IDENTIFIER "=" exp ";" { drv.add_decl($1, $3); drv.expression_result = $3; std::cout << "Got an expression\n"; }
+statement : declaration				{ drv.statements.push_back(statement($1)); }
+          | "return" exp ";"		{ drv.statements.push_back(statement($2)); }
+          ;
+          
+declaration : IDENTIFIER "=" exp ";" { $$ = declaration{drv.decl_var_id($1), $3}; drv.add_decl($1, $3); drv.expression_result = $3; std::cout << "Got an expression\n"; }
             ;
 
 %left "+" "-";
