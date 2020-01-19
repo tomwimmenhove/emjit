@@ -27,14 +27,15 @@
 
 %define api.token.prefix {TOK_}
 %token
-  END  0  "end of file"
-  ASSIGN  ":="
-  MINUS   "-"
-  PLUS    "+"
-  STAR    "*"
-  SLASH   "/"
-  LPAREN  "("
-  RPAREN  ")"
+  END  0    "end of file"
+  ASSIGN    "="
+  MINUS     "-"
+  PLUS      "+"
+  STAR      "*"
+  SLASH     "/"
+  LPAREN    "("
+  RPAREN    ")"
+  SEMICOLON ";"
 ;
 
 %token <std::string> IDENTIFIER "identifier"
@@ -45,8 +46,14 @@
 %printer { yyoutput << ($$).eval(); } <expression>;
 
 %%
-%start unit;
-unit:  exp  { drv.expression_result = $1; };
+%start declarations;
+
+declarations : declaration
+             | declarations declaration
+             ; 
+
+declaration : IDENTIFIER "=" exp ";" { drv.add_decl($1, $3); drv.expression_result = $3; std::cout << "Got an expression\n"; }
+            ;
 
 %left "+" "-";
 %left "*" "/";
@@ -55,8 +62,10 @@ exp	: exp "+" exp   { /*std::cout << "add\n";*/ $$ = expression(expr_type::add, 
    	| exp "*" exp   { /*std::cout << "mul\n";*/ $$ = expression(expr_type::mul, $1, $3); }
    	| exp "/" exp   { /*std::cout << "div\n";*/ $$ = expression(expr_type::div, $1, $3); }
 	| "(" exp ")"   { $$ = $2; }
-   	| "number"      { /*std::cout << "number " << $1 << '\n';*/ $$ = expression($1); }
+   	| "number"      { /*std::cout << "number " << $1 << '\n';*/ $$ = expression(expr_type::num, $1); }
+   	| "identifier"	{ $$ = expression(expr_type::var, drv.get_var_id($1)); }
    	;
+
 %%
 
 void

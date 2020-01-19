@@ -15,13 +15,32 @@
 
 using namespace std;
 
-tac::tac(const expression& exp)
+tac::tac(const driver& drv)
+ :drv(drv)
 {
 	//experiments();
-	int id = add_from_exp(exp);
+	//int id = add_from_exp(drv.declarations[0].exp);
+
+//	int id = 0;
+	for(auto& decl: drv.declarations)
+	{
+//		if (decl.result_var != -1 && decl.exp.type == expr_type::num)
+//		{
+//			entries.push_back(tac_entry(tac_type::assign,
+//					tac_var(tac_var_type::local, decl.result_var),
+//					tac_var(tac_var_type::constant, decl.exp.num)));
+//			continue;
+//		}
+		add_from_exp(tac_var(tac_var_type::local, decl.result_var), decl.exp);
+//
+//		if (decl.result_var != -1)
+//			entries.push_back(tac_entry(tac_type::assign,
+//					tac_var(tac_var_type::local, decl.result_var),
+//					tac_var(tac_var_type::temp, id)));
+	}
 
 	// HACK!
-	entries.push_back(tac_entry(tac_type::ret, tac_var(/*void*/), tac_var(tac_var_type::temp, id)));
+//	entries.push_back(tac_entry(tac_type::ret, tac_var(/*void*/), tac_var(tac_var_type::temp, id)));
 
 	debug_print();
 
@@ -97,20 +116,20 @@ void tac::calculate_life_times()
 //	return false;
 //}
 
-string tac_var::var_to_string() const
+string tac::var_to_string(const tac_var& var) const
 {
 	string s;
 
-	switch(type)
+	switch(var.type)
 	{
-	case tac_var_type::constant: return to_string(value);
-	case tac_var_type::local: s = "l"; break;
+	case tac_var_type::constant: return to_string(var.value);
+	case tac_var_type::local: return drv.get_var_name(var.id);
 	case tac_var_type::param: s = "p"; break;
 	case tac_var_type::temp: s = "t"; break;
 	case tac_var_type::unused: return "unused";
 	}
 
-	s += to_string(id);
+	s += to_string(var.id);
 
 	return s;
 }
@@ -130,23 +149,23 @@ void tac::debug_print()
 		switch(entry.type)
 		{
 		case tac_type::assign:
-			cout << entry.a.var_to_string() << " = " << entry.b.var_to_string() << '\n';
+			cout << var_to_string(entry.a) << " = " << var_to_string(entry.b) << '\n';
 			break;
 		case tac_type::add:
-			cout << entry.a.var_to_string() << " = " << entry.b.var_to_string() << " + " << entry.c.var_to_string() << '\n';
+			cout << var_to_string(entry.a) << " = " << var_to_string(entry.b) << " + " << var_to_string(entry.c) << '\n';
 			break;
 		case tac_type::sub:
-			cout << entry.a.var_to_string() << " = " << entry.b.var_to_string() << " - " << entry.c.var_to_string() << '\n';
+			cout << var_to_string(entry.a) << " = " << var_to_string(entry.b) << " - " << var_to_string(entry.c) << '\n';
 			break;
 		case tac_type::mul:
-			cout << entry.a.var_to_string() << " = " << entry.b.var_to_string() << " * " << entry.c.var_to_string() << '\n';
+			cout << var_to_string(entry.a) << " = " << var_to_string(entry.b) << " * " << var_to_string(entry.c) << '\n';
 			break;
 		case tac_type::div:
-			cout << entry.a.var_to_string() << " = " << entry.b.var_to_string() << " / " << entry.c.var_to_string() << '\n';
+			cout << var_to_string(entry.a) << " = " << var_to_string(entry.b) << " / " << var_to_string(entry.c) << '\n';
 			break;
 
 		case tac_type::ret:
-			cout << "return " << entry.b.var_to_string() << '\n';
+			cout << "return " << var_to_string(entry.b) << '\n';
 		}
 	}
 }
@@ -172,39 +191,52 @@ void tac::experiments()
 	next_varid = 100;
 }
 
-int tac::add_from_exp(const expression& exp)
+void tac::add_from_exp(const tac_var& result, const expression& exp)
 {
-	int b, c;
+	if (exp.type == expr_type::invalid)
+		throw invalid_argument("Internal error: invalid expression type");
 
-	if (exp.type != expr_type::num)
+	tac_var b, c;
+
+	if (exp.type != expr_type::num && exp.type != expr_type::var)
 	{
-		b = add_from_exp(exp.expressions[0]);
-		c = add_from_exp(exp.expressions[1]);
+		b = tac_var(tac_var_type::temp, next_varid++);
+		c = tac_var(tac_var_type::temp, next_varid++);
+
+		add_from_exp(b, exp.expressions[0]);
+		add_from_exp(c, exp.expressions[1]);
 	}
 
-	int a = next_varid++;
+	if (exp.type == expr_type::var)
+		cout << "Got a var\n";
+
+	//int a = next_varid++;
+	//tac_var a;
 	switch(exp.type)
 	{
+	case expr_type::var:
+		entries.push_back(tac_entry(tac_type::assign, result, tac_var(tac_var_type::local, exp.num)));
+		//throw invalid_argument("Not implemented yet");
+
+		break;
 	case expr_type::num:
-		entries.push_back(tac_entry(tac_type::assign, tac_var(tac_var_type::temp, a), tac_var(tac_var_type::constant, exp.num)));
+		entries.push_back(tac_entry(tac_type::assign, result, tac_var(tac_var_type::constant, exp.num)));
 		break;
 	case expr_type::add:
-		entries.push_back(tac_entry(tac_type::add, tac_var(tac_var_type::temp, a), tac_var(tac_var_type::temp, b), tac_var(tac_var_type::temp, c)));
+		entries.push_back(tac_entry(tac_type::add, result, b, c));
 		break;
 	case expr_type::sub:
-		entries.push_back(tac_entry(tac_type::sub, tac_var(tac_var_type::temp, a), tac_var(tac_var_type::temp, b), tac_var(tac_var_type::temp, c)));
+		entries.push_back(tac_entry(tac_type::sub, result, b, c));
 		break;
 	case expr_type::mul:
-		entries.push_back(tac_entry(tac_type::mul, tac_var(tac_var_type::temp, a), tac_var(tac_var_type::temp, b), tac_var(tac_var_type::temp, c)));
+		entries.push_back(tac_entry(tac_type::mul, result, b, c));
 		break;
 	case expr_type::div:
-		entries.push_back(tac_entry(tac_type::div, tac_var(tac_var_type::temp, a), tac_var(tac_var_type::temp, b), tac_var(tac_var_type::temp, c)));
+		entries.push_back(tac_entry(tac_type::div, result, b, c));
 		break;
 
 	case expr_type::invalid: throw invalid_argument("Internal error: Invalid expression.");
 	}
-
-	return a;
 }
 
 

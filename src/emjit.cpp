@@ -37,13 +37,14 @@ int main()
 	driver drv;
 	//drv.trace_parsing = true;
 	//drv.trace_scanning = true;
-	drv.parse ("src/parser/parseme.txt");
+	if (drv.parse ("src/parser/parseme.txt") != 0)
+		return 1;
 
 	/* Get the entry point */
 	auto program = s.entry_point<int(int, int)>();
 
 	/* Convert the expression into TAC */
-	tac t(drv.expression_result);
+	tac t(drv);
 
 	/* Compile TAC to machine code */
 	tac2x64 t2e(s);

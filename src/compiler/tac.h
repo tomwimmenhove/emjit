@@ -12,6 +12,7 @@
 #include <string>
 
 #include "../parser/expression.h"
+#include "../parser/driver.h"
 
 enum class tac_var_type
 {
@@ -26,11 +27,12 @@ class tac_entry;
 
 struct tac_var
 {
-	const int id;
-	const tac_var_type type;
-	const int32_t value;
+	int id;
+	tac_var_type type;
+	int32_t value;
 
 	tac_var() : id(-1), type(tac_var_type::unused), value(0) { }
+	tac_var(const tac_var& other) : id(other.id), type(other.type), value(other.value) { }
 	tac_var(tac_var_type type, int32_t i)
 	 : id(type != tac_var_type::constant ? i : -1), type(type), value(type == tac_var_type::constant ? i : 0) { }
 	//tac_var(tac_var_type type, int id) : id(id), type(type), value(0) { }
@@ -38,7 +40,7 @@ struct tac_var
 
 	//bool will_be_read(std::vector<tac_entry>::iterator from, std::vector<tac_entry>::iterator to);
 
-	std::string var_to_string() const;
+	//std::string var_to_string() const;
 };
 
 enum class tac_type
@@ -69,9 +71,11 @@ class tac
 {
 
 public:
-	tac(const expression& exp);
+	tac(const driver& drv);
 
 	const std::vector<tac_entry>& get_entries() const { return entries; }
+
+	std::string var_to_string(const tac_var& var) const;
 
 	static bool will_be_read(tac_var_type type, int id, std::vector<tac_entry>::iterator from, std::vector<tac_entry>::iterator to);
 
@@ -83,7 +87,9 @@ public:
 	virtual ~tac();
 
 private:
-	int add_from_exp(const expression& exp);
+	const driver& drv;
+
+	void add_from_exp(const tac_var& result, const expression& exp);
 	void add_live_range(int id, int from, int to);
 
 	int next_varid = 0;

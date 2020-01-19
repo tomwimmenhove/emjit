@@ -2,6 +2,7 @@
 #define EXPRESSION_H
 
 #include <vector>
+#include <string>
 
 enum class expr_type
 {   
@@ -13,6 +14,8 @@ enum class expr_type
 	div,
 
 	num,
+
+	var,
 };
 
 struct expression
@@ -21,8 +24,8 @@ struct expression
 
 	expression() { }
 
-	expression(int num)
-		: type(expr_type::num), num(num)
+	expression(expr_type type, int num)
+		: type(type), num(num)
 	{ }
 
 	expression(expr_type type, const expression& a, const expression& b)
@@ -38,6 +41,12 @@ struct expression
 	int num = 0;
 };
 
+struct declaration
+{
+	int result_var;
+
+	expression exp;
+};
 
 
 #endif /* EXPRESSION_H */
