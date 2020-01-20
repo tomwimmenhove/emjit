@@ -35,6 +35,23 @@ struct tac_var
 	tac_var(const tac_var& other) : id(other.id), type(other.type), value(other.value) { }
 	tac_var(tac_var_type type, int32_t i)
 	 : id(type != tac_var_type::constant ? i : -1), type(type), value(type == tac_var_type::constant ? i : 0) { }
+
+	inline bool operator==(const tac_var& other) const { return cmp(other) == 0; }
+	inline bool operator!=(const tac_var& other) const { return cmp(other) != 0; }
+	inline bool operator> (const tac_var& other) const { return cmp(other) >  0; }
+	inline bool operator< (const tac_var& other) const { return cmp(other) <  0; }
+
+private:
+	inline int cmp(const tac_var& other) const
+	{
+		if (id > other.id) return 1;
+		if (id < other.id) return -1;
+		if (type > other.type) return 1;
+		if (type < other.type) return -1;
+		if (value > other.value) return 1;
+		if (value < other.value) return -1;
+		return 0;
+	}
 };
 
 enum class tac_type

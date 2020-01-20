@@ -94,18 +94,6 @@ void tac::calculate_life_times()
 	}
 }
 
-//bool tac_var::will_be_read(vector<tac_entry>::iterator from, vector<tac_entry>::iterator to)
-//{
-//	for(auto it = from; it != to; ++it)
-//	{
-//		if ((it->b.type == type && it->b.id == id) ||
-//				(it->c.type == type && it->c.id == id))
-//			return true;
-//	}
-//
-//	return false;
-//}
-
 string tac::var_to_string(const tac_var& var) const
 {
 	string s;
