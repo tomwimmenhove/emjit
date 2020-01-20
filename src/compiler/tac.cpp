@@ -18,6 +18,8 @@ using namespace std;
 tac::tac(const driver& drv)
  :drv(drv)
 {
+	next_varid = drv.get_var_id();
+
 	for(auto& stmt: drv.statements)
 	{
 		switch(stmt.type)
@@ -63,7 +65,6 @@ void tac::calculate_life_times()
 
 		entry.live_vars.resize(next_varid, false);
 
-		//if (entry.a.type == tac_var_type::temp)
 		if (entry.a.id != -1)
 		{
 			if (last_read[entry.a.id] != -1)
@@ -72,14 +73,11 @@ void tac::calculate_life_times()
 				last_read[entry.a.id] = -1;
 			}
 			last_write[entry.a.id] = i;
-			//continue;
 		}
 
-		//if (entry.b.type == tac_var_type::temp)
 		if (entry.b.id != -1)
 			last_read[entry.b.id] = i;
 
-		//if (entry.c.type == tac_var_type::temp)
 		if (entry.c.id != -1)
 			last_read[entry.c.id] = i;
 	}

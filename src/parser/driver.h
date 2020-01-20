@@ -20,6 +20,8 @@ public:
 
 	std::vector<statement> statements;
 
+	inline int get_var_id() const { return var_id; }
+
 	int decl_var_id(std::string identifier);
 
 	int get_var_id(std::string identifier) const;
