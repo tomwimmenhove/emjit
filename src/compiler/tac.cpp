@@ -58,39 +58,25 @@ void tac::add_live_range(int id, int from, int to)
 
 void tac::calculate_life_times()
 {
-	vector<int> last_write(next_varid, -1);
 	vector<int> last_read(next_varid, -1);
 
-	for(size_t i = 0; i < entries.size(); i++)
+	for(ssize_t i = static_cast<ssize_t>(entries.size()) - 1; i >= 0; i--)
 	{
 		auto& entry = entries[i];
 
 		entry.live_vars.resize(next_varid, false);
 
-		if (entry.a.id != -1)
+		if (entry.a.id != -1 && last_read[entry.a.id] != -1)
 		{
-			if (last_read[entry.a.id] != -1)
-			{
-				add_live_range(i, last_write[entry.a.id] + 1, last_read[entry.a.id]);
-				last_read[entry.a.id] = -1;
-			}
-			last_write[entry.a.id] = i;
+			add_live_range(entry.a.id, i + 1, last_read[entry.a.id]);
+			last_read[entry.a.id] = -1;
 		}
 
-		if (entry.b.id != -1)
+		if (entry.b.id != -1 && last_read[entry.b.id] == -1)
 			last_read[entry.b.id] = i;
 
-		if (entry.c.id != -1)
+		if (entry.c.id != -1 && last_read[entry.c.id] == -1)
 			last_read[entry.c.id] = i;
-	}
-
-	for(auto i = 0; i < next_varid; i++)
-	{
-		if (last_read[i] != -1)
-		{
-			add_live_range(i, last_write[i] + 1, last_read[i]);
-			last_read[i] = -1;
-		}
 	}
 
 	tac_interf_graph.resize(next_varid);
@@ -155,7 +141,7 @@ void tac::debug_print()
 	{
 		auto& entry = entries[i];
 
-		//cout << '@' << i << ": ";
+		cout << '@' << i << ": ";
 
 		switch(entry.type)
 		{
