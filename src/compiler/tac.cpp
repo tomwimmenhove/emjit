@@ -18,6 +18,7 @@ using namespace std;
 tac::tac(const driver& drv)
  :drv(drv)
 {
+#if 0
 	next_varid = drv.get_var_id();
 
 	for(auto& stmt: drv.statements)
@@ -34,6 +35,9 @@ tac::tac(const driver& drv)
 			break;
 		}
 	}
+#else
+	experiments();
+#endif
 
 	debug_print();
 	calculate_life_times();
@@ -48,16 +52,14 @@ void tac::add_live_range(int id, int from, int to)
 	}
 	cout << "Life time of t" << id << ": " << from << ".." << to << '\n';
 
-	for (int i = from; i < to; i++)
+	for (int i = from; i < to + 1; i++)
 		entries[i].live_vars[id] = true;
 }
 
 void tac::calculate_life_times()
 {
-	int* last_write = static_cast<int*>(alloca(next_varid * sizeof(int)));
-	int* last_read = static_cast<int*>(alloca(next_varid * sizeof(int)));
-	memset(last_write, 0xff, next_varid * sizeof(int));
-	memset(last_read, 0xff, next_varid * sizeof(int));
+	vector<int> last_write(next_varid, -1);
+	vector<int> last_read(next_varid, -1);
 
 	for(size_t i = 0; i < entries.size(); i++)
 	{
@@ -90,6 +92,42 @@ void tac::calculate_life_times()
 			last_read[i] = -1;
 		}
 	}
+
+	tac_interf_graph.resize(next_varid);
+	for (auto i = 0; i < next_varid; i++)
+	{
+		auto& node = tac_interf_graph[i];
+
+		node.resize(next_varid, false);
+		for (auto& entry: entries)
+		{
+			if (entry.live_vars[i])
+			{
+				for (auto j = 0; j < next_varid; j++)
+				{
+					if (j == i)
+						continue;
+
+					if (entry.live_vars[j])
+						node[j] = true;
+				}
+			}
+		}
+	}
+
+	/* Print for debugging */
+	for (auto i = 0; i < next_varid; i++)
+	{
+		auto& node = tac_interf_graph[i];
+
+		cout << "Var id " << i << " interferes with: ";
+		for (auto j = 0; j < next_varid; j++)
+			if (node[j])
+				cout << j << ", ";
+		cout << '\n';
+	}
+
+	exit(0);
 }
 
 string tac::var_to_string(const tac_var& var) const
@@ -116,11 +154,8 @@ void tac::debug_print()
 	for (size_t i = 0; i < entries.size(); i++)
 	{
 		auto& entry = entries[i];
-//		if (entry.a.id != -1) cout << "Wt" << entry.a.id << ' ';
-//		if (entry.b.id != -1) cout << "Rt" << entry.b.id << ' ';
-//		if (entry.c.id != -1) cout << "Rt" << entry.c.id << ' ';
 
-		cout << '@' << i << ": ";
+		//cout << '@' << i << ": ";
 
 		switch(entry.type)
 		{
@@ -158,13 +193,14 @@ void tac::experiments()
 	entries.push_back(tac_entry(tac_type::add, tac_var(tac_var_type::temp, 2), tac_var(tac_var_type::temp, 1), tac_var(tac_var_type::temp, 0)));
 	entries.push_back(tac_entry(tac_type::add, tac_var(tac_var_type::temp, 3), tac_var(tac_var_type::temp, 1), tac_var(tac_var_type::temp, 2)));
 
-	entries.push_back(tac_entry(tac_type::add, tac_var(tac_var_type::temp, 4), tac_var(tac_var_type::temp, 1), tac_var(tac_var_type::temp, 2)));
+	entries.push_back(tac_entry(tac_type::add, tac_var(tac_var_type::temp, 4), tac_var(tac_var_type::temp, 1), tac_var(tac_var_type::temp, 3)));
 
+
+	entries.push_back(tac_entry(tac_type::add, tac_var(tac_var_type::temp, 5), tac_var(tac_var_type::temp, 0), tac_var(tac_var_type::temp, 3)));
 	entries.push_back(tac_entry(tac_type::ret, tac_var(/*void*/), tac_var(tac_var_type::temp, 4)));
 
 
-
-	next_varid = 100;
+	next_varid = 6;
 }
 
 tac_var tac::add_from_exp(const tac_var& result, const expression& exp)

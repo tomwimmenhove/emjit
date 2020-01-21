@@ -100,6 +100,8 @@ public:
 private:
 	const driver& drv;
 
+	std::vector<std::vector<bool>> tac_interf_graph;
+
 	tac_var add_from_exp(const tac_var& result, const expression& exp);
 	void add_live_range(int id, int from, int to);
 
