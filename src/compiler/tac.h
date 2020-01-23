@@ -88,8 +88,6 @@ public:
 
 	std::string var_to_string(const tac_var& var) const;
 
-	static bool will_be_read(tac_var_type type, int id, std::vector<tac_entry>::iterator from, std::vector<tac_entry>::iterator to);
-
 	void calculate_life_times();
 
 	void experiments();
@@ -100,10 +98,19 @@ public:
 private:
 	const driver& drv;
 
-	std::vector<std::vector<bool>> tac_interf_graph;
+	std::vector<std::vector<bool>> rig; /* Register interference graph */
 
 	tac_var add_from_exp(const tac_var& result, const expression& exp);
 	void add_live_range(int id, int from, int to);
+	void rig_generate();
+	void rig_push_stack(int id);
+	int rig_pop_stack();
+	bool rig_interferes(int id1, int id2);
+	int rig_interference_nodes(int id);
+	void rig_debug_print();
+
+	std::vector<int> rig_stack;
+	std::vector<bool> rig_stack_set;
 
 	int next_varid = 0;
 	std::vector<tac_entry> entries;

@@ -18,7 +18,7 @@ using namespace std;
 tac::tac(const driver& drv)
  :drv(drv)
 {
-#if 0
+#if 1
 	next_varid = drv.get_var_id();
 
 	for(auto& stmt: drv.statements)
@@ -41,6 +41,19 @@ tac::tac(const driver& drv)
 
 	debug_print();
 	calculate_life_times();
+	rig_generate();
+	rig_debug_print();
+
+	cout << "---XXXX Removing ID 4 and 5! XXXX----\n";
+	rig_push_stack(4);
+	rig_push_stack(5);
+
+	rig_debug_print();
+	cout << "---XXXX Restoring ID 4 and 5! XXXX----\n";
+	rig_pop_stack();
+	rig_pop_stack();
+
+	rig_debug_print();
 }
 
 void tac::add_live_range(int id, int from, int to)
@@ -55,6 +68,25 @@ void tac::add_live_range(int id, int from, int to)
 	for (int i = from; i < to + 1; i++)
 		entries[i].live_vars[id] = true;
 }
+
+//#include <list>
+//#include <stack>
+//
+//struct tac_rig_node
+//{
+//	int id;
+//
+//	std::list<tac_rig_node> nodes;
+//};
+//
+//struct tac_rig
+//{
+//	std::list<tac_rig_node> nodes;
+//	std::stack<tac_rig_node> node_stack;
+//
+//
+//};
+
 
 void tac::calculate_life_times()
 {
@@ -78,11 +110,14 @@ void tac::calculate_life_times()
 		if (entry.c.id != -1 && last_read[entry.c.id] == -1)
 			last_read[entry.c.id] = i;
 	}
+}
 
-	tac_interf_graph.resize(next_varid);
+void tac::rig_generate()
+{
+	rig.resize(next_varid);
 	for (auto i = 0; i < next_varid; i++)
 	{
-		auto& node = tac_interf_graph[i];
+		auto& node = rig[i];
 
 		node.resize(next_varid, false);
 		for (auto& entry: entries)
@@ -101,19 +136,61 @@ void tac::calculate_life_times()
 		}
 	}
 
-	/* Print for debugging */
+	rig_stack.reserve(next_varid);
+	rig_stack_set.resize(next_varid, false);
+	rig_stack.clear();
+}
+
+void tac::rig_push_stack(int id)
+{
+	rig_stack.push_back(id);
+	rig_stack_set[id] = true;
+}
+
+int tac::rig_pop_stack()
+{
+	int id = rig_stack.back();
+	rig_stack.pop_back();
+	rig_stack_set[id] = false;
+
+	return id;
+}
+
+bool tac::rig_interferes(int id1, int id2)
+{
+	return !rig_stack_set[id1] && !rig_stack_set[id2] && rig[id1][id2];
+}
+
+int tac::rig_interference_nodes(int id)
+{
+	if (rig_stack_set[id])
+		return 0;
+
+	int cnt = 0;
+	auto& node = rig[id];
 	for (auto i = 0; i < next_varid; i++)
 	{
-		auto& node = tac_interf_graph[i];
+		if (rig_stack_set[i])
+			continue;
 
-		cout << "Var id " << i << " interferes with: ";
+		if (node[i])
+			cnt++;
+	}
+
+	return cnt;
+}
+
+void tac::rig_debug_print()
+{
+	for (auto i = 0; i < next_varid; i++)
+	{
+		int n = rig_interference_nodes(i);
+		cout << "Var id " << i << " interferes with " << n << " nodes: ";
 		for (auto j = 0; j < next_varid; j++)
-			if (node[j])
+			if (rig_interferes(i, j))
 				cout << j << ", ";
 		cout << '\n';
 	}
-
-	exit(0);
 }
 
 string tac::var_to_string(const tac_var& var) const
@@ -141,7 +218,7 @@ void tac::debug_print()
 	{
 		auto& entry = entries[i];
 
-		cout << '@' << i << ": ";
+		//cout << '@' << i << ": ";
 
 		switch(entry.type)
 		{
