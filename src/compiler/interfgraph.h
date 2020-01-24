@@ -24,6 +24,8 @@ public:
 	inline int get_n_vars() const { return n_vars; }
 	inline void set_n_vars(int n) { n_vars = n; }
 
+	inline int get_n_spills() const { return n_spills; }
+
 	void generate(const std::vector<tac_entry>& entries);
 	void debug_print();
 
@@ -44,6 +46,7 @@ private:
 	std::vector<bool> removed;
 
 	int n_vars;
+	int n_spills = 0;
 };
 
 #endif /* COMPILER_INTERFGRAPH_H_ */

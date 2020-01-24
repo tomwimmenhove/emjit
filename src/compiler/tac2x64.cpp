@@ -414,7 +414,7 @@ void tac2x64::compile_expression(const tac& t)
 
 	auto& entries = t.get_entries();
 
-	prologue(0);
+	prologue(rig.get_n_spills() * sizeof(int32_t));
 
 	bool last_was_ret;
 	for(auto& entry: entries)

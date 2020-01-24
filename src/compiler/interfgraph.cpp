@@ -193,6 +193,8 @@ map<int, int> interf_graph::color(int k)
 		}
 	}
 
+	n_spills = -color;
+
 	return color_map;
 }
 

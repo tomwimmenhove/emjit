@@ -134,19 +134,19 @@ private:
 	std::map<int, int> color_map;
 
 	std::array<int, 7> reg_avail {
-			//x64_regs::eax.value,
-			//x64_regs::ecx.value,
-			//x64_regs::edx.value,
-			//x64_regs::ebx.value,
-			//x64_regs::esp.value,
-			//x64_regs::ebp.value,
+			//x64_regs::eax.value,	/* Reserved for certain ALU instructions and return values*/
+			x64_regs::ecx.value,
+			//x64_regs::edx.value,	/* Reserved fofr idiv, until we can mark edx as live for these instructions */
+			x64_regs::ebx.value,
+			//x64_regs::esp.value,	/* Stack pointer */
+			//x64_regs::ebp.value,	/* Frame pointer */
 			x64_regs::esi.value,
 			x64_regs::edi.value,
 			x64_regs::r8d.value,
 			x64_regs::r9d.value,
 			x64_regs::r10d.value,
-			x64_regs::r11d.value,
-			x64_regs::r12d.value,
+			//x64_regs::r11d.value,	/* Load/store temp register */
+//			x64_regs::r12d.value,
 //			x64_regs::r13d.value,
 //			x64_regs::r14d.value,
 //			x64_regs::r15d.value,
