@@ -36,7 +36,6 @@ private:
 	int pop_stack();
 	int find_lt_nodes(int nodes);
 	int try_add_reuse(std::map<int, int>& color_map, int id, int max_color);
-	bool interferes(int id1, int id2);
 	int interference_nodes(int id);
 	bool interference_nodes_lt(int id, int lt);
 

@@ -20,7 +20,7 @@
 #include "usedregister.h"
 #include "x64tmpreg.h"
 #include "stackvariable.h"
-
+#include "interfgraph.h"
 
 /* Debug classes XXX: Move this shit somewhere else.*/
 class exprcted_regs_exception: public std::exception
@@ -130,6 +130,28 @@ public:
 	virtual ~tac2x64();
 
 private:
+	interf_graph rig;
+	std::map<int, int> color_map;
+
+	std::array<int, 7> reg_avail {
+			//x64_regs::eax.value,
+			//x64_regs::ecx.value,
+			//x64_regs::edx.value,
+			//x64_regs::ebx.value,
+			//x64_regs::esp.value,
+			//x64_regs::ebp.value,
+			x64_regs::esi.value,
+			x64_regs::edi.value,
+			x64_regs::r8d.value,
+			x64_regs::r9d.value,
+			x64_regs::r10d.value,
+			x64_regs::r11d.value,
+			x64_regs::r12d.value,
+//			x64_regs::r13d.value,
+//			x64_regs::r14d.value,
+//			x64_regs::r15d.value,
+	};
+
 	void add_tac_var(const tac_var& var);
 
 	struct sigaction saved_action;
@@ -168,12 +190,12 @@ private:
 		int32_t i = 0;
 	};
 
-	void op_assign(get_reg<x64_reg32>& gr, const tac_entry& entry);
-	void op_add(get_reg<x64_reg32>& gr, const tac_entry& entry);
-	void op_sub(get_reg<x64_reg32>& gr, const tac_entry& entry);
-	void op_mul(get_reg<x64_reg32>& gr, const tac_entry& entry);
-	void op_div(get_reg<x64_reg32>& gr, const tac_entry& entry);
-	void op_ret(get_reg<x64_reg32>& gr, const tac_entry& entry);
+	void op_assign(const tac_entry& entry);
+	void op_add(const tac_entry& entry);
+	void op_sub(const tac_entry& entry);
+	void op_mul(const tac_entry& entry);
+	void op_div(const tac_entry& entry);
+	void op_ret(const tac_entry& entry);
 
 	std::map<int, var> var_map;
 	int stack_pos = 0;

@@ -80,16 +80,13 @@ int interf_graph::try_add_reuse(map<int, int>& color_map, int id, int max_color)
 	/* Mark all colors that we can't use because interfering variables already use the color */
 	for (auto i = 0; i < n_vars; i++)
 	{
-		if (id == i)
-			continue;
-
-		if (interferes(id, i))
+		if (id != i && !removed[i] && graph[id][i])
 		{
 			auto it = color_map.find(i);
 			if (it == color_map.end())
-				throw invalid_argument("Internal error: Can't find id in reg_map! << REMOVE ME!");
+				throw invalid_argument("Internal error: RIG: Can't find id in color_map!");
 
-			int color = color_map[i];
+			int color = it->second;
 			if (color >= 0) /* Don't worry about already-spilled variables */
 				can_use[color] = false;
 		}
@@ -109,13 +106,12 @@ map<int, int> interf_graph::color(int k)
 
 	unordered_set<int> spills;
 
-	/* Stage 1: removing nodes */
+	/* Stage 1: removing nodes with <k edges */
 	while (true)
 	{
 		int found;
 		int left;
 
-		/* Remove nodes with <k edges */
 		do
 		{
 			found = left = 0;
@@ -177,13 +173,14 @@ map<int, int> interf_graph::color(int k)
 
 	/* Optimistically try to assign existing color to possibly spilled variables,
 	 * otherwise assign a spill (negative) value. */
-	int used_colors = color;
+	//int used_colors = color;
 	color = 0;
 	for(auto id: spills)
 	{
 		removed[id] = false;
 
-		int c = try_add_reuse(color_map, id, used_colors);
+		//int c = try_add_reuse(color_map, id, used_colors);
+		int c = try_add_reuse(color_map, id, k);
 		if (c != -1)
 		{
 			color_map[id] = c;
@@ -197,12 +194,6 @@ map<int, int> interf_graph::color(int k)
 	}
 
 	return color_map;
-}
-
-
-bool interf_graph::interferes(int id1, int id2)
-{
-	return !removed[id1] && !removed[id2] && graph[id1][id2];
 }
 
 int interf_graph::interference_nodes(int id)
@@ -254,7 +245,7 @@ void interf_graph::debug_print()
 		int n = interference_nodes(i);
 		cout << "Var id " << i << " interferes with " << n << " nodes: ";
 		for (auto j = 0; j < n_vars; j++)
-			if (interferes(i, j))
+			if (!removed[j] && graph[i][j])
 				cout << j << ", ";
 		cout << '\n';
 	}

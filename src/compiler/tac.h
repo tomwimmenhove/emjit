@@ -87,6 +87,8 @@ public:
 
 	std::string var_to_string(const tac_var& var) const;
 
+	inline int get_num_vars() const { return next_varid; }
+
 	void calculate_life_times();
 
 	void experiments();

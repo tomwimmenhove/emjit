@@ -13,7 +13,6 @@
 #include <unordered_set>
 
 #include "tac.h"
-#include "interfgraph.h"
 
 using namespace std;
 
@@ -43,17 +42,6 @@ tac::tac(const driver& drv)
 
 	debug_print();
 	calculate_life_times();
-
-	interf_graph rig;
-
-	rig.set_n_vars(next_varid);
-	rig.generate(entries);
-	rig.debug_print();
-
-	auto color_map = rig.color(4);
-
-	for(auto it = color_map.begin(); it != color_map.end(); ++it)
-		cout << "Mapping: " << it->first << ": " << it->second << '\n';
 }
 
 void tac::add_live_range(int id, int from, int to)

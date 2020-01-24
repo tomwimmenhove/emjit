@@ -244,109 +244,160 @@ void tac2x64::div_test(const var& dst, const var& dividend, const var& divisor, 
 //
 //}
 
-void tac2x64::op_assign(get_reg<x64_reg32>& gr, const tac_entry& entry)
+void tac2x64::op_assign(const tac_entry& entry)
 {
 	if (entry.b.type != tac_var_type::constant)
 		throw invalid_argument("Assignments of non-constants not yet supported");
 
-	auto reg = gr.reg_for_var(entry.a.id, entry);
+	//auto reg = gr.reg_for_var(entry.a.id, entry);
+	auto reg = x64_reg32(reg_avail[color_map[entry.a.id]]);
 
 	inst_stream << x64_mov(reg, entry.b.value);
 }
 
-void tac2x64::op_add(get_reg<x64_reg32>& gr, const tac_entry& entry)
+void tac2x64::op_add(const tac_entry& entry)
 {
-	auto regb = gr.reg_for_var(entry.b.id, entry);
-	auto regc = gr.reg_for_var(entry.c.id, entry);
+	auto rega = x64_reg32(reg_avail[color_map[entry.a.id]]);
+	auto regb = x64_reg32(reg_avail[color_map[entry.b.id]]);
+	auto regc = x64_reg32(reg_avail[color_map[entry.c.id]]);
 
-	/* TODO:
-	 *  Always just do: x64_add(regb, regc);
-	 *  AFTER calling some "we're storing this this in register x", that
-	 *  function can then decide wether to move the old storage place to
-	 *  some new register, or memory
-	 *
-	 *  ALSO:
-	 *  reg_for_var() should be able to get spilled registers back into registers
-	 *
-	 *  ^^ Fuck all that. Implement: https://www.youtube.com/watch?v=4eHdo8GaICY&list=PLEUhcCFlouiXsqOfvZlQ6ORkQZ7GwAab9&index=16&t=0s
-	 */
+	if (rega.value != regb.value)
+		inst_stream << x64_mov(rega, regb);
 
-	/* Can we use b to store the result? */
-	if (!entry.live_vars[entry.b.id])
-	{
-		inst_stream << x64_add(regb, regc);
-		gr.store_var_in(entry.a.id, regb); /* Result (a) is now in regb */
-		return;
-	}
+	inst_stream << x64_add(rega, regc);
 
-	/* Can we use c to store the result? */
-	if (!entry.live_vars[entry.c.id])
-	{
-		inst_stream << x64_add(regc, regb);
-		gr.store_var_in(entry.a.id, regc); /* Result (a) is now in regc */
-		return;
-	}
-
-	auto rega = gr.reg_for_var(entry.a.id, entry);
-	inst_stream << x64_mov(rega, regb) << x64_add(rega, regc);
+//
+//	auto regb = gr.reg_for_var(entry.b.id, entry);
+//	auto regc = gr.reg_for_var(entry.c.id, entry);
+//
+//	/* TODO:
+//	 *  Always just do: x64_add(regb, regc);
+//	 *  AFTER calling some "we're storing this this in register x", that
+//	 *  function can then decide wether to move the old storage place to
+//	 *  some new register, or memory
+//	 *
+//	 *  ALSO:
+//	 *  reg_for_var() should be able to get spilled registers back into registers
+//	 *
+//	 *  ^^ Fuck all that. Implement: https://www.youtube.com/watch?v=4eHdo8GaICY&list=PLEUhcCFlouiXsqOfvZlQ6ORkQZ7GwAab9&index=16&t=0s
+//	 */
+//
+//	/* Can we use b to store the result? */
+//	if (!entry.live_vars[entry.b.id])
+//	{
+//		inst_stream << x64_add(regb, regc);
+//		gr.store_var_in(entry.a.id, regb); /* Result (a) is now in regb */
+//		return;
+//	}
+//
+//	/* Can we use c to store the result? */
+//	if (!entry.live_vars[entry.c.id])
+//	{
+//		inst_stream << x64_add(regc, regb);
+//		gr.store_var_in(entry.a.id, regc); /* Result (a) is now in regc */
+//		return;
+//	}
+//
+//	auto rega = gr.reg_for_var(entry.a.id, entry);
+//	inst_stream << x64_mov(rega, regb) << x64_add(rega, regc);
 }
 
-void tac2x64::op_sub(get_reg<x64_reg32>& gr, const tac_entry& entry)
+void tac2x64::op_sub(const tac_entry& entry)
 {
-	auto regb = gr.reg_for_var(entry.b.id, entry);
-	auto regc = gr.reg_for_var(entry.c.id, entry);
+	auto rega = x64_reg32(reg_avail[color_map[entry.a.id]]);
+	auto regb = x64_reg32(reg_avail[color_map[entry.b.id]]);
+	auto regc = x64_reg32(reg_avail[color_map[entry.c.id]]);
 
-	if (!entry.live_vars[entry.b.id])
-	{
-		inst_stream << x64_sub(regb, regc);
-		gr.store_var_in(entry.a.id, regb); /* Result (a) is now in regb */
-		return;
-	}
+	if (rega.value != regb.value)
+		inst_stream << x64_mov(rega, regb);
 
-	auto rega = gr.reg_for_var(entry.a.id, entry);
-	inst_stream << x64_mov(rega, regb) << x64_sub(rega, regc);
+	inst_stream << x64_sub(rega, regc);
+//	auto regb = gr.reg_for_var(entry.b.id, entry);
+//	auto regc = gr.reg_for_var(entry.c.id, entry);
+//
+//	if (!entry.live_vars[entry.b.id])
+//	{
+//		inst_stream << x64_sub(regb, regc);
+//		gr.store_var_in(entry.a.id, regb); /* Result (a) is now in regb */
+//		return;
+//	}
+//
+//	auto rega = gr.reg_for_var(entry.a.id, entry);
+//	inst_stream << x64_mov(rega, regb) << x64_sub(rega, regc);
 }
 
-void tac2x64::op_mul(get_reg<x64_reg32>& gr, const tac_entry& entry)
+void tac2x64::op_mul(const tac_entry& entry)
 {
-	auto regb = gr.reg_for_var(entry.b.id, entry);
-	auto regc = gr.reg_for_var(entry.c.id, entry);
+	auto rega = x64_reg32(reg_avail[color_map[entry.a.id]]);
+	auto regb = x64_reg32(reg_avail[color_map[entry.b.id]]);
+	auto regc = x64_reg32(reg_avail[color_map[entry.c.id]]);
 
-	if (!entry.live_vars[entry.b.id])
-	{
-		inst_stream << x64_imul(regb, regc);
-		gr.store_var_in(entry.a.id, regb); /* Result (a) is now in regb */
-		return;
-	}
+	if (rega.value != regb.value)
+		inst_stream << x64_mov(rega, regb);
+	inst_stream << x64_imul(rega, regc);
 
-	auto rega = gr.reg_for_var(entry.a.id, entry);
-	inst_stream << x64_mov(rega, regb) << x64_imul(rega, regc);
+//	auto regb = gr.reg_for_var(entry.b.id, entry);
+//	auto regc = gr.reg_for_var(entry.c.id, entry);
+//
+//	if (!entry.live_vars[entry.b.id])
+//	{
+//		inst_stream << x64_imul(regb, regc);
+//		gr.store_var_in(entry.a.id, regb); /* Result (a) is now in regb */
+//		return;
+//	}
+//
+//	auto rega = gr.reg_for_var(entry.a.id, entry);
+//	inst_stream << x64_mov(rega, regb) << x64_imul(rega, regc);
 }
 
-void tac2x64::op_div(get_reg<x64_reg32>& gr, const tac_entry& entry)
+void tac2x64::op_div(const tac_entry& entry)
 {
-	auto rega = gr.reg_for_var(entry.a.id, entry);
-	auto regb = gr.reg_for_var(entry.b.id, entry);
-	auto regc = gr.reg_for_var(entry.c.id, entry);
+	auto rega = x64_reg32(reg_avail[color_map[entry.a.id]]);
+	auto regb = x64_reg32(reg_avail[color_map[entry.b.id]]);
+	auto regc = x64_reg32(reg_avail[color_map[entry.c.id]]);
 
 	inst_stream << x64_mov(x64_regs::eax, regb) << x64_xor(x64_regs::edx, x64_regs::edx)
 			<< x64_idiv(regc) << x64_mov(rega, x64_regs::eax);
+
+//	auto rega = gr.reg_for_var(entry.a.id, entry);
+//	auto regb = gr.reg_for_var(entry.b.id, entry);
+//	auto regc = gr.reg_for_var(entry.c.id, entry);
+//
+//	inst_stream << x64_mov(x64_regs::eax, regb) << x64_xor(x64_regs::edx, x64_regs::edx)
+//			<< x64_idiv(regc) << x64_mov(rega, x64_regs::eax);
 }
 
-void tac2x64::op_ret(get_reg<x64_reg32>& gr, const tac_entry& entry)
+void tac2x64::op_ret(const tac_entry& entry)
 {
 	if (entry.b.id != -1)
 	{
-		auto result_reg = gr.reg_for_var(entry.b.id, entry);
+		auto result_reg = x64_reg32(reg_avail[color_map[entry.b.id]]);
 		if (result_reg.value != x64_regs::eax.value)
 			inst_stream << x64_mov(x64_regs::eax, result_reg);
 	}
 	epilogue();
-}
 
+//	if (entry.b.id != -1)
+//	{
+//		auto result_reg = gr.reg_for_var(entry.b.id, entry);
+//		if (result_reg.value != x64_regs::eax.value)
+//			inst_stream << x64_mov(x64_regs::eax, result_reg);
+//	}
+//	epilogue();
+}
 
 void tac2x64::compile_expression(const tac& t)
 {
+	rig.set_n_vars(t.get_num_vars());
+	rig.generate(t.get_entries());
+	rig.debug_print();
+
+	color_map = rig.color(reg_avail.size());
+
+	for(auto it = color_map.begin(); it != color_map.end(); ++it)
+		cout << "Mapping: " << it->first << ": " << it->second << '\n';
+
+
 	auto program = inst_stream.entry_point<int(int, int, int, int, int, int, int, int, int)>();
 
 	/* For now, to make mul/div simple */
@@ -359,7 +410,7 @@ void tac2x64::compile_expression(const tac& t)
 //		dr.use(i);
 //	}
 
-	get_reg<x64_reg32> gr(dr, tac_var_type::temp);
+	//get_reg<x64_reg32> gr(dr, tac_var_type::temp);
 
 	auto& entries = t.get_entries();
 
@@ -373,22 +424,22 @@ void tac2x64::compile_expression(const tac& t)
 		switch(entry.type)
 		{
 		case tac_type::assign:
-			op_assign(gr, entry);
+			op_assign(entry);
 			break;
 		case tac_type::add:
-			op_add(gr, entry);
+			op_add(entry);
 			break;
 		case tac_type::sub:
-			op_sub(gr, entry);
+			op_sub(entry);
 			break;
 		case tac_type::mul:
-			op_mul(gr, entry);
+			op_mul(entry);
 			break;
 		case tac_type::div:
-			op_div(gr, entry);
+			op_div(entry);
 			break;
 		case tac_type::ret:
-			op_ret(gr, entry);
+			op_ret(entry);
 			last_was_ret = true;
 		break;
 		}
