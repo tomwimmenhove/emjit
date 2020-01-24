@@ -106,7 +106,7 @@ private:
 	void rig_push_stack(int id);
 	int rig_pop_stack();
 	int rig_find_lt_k(int k);
-	bool rig_try_add(std::map<int, int>& reg_map, int id);
+	int rig_try_add_reuse(std::map<int, int>& reg_map, int id, int max_color);
 	std::map<int, int> rig_color(int k);
 	bool rig_interferes(int id1, int id2);
 	int rig_interference_nodes(int id);

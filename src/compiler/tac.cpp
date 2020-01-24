@@ -43,7 +43,6 @@ tac::tac(const driver& drv)
 	debug_print();
 	calculate_life_times();
 	rig_generate();
-	rig_debug_print();
 
 //	cout << "---XXXX Removing ID 1 XXXX----\n";
 //	rig_push_stack(1);
@@ -60,10 +59,10 @@ tac::tac(const driver& drv)
 //	rig_pop_stack();
 
 
-	auto m = rig_color(4);
+	auto m = rig_color(7);
 
 
-	rig_debug_print();
+	//rig_debug_print();
 }
 
 void tac::add_live_range(int id, int from, int to)
@@ -164,28 +163,34 @@ int tac::rig_find_lt_k(int k)
 	return -1;
 }
 
-bool tac::rig_try_add(map<int, int>& reg_map, int id)
+int tac::rig_try_add_reuse(map<int, int>& reg_map, int id, int max_color)
 {
-	if (id == 9)
-		cout << "STOP\n";
+	vector<bool> can_use(max_color, true);
 
+	/* Mark all colors that we can't use because interfering variables already use the color */
 	for (auto i = 0; i < next_varid; i++)
 	{
-		if (rig_removed[i] || i == id)
+		if (id == i)
 			continue;
 
-		if (!rig_interferes(i, id))
+		if (rig_interferes(id, i))
 		{
 			auto it = reg_map.find(i);
-			if (it != reg_map.end())
-			{
-				reg_map[id] = it->second;
-				return true;
-			}
+			if (it == reg_map.end())
+				throw invalid_argument("Internal error: Can't find id in reg_map! << REMOVE ME!");
+
+			int color = reg_map[i];
+			if (color >= 0) /* Don't worry about already-spilled variables */
+				can_use[color] = false;
 		}
 	}
 
-	return false;
+	/* Find if there's anything left that we can use */
+	for (auto i = 0; i < max_color; i++)
+		if (can_use[i])
+			return i;
+
+	return -1;
 }
 
 map<int, int> tac::rig_color(int k)
@@ -198,14 +203,14 @@ map<int, int> tac::rig_color(int k)
 	while (true)
 	{
 		int found;
-		int left = 0;
+		int left;
 
 		/* Remove nodes with <k edges */
 		do
 		{
 			rig_debug_print();
 
-			found = 0;
+			found = left = 0;
 			for (auto i = 0; i < next_varid; i++)
 			{
 				if (rig_interference_nodes_lt(i, k))
@@ -255,25 +260,36 @@ map<int, int> tac::rig_color(int k)
 		if (id == -1)
 			break;
 
+		cout << "Popping back " << id << '\n';
+
 		/* Try to assign existing color, otherwise assign a new one */
-		if (!rig_try_add(reg_map, id))
+		int c = rig_try_add_reuse(reg_map, id, color);
+		if (c != -1)
+			reg_map[id] = c;
+		else
 			reg_map[id] = color++;
 	}
 
-//	color = 0;
-//	for(auto id: spills)
-//	{
-//		/* Optimistically try to assign existing color, otherwise assign a spill (negative) value. */
-//		rig_removed[id] = false;
-//
-//		cout << "Trying to assign color to id " << id << '\n';
-//		rig_debug_print();
-//
-//		if (!rig_try_add(reg_map, id))
-//			reg_map[id] = --color;
-//		else
-//			cout << "Was able to assign color " << reg_map[id] << " to id " << id << '\n';
-//	}
+	/* Optimistically try to assign existing color to possibly spilled variables,
+	 * otherwise assign a spill (negative) value. */
+	int used_colors = color;
+	color = 0;
+	for(auto id: spills)
+	{
+		rig_removed[id] = false;
+
+		cout << "Trying to assign color to id " << id << '\n';
+		rig_debug_print();
+
+		int c = rig_try_add_reuse(reg_map, id, used_colors);
+		if (c != -1)
+		{
+			cout << "Was able to assign color " << c << " to id " << id << '\n';
+			reg_map[id] = c;
+		}
+		else
+			reg_map[id] = --color;
+	}
 
 	for(auto it = reg_map.begin(); it != reg_map.end(); ++it)
 		cout << "Mapping: " << it->first << ": " << it->second << '\n';
@@ -323,10 +339,8 @@ bool tac::rig_interference_nodes_lt(int id, int lt)
 			continue;
 
 		if (node[i])
-			cnt++;
-
-		if (cnt >= lt)
-			return false;
+			if (++cnt >= lt)
+				return false;
 	}
 
 	return true;
