@@ -80,7 +80,6 @@ struct tac_entry
 
 class tac
 {
-
 public:
 	tac(const driver& drv);
 
@@ -98,23 +97,8 @@ public:
 private:
 	const driver& drv;
 
-	std::vector<std::vector<bool>> rig; /* Register interference graph */
-
 	tac_var add_from_exp(const tac_var& result, const expression& exp);
 	void add_live_range(int id, int from, int to);
-	void rig_generate();
-	void rig_push_stack(int id);
-	int rig_pop_stack();
-	int rig_find_lt_k(int k);
-	int rig_try_add_reuse(std::map<int, int>& reg_map, int id, int max_color);
-	std::map<int, int> rig_color(int k);
-	bool rig_interferes(int id1, int id2);
-	int rig_interference_nodes(int id);
-	bool rig_interference_nodes_lt(int id, int lt);
-	void rig_debug_print();
-
-	std::vector<int> rig_stack;
-	std::vector<bool> rig_removed;
 
 	int next_varid = 0;
 	std::vector<tac_entry> entries;
