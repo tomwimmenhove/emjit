@@ -10,6 +10,7 @@
 #include <cstring>
 #include <vector>
 #include <map>
+#include <unordered_set>
 
 #include "tac.h"
 
@@ -44,14 +45,23 @@ tac::tac(const driver& drv)
 	rig_generate();
 	rig_debug_print();
 
-	cout << "---XXXX Removing ID 4 and 5! XXXX----\n";
-	rig_push_stack(4);
-	rig_push_stack(5);
+//	cout << "---XXXX Removing ID 1 XXXX----\n";
+//	rig_push_stack(1);
+//	rig_debug_print();
 
-	rig_debug_print();
-	cout << "---XXXX Restoring ID 4 and 5! XXXX----\n";
-	rig_pop_stack();
-	rig_pop_stack();
+
+//	cout << "---XXXX Removing ID 4 and 5! XXXX----\n";
+//	rig_push_stack(4);
+//	rig_push_stack(5);
+//
+//	rig_debug_print();
+//	cout << "---XXXX Restoring ID 4 and 5! XXXX----\n";
+//	rig_pop_stack();
+//	rig_pop_stack();
+
+
+	auto m = rig_color(4);
+
 
 	rig_debug_print();
 }
@@ -68,25 +78,6 @@ void tac::add_live_range(int id, int from, int to)
 	for (int i = from; i < to + 1; i++)
 		entries[i].live_vars[id] = true;
 }
-
-//#include <list>
-//#include <stack>
-//
-//struct tac_rig_node
-//{
-//	int id;
-//
-//	std::list<tac_rig_node> nodes;
-//};
-//
-//struct tac_rig
-//{
-//	std::list<tac_rig_node> nodes;
-//	std::stack<tac_rig_node> node_stack;
-//
-//
-//};
-
 
 void tac::calculate_life_times()
 {
@@ -137,40 +128,179 @@ void tac::rig_generate()
 	}
 
 	rig_stack.reserve(next_varid);
-	rig_stack_set.resize(next_varid, false);
+	rig_removed.resize(next_varid, false);
 	rig_stack.clear();
 }
 
 void tac::rig_push_stack(int id)
 {
 	rig_stack.push_back(id);
-	rig_stack_set[id] = true;
+	rig_removed[id] = true;
 }
 
 int tac::rig_pop_stack()
 {
+	if (rig_stack.empty())
+			return -1;
+
 	int id = rig_stack.back();
 	rig_stack.pop_back();
-	rig_stack_set[id] = false;
+	rig_removed[id] = false;
 
 	return id;
 }
 
+int tac::rig_find_lt_k(int k)
+{
+	for (auto i = 0; i < next_varid; i++)
+	{
+		if (rig_removed[i])
+			continue;
+
+		if (rig_interference_nodes(i) < k)
+			return i;
+	}
+
+	return -1;
+}
+
+bool tac::rig_try_add(map<int, int>& reg_map, int id)
+{
+	if (id == 9)
+		cout << "STOP\n";
+
+	for (auto i = 0; i < next_varid; i++)
+	{
+		if (rig_removed[i] || i == id)
+			continue;
+
+		if (!rig_interferes(i, id))
+		{
+			auto it = reg_map.find(i);
+			if (it != reg_map.end())
+			{
+				reg_map[id] = it->second;
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
+map<int, int> tac::rig_color(int k)
+{
+	map<int, int> reg_map;
+
+	unordered_set<int> spills;
+
+	/* Stage 1: removing nodes */
+	while (true)
+	{
+		int found;
+		int left = 0;
+
+		/* Remove nodes with <k edges */
+		do
+		{
+			rig_debug_print();
+
+			found = 0;
+			for (auto i = 0; i < next_varid; i++)
+			{
+				if (rig_interference_nodes_lt(i, k))
+				{
+					cout << "Removing " << i << '\n';
+					rig_push_stack(i);
+					found++;
+				}
+
+				if (!rig_removed[i])
+					left++;
+			}
+		} while (found);
+
+		/* Anything left? */
+		if (!left)
+			break;
+
+		/* Ok, potential spilling */
+		int max = 0;
+		int maxid = -1;
+		for (auto i = 0; i < next_varid; i++)
+		{
+			/* Find the node with the most edges. XXX: This should be optimized! */
+			int n = rig_interference_nodes(i);
+			if (n > max)
+			{
+				max = n;
+				maxid = i;
+			}
+		}
+
+		if (maxid == -1)
+			throw invalid_argument("Internal error: RIG coloring error");
+
+		rig_removed[maxid] = true;
+		spills.insert(maxid);
+		cout << "Possibly spilling " << maxid << '\n';
+	}
+
+	/* Stage 2: coloring */
+	int color = 0;
+	while (true)
+	{
+		/* Pop nodes back from the stack */
+		int id = rig_pop_stack();
+		if (id == -1)
+			break;
+
+		/* Try to assign existing color, otherwise assign a new one */
+		if (!rig_try_add(reg_map, id))
+			reg_map[id] = color++;
+	}
+
+//	color = 0;
+//	for(auto id: spills)
+//	{
+//		/* Optimistically try to assign existing color, otherwise assign a spill (negative) value. */
+//		rig_removed[id] = false;
+//
+//		cout << "Trying to assign color to id " << id << '\n';
+//		rig_debug_print();
+//
+//		if (!rig_try_add(reg_map, id))
+//			reg_map[id] = --color;
+//		else
+//			cout << "Was able to assign color " << reg_map[id] << " to id " << id << '\n';
+//	}
+
+	for(auto it = reg_map.begin(); it != reg_map.end(); ++it)
+		cout << "Mapping: " << it->first << ": " << it->second << '\n';
+
+	cout << "DONE\n";
+
+	rig_debug_print();
+
+	return reg_map;
+}
+
+
 bool tac::rig_interferes(int id1, int id2)
 {
-	return !rig_stack_set[id1] && !rig_stack_set[id2] && rig[id1][id2];
+	return !rig_removed[id1] && !rig_removed[id2] && rig[id1][id2];
 }
 
 int tac::rig_interference_nodes(int id)
 {
-	if (rig_stack_set[id])
+	if (rig_removed[id])
 		return 0;
 
 	int cnt = 0;
 	auto& node = rig[id];
 	for (auto i = 0; i < next_varid; i++)
 	{
-		if (rig_stack_set[i])
+		if (rig_removed[i])
 			continue;
 
 		if (node[i])
@@ -180,10 +310,35 @@ int tac::rig_interference_nodes(int id)
 	return cnt;
 }
 
+bool tac::rig_interference_nodes_lt(int id, int lt)
+{
+	if (rig_removed[id])
+		return false;
+
+	int cnt = 0;
+	auto& node = rig[id];
+	for (auto i = 0; i < next_varid; i++)
+	{
+		if (rig_removed[i])
+			continue;
+
+		if (node[i])
+			cnt++;
+
+		if (cnt >= lt)
+			return false;
+	}
+
+	return true;
+}
+
 void tac::rig_debug_print()
 {
 	for (auto i = 0; i < next_varid; i++)
 	{
+		if (rig_removed[i])
+			continue;
+
 		int n = rig_interference_nodes(i);
 		cout << "Var id " << i << " interferes with " << n << " nodes: ";
 		for (auto j = 0; j < next_varid; j++)
@@ -200,7 +355,7 @@ string tac::var_to_string(const tac_var& var) const
 	switch(var.type)
 	{
 	case tac_var_type::constant: return to_string(var.value);
-	case tac_var_type::local: return drv.get_var_name(var.id);
+	case tac_var_type::local: return drv.get_var_name(var.id);// + '(' + to_string(var.id) + ')';
 	case tac_var_type::param: s = "p"; break;
 	case tac_var_type::temp: s = "t"; break;
 	case tac_var_type::unused: return "unused";
