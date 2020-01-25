@@ -113,26 +113,26 @@ void tac2x64::epilogue()
 	inst_stream << x64_leave() << x64_ret();
 }
 
-void tac2x64::add_tac_var(const tac_var& tv)
-{
-	if (tv.id == -1)
-		return;
-
-	if (var_map.find(tv.id) != var_map.end())
-		return;
-
-	auto reg = dr.get();
-	if (reg.value != -1)
-	{
-		var_map[tv.id] = var(variable_type::reg, reg.value);
-	}
-	else
-	{
-		var_map[tv.id] = var(variable_type::stack, stack_pos);
-
-		stack_pos += 8;
-	}
-}
+//void tac2x64::add_tac_var(const tac_var& tv)
+//{
+//	if (tv.id == -1)
+//		return;
+//
+//	if (var_map.find(tv.id) != var_map.end())
+//		return;
+//
+//	auto reg = dr.get();
+//	if (reg.value != -1)
+//	{
+//		var_map[tv.id] = var(variable_type::reg, reg.value);
+//	}
+//	else
+//	{
+//		var_map[tv.id] = var(variable_type::stack, stack_pos);
+//
+//		stack_pos += 8;
+//	}
+//}
 
 extern "C" void breakout_and_die()
 {
@@ -157,7 +157,7 @@ const tac2x64::var tac2x64::var_from_tac_var(const tac_var& tv)
 		if (color >= 0)
 			return var(x64_reg32(reg_avail[color]));
 		else
-			return var(variable_type::stack, (-color) * sizeof(int32_t));
+			return var(variable_type::stack, get_stack_pos(color));
 	}
 
 	throw invalid_argument("Internal error: var_from_tac_var(): invalid type");
@@ -269,6 +269,7 @@ void tac2x64::op_mul(const tac_entry& entry)
 //	auto tva = var_from_tac_var(entry.a);
 //	auto tvc = var_from_tac_var(entry.c);
 
+	inst_stream << x64_nop1();
 	if (entry.c.type == tac_var_type::constant)
 		throw invalid_argument("Multiplying by constants not yet implemented");
 
@@ -299,10 +300,12 @@ void tac2x64::op_mul(const tac_entry& entry)
 	if (c_color >= 0)
 		inst_stream << x64_imul(rega, x64_reg32(reg_avail[c_color]));
 	else
-		inst_stream << x64_imul(rega, x64_address(x64_regs::rbp, static_cast<int32_t>((-c_color) * sizeof(int32_t))));
+		inst_stream << x64_imul(rega, x64_address(x64_regs::rbp, get_stack_pos(c_color)));
 
 	if (a_color < 0)
 		src_dest<x64_mov>(var_from_tac_var(entry.a), temp_reg);
+
+	inst_stream << x64_nop1();
 
 //	auto regb = gr.reg_for_var(entry.b.id, entry);
 //	auto regc = gr.reg_for_var(entry.c.id, entry);
@@ -332,7 +335,7 @@ void tac2x64::op_div(const tac_entry& entry)
 	if (c_color >= 0)
 		inst_stream << x64_idiv(x64_reg32(reg_avail[c_color]));
 	else
-		inst_stream << x64_idivl(x64_address(x64_regs::rbp, static_cast<int32_t>((-c_color) * sizeof(int32_t))));
+		inst_stream << x64_idivl(x64_address(x64_regs::rbp, get_stack_pos(c_color)));
 
 	src_dest<x64_mov>(tva, var(x64_regs::eax));
 

@@ -133,19 +133,20 @@ private:
 	interf_graph rig;
 	std::map<int, int> color_map;
 	inline int var_color(const tac_var& var) { return color_map[var.id]; }
+	inline int32_t get_stack_pos(int color) { return color * sizeof(int32_t); } // First stack color is -1
 
-	std::array<int, 5> reg_avail {
-			//x64_regs::eax.value,	/* Reserved for certain ALU instructions and return values*/
+	std::array<int, 7> reg_avail {
+			//x64_regs::eax.value,	/* Reserved for certain ALU instructions */
 			x64_regs::ecx.value,
-			//x64_regs::edx.value,	/* Reserved fofr idiv, until we can mark edx as live for these instructions */
+			//x64_regs::edx.value,	/* Reserved for idiv, until we can mark edx as live for these instructions */
 			x64_regs::ebx.value,
 			//x64_regs::esp.value,	/* Stack pointer */
 			//x64_regs::ebp.value,	/* Frame pointer */
 			x64_regs::esi.value,
 			x64_regs::edi.value,
 			x64_regs::r8d.value,
-//			x64_regs::r9d.value,
-//			x64_regs::r10d.value,
+			x64_regs::r9d.value,
+			x64_regs::r10d.value,
 			//x64_regs::r11d.value,	/* Load/store temp register */
 //			x64_regs::r12d.value,
 //			x64_regs::r13d.value,
@@ -202,7 +203,7 @@ private:
 	void op_ret(const tac_entry& entry);
 
 	std::map<int, var> var_map;
-	int stack_pos = 0;
+//	int stack_pos = 0;
 
 	template<typename T>
 	void stack_to_reg(x64_reg32 dst, int32_t src_offset)
