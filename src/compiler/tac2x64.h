@@ -132,8 +132,9 @@ public:
 private:
 	interf_graph rig;
 	std::map<int, int> color_map;
+	inline int var_color(const tac_var& var) { return color_map[var.id]; }
 
-	std::array<int, 7> reg_avail {
+	std::array<int, 5> reg_avail {
 			//x64_regs::eax.value,	/* Reserved for certain ALU instructions and return values*/
 			x64_regs::ecx.value,
 			//x64_regs::edx.value,	/* Reserved fofr idiv, until we can mark edx as live for these instructions */
@@ -143,14 +144,15 @@ private:
 			x64_regs::esi.value,
 			x64_regs::edi.value,
 			x64_regs::r8d.value,
-			x64_regs::r9d.value,
-			x64_regs::r10d.value,
+//			x64_regs::r9d.value,
+//			x64_regs::r10d.value,
 			//x64_regs::r11d.value,	/* Load/store temp register */
 //			x64_regs::r12d.value,
 //			x64_regs::r13d.value,
 //			x64_regs::r14d.value,
 //			x64_regs::r15d.value,
 	};
+	const x64_reg32 temp_reg = x64_regs::r11d;
 
 	void add_tac_var(const tac_var& var);
 
@@ -190,6 +192,8 @@ private:
 		int32_t i = 0;
 	};
 
+	const var var_from_tac_var(const tac_var& tv);
+
 	void op_assign(const tac_entry& entry);
 	void op_add(const tac_entry& entry);
 	void op_sub(const tac_entry& entry);
@@ -226,134 +230,6 @@ private:
 		else
 			inst_stream << T(x64_address(x64_regs::rbp, static_cast<int8_t>(dst_offset)));
 	}
-
-
-//	template<typename T>
-//	void div(x64_reg32 dst, x64_reg32 divident, x64_reg32 divisor)
-//	{
-//		/* Careful: order matters! */
-//		x64_tmp_reg<x64_reg32> tmp(inst_stream, dr);
-//		x64_steal_reg<x64_reg32> steal_edx(inst_stream, dr);
-//		x64_steal_reg<x64_reg32> steal_eax(inst_stream, dr);
-//
-//		int divisor_idx;
-//		/* If the divisor is edx, we'll have to use a
-//		 * temporary register, because edx should be zero */
-//		if (divisor.value == x64_regs::edx.value)
-//		{
-//			/* Make sure we don't end up with our tmp in edx :) */
-//			auto tmp_reg = tmp.take({dst, x64_regs::edx, x64_regs::eax, divident});
-//
-//			/* Move the divisor into our tmp register */
-//			inst_stream << x64_mov(tmp_reg, x64_regs::edx);
-//			divisor_idx = tmp_reg.value;
-//		}
-//		else
-//		{
-//			/* Otherwise, take edx so that we can safely set it to 0 within this scope*/
-//			steal_edx.take(x64_regs::edx, {dst, x64_regs::edx});
-//			divisor_idx = divisor.value;
-//		}
-//
-//		/* Zero edx */
-//		inst_stream << x64_xor(x64_regs::edx, x64_regs::edx);
-//
-//		/* Move the divident into eax. Store it if we have to */
-//		if (divident.value != x64_regs::eax.value)
-//		{
-//			if (dst.value != x64_regs::eax.value)
-//				steal_eax.take(x64_regs::eax, {dst, x64_regs::eax});
-//
-//			inst_stream << x64_mov(x64_regs::eax, divident);
-//		}
-//
-//		inst_stream << T(x64_reg32(divisor_idx));
-//
-//		/* Move the result into the correct register, if not already there */
-//		if (dst.value != x64_regs::eax.value)
-//			inst_stream << x64_mov(dst, x64_regs::eax);
-//
-//		/* Do we need to restore edx ? */
-//		if (divisor.value == x64_regs::edx.value && dr.is_used(x64_regs::edx))
-//			inst_stream << x64_mov(divisor, tmp.reg());
-//	}
-
-	void div_test(const var& dst, const var& dividend, const var& divisor, int i_dividend, int i_divisor);
-
-	/* X64 IDIV instruction:
-	 * Result (dst) _always_ in EAX
-	 * Dividend is _always_ in EAX
-	 * Divisor can be either a register or memory
-	 * EDX will be set to zero before issueing the instruction
-	 */
-	template<typename T>
-	void div(const var& dst, const var& dividend, const var& divisor)
-	{
-		auto divisor_internal = divisor;
-
-		/* Lock variables that we can't use as temporaries. dst is added here because if it's not locked, it
-		 * might get popped at the end (when going out of scope), overwriting the result. We also can't check if it's in
-		 * use because, if it's not, it might be used as a temporary later. */
-		lock_register<x64_reg32> lock_dst(lr, dst.reg<x64_reg32>(),dst.type == variable_type::reg);
-		lock_register<x64_reg32> lock_dividend(lr, dividend.reg<x64_reg32>(), dividend.type == variable_type::reg);
-		lock_register<x64_reg32> lock_divisor(lr,  divisor_internal.reg<x64_reg32>(),  divisor_internal.type == variable_type::reg);
-		lock_register<x64_reg32> lock_eax(lr, x64_regs::eax);
-		lock_register<x64_reg32> lock_edx(lr, x64_regs::edx);
-
-		/* Move the dividend into eax. Store it if we have to */
-		x64_steal_reg<x64_reg32> steal_eax(inst_stream, dr, lr);
-		x64_tmp_reg<x64_reg32> tmp(inst_stream, dr, lr);
-		if (!dividend.is_reg(x64_regs::eax))
-		{
-			if (!dst.is_reg(x64_regs::eax))
-				steal_eax.take(x64_regs::eax);
-
-			/* If the divisor was in eax, put it in a temporary before overwriting eax */
-			if (divisor_internal.is_reg(x64_regs::eax))
-			{
-				divisor_internal = var(tmp.take());
-				inst_stream << x64_mov(divisor_internal.reg<x64_reg32>(), x64_regs::eax);
-			}
-
-			src_dest<x64_mov>(var(variable_type::reg, x64_regs::eax.value), dividend);
-		}
-
-		/* Check if we need to use a temporary register for the divisor */
-		int divisor_idx;
-		x64_steal_reg<x64_reg32> steal_edx(inst_stream, dr, lr);
-		if (divisor_internal.type == variable_type::constant || divisor_internal.is_reg(x64_regs::edx))
-		{
-			auto tmp_reg = tmp.take();
-
-			/* Move the divisor into our tmp register. */
-			src_dest<x64_mov>(var(variable_type::reg, tmp_reg.value), divisor_internal);
-			divisor_idx = tmp_reg.value;
-		}
-		else /* Otherwise, take edx so that we can safely set it to 0 within this scope*/
-		{
-			steal_edx.take(x64_regs::edx);
-			divisor_idx = divisor_internal.i;
-		}
-
-		/* Zero edx */
-		inst_stream << x64_xor(x64_regs::edx, x64_regs::edx);
-
-		/* IDIV supports either dividing by a register, or address */
-		if (divisor_internal.type == variable_type::stack)
-			single_op_stack<T>(divisor_internal.i);
-		else
-			inst_stream << T(x64_reg32(divisor_idx));
-
-		/* Move the result into the correct register, if not already there */
-		if (!dst.is_reg(x64_regs::eax))
-			src_dest<x64_mov>(dst, var(variable_type::reg, x64_regs::eax.value));
-
-		/* Do we need to restore edx ? */
-		if (divisor_internal.is_reg(x64_regs::edx) && dr.is_used(x64_regs::edx))
-			inst_stream << x64_mov(divisor_internal.reg<x64_reg32>(), tmp.reg());
-	}
-
-	var tac_var_to_var(const tac_var& v);
 
 	template<typename T>
 	void src_dest(const var& dst, const var& src)
@@ -399,18 +275,22 @@ private:
 			/* stack to stack */
 			case variable_type::stack:
 			{
-				x64_tmp_reg<x64_reg32> tmp(inst_stream, dr, lr);
-				stack_to_reg<x64_mov>(tmp.take(), src.i);
-				reg_to_stack<T>(dst.i, tmp.reg());
+				//x64_tmp_reg<x64_reg32> tmp(inst_stream, dr, lr);
+				//stack_to_reg<x64_mov>(tmp.take(), src.i);
+				//reg_to_stack<T>(dst.i, tmp.reg());
+				stack_to_reg<x64_mov>(temp_reg, src.i);
+				reg_to_stack<T>(dst.i, temp_reg);
 				break;
 			}
 
 			/* constant to stack */
 			case variable_type::constant:
 			{
-				x64_tmp_reg<x64_reg32> tmp(inst_stream, dr, lr);
-				inst_stream << x64_mov(tmp.take(), static_cast<uint32_t>(src.i));
-				reg_to_stack<T>(dst.i, tmp.reg());
+				//x64_tmp_reg<x64_reg32> tmp(inst_stream, dr, lr);
+				//inst_stream << x64_mov(tmp.take(), static_cast<uint32_t>(src.i));
+				//reg_to_stack<T>(dst.i, tmp.reg());
+				inst_stream << x64_mov(temp_reg, static_cast<uint32_t>(src.i));
+				reg_to_stack<T>(dst.i, temp_reg);
 				break;
 			}
 			}
