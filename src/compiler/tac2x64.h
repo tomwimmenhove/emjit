@@ -164,26 +164,27 @@ private:
 	inline int var_color(const tac_var& var) { return color_map[var.id]; }
 	inline int32_t get_stack_pos(int color) { return color * sizeof(int32_t); } // First stack color is -1
 
+	/* Reserved registers:
+	 * eax: Certain ALU instructions. XXX: Could use optimizing!
+	 * rsp: Stack pointer
+	 * rbp: Frame pointer
+	 * r11: Removed from the list in case of spilling
+	 */
 	std::vector<int> reg_avail {
-			//x64_regs::eax.value,	/* Reserved for certain ALU instructions */
 			x64_regs::ecx.value,
-			//x64_regs::edx.value,	/* Reserved for idiv, until we can mark edx as live for these instructions */
 			x64_regs::ebx.value,
-			//x64_regs::esp.value,	/* Stack pointer */
-			//x64_regs::ebp.value,	/* Frame pointer */
-//			x64_regs::esi.value,
-//			x64_regs::edi.value,
+			x64_regs::esi.value,
+			x64_regs::edi.value,
 //			x64_regs::r8d.value,
 //			x64_regs::r9d.value,
 //			x64_regs::r10d.value,
-			//x64_regs::r11d.value,	/* Load/store temp register */
 //			x64_regs::r12d.value,
 //			x64_regs::r13d.value,
-			x64_regs::r14d.value,
-			x64_regs::r15d.value,
+//			x64_regs::r14d.value,
+//			x64_regs::r15d.value,
+
 			x64_regs::r11d.value,	/* Load/store temp register. ALWAYS at the end. Might be popped-off */
 	};
-	//const x64_reg32 temp_reg = x64_regs::r11d;
 	int temp_reg_idx = -1;
 	var temp_var;
 

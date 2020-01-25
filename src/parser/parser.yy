@@ -45,7 +45,6 @@
 %type  <declaration> declaration
 
 %printer { yyoutput << $$; } <int>;
-%printer { yyoutput << ($$).eval(); } <expression>;
 
 %%
 %start statements;

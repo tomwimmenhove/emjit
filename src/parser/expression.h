@@ -35,8 +35,6 @@ struct expression
 		expressions.push_back(b);
 	}
 
-	int eval() const;
-
 	std::vector<expression> expressions;
 	int num = 0;
 };
