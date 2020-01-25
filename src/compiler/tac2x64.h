@@ -135,7 +135,7 @@ private:
 	inline int var_color(const tac_var& var) { return color_map[var.id]; }
 	inline int32_t get_stack_pos(int color) { return color * sizeof(int32_t); } // First stack color is -1
 
-	std::array<int, 7> reg_avail {
+	std::array<int, 4> reg_avail {
 			//x64_regs::eax.value,	/* Reserved for certain ALU instructions */
 			x64_regs::ecx.value,
 			//x64_regs::edx.value,	/* Reserved for idiv, until we can mark edx as live for these instructions */
@@ -144,9 +144,9 @@ private:
 			//x64_regs::ebp.value,	/* Frame pointer */
 			x64_regs::esi.value,
 			x64_regs::edi.value,
-			x64_regs::r8d.value,
-			x64_regs::r9d.value,
-			x64_regs::r10d.value,
+//			x64_regs::r8d.value,
+//			x64_regs::r9d.value,
+//			x64_regs::r10d.value,
 			//x64_regs::r11d.value,	/* Load/store temp register */
 //			x64_regs::r12d.value,
 //			x64_regs::r13d.value,

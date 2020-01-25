@@ -87,7 +87,9 @@ public:
 
 	std::string var_to_string(const tac_var& var) const;
 
+	inline int get_num_user_vars() const { return drv.get_var_id(); }
 	inline int get_num_vars() const { return next_varid; }
+	inline std::string get_var_name(int id) const { return id < drv.get_var_id() ? drv.get_var_name(id) : "t" + std::to_string(id); }
 
 	void calculate_life_times();
 

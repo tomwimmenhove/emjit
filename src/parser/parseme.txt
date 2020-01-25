@@ -6,11 +6,11 @@ e = 15;
 f = 16;
 g = 17;
 g = g + 8;
-f = g / e;
-f = f * b;
+f = g + e;
+f = f + b;
 f = f + c;
-f = f - d;
+f = f + d;
 f = f + c;
-c = (a * b) + 13 + f;
+c = (a + b) + 13 + f;
 
-return 12 * c;
+return 12 + c;

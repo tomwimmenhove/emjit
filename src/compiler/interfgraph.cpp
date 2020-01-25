@@ -102,6 +102,9 @@ int interf_graph::try_add_reuse(map<int, int>& color_map, int id, int max_color)
 
 map<int, int> interf_graph::color(int k)
 {
+	if (!k)
+		throw invalid_argument("Internal error: k must be > 0 for graph coloring");
+
 	map<int, int> color_map;
 
 	unordered_set<int> spills;

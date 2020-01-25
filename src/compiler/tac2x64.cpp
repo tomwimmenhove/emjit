@@ -185,6 +185,8 @@ void tac2x64::op_add(const tac_entry& entry)
 //		inst_stream << x64_mov(rega, regb);
 //	inst_stream << x64_add(rega, regc);
 
+	inst_stream << x64_nop1();
+
 	auto tva = var_from_tac_var(entry.a);
 	auto tvb = var_from_tac_var(entry.b);
 	auto tvc = var_from_tac_var(entry.c);
@@ -193,6 +195,8 @@ void tac2x64::op_add(const tac_entry& entry)
 		src_dest<x64_mov>(tva, tvb);
 
 	src_dest<x64_add>(tva, tvc);
+
+	inst_stream << x64_nop1();
 
 //
 //	auto regb = gr.reg_for_var(entry.b.id, entry);
@@ -382,8 +386,14 @@ void tac2x64::compile_expression(const tac& t)
 	color_map = rig.color(reg_avail.size());
 
 	for(auto it = color_map.begin(); it != color_map.end(); ++it)
-		cout << "Mapping: " << it->first << ": " << it->second << '\n';
+	{
+		string var_name = t.get_var_name(it->first);
+		string storage_name = it->second >= 0 ?							/* Where? */
+				x64_reg32::names[reg_avail[it->second]] :				/* Register : */
+				("[rbp" + to_string(get_stack_pos(it->second)) + ']');		/* Stack */
 
+		cout << "Mapping: " << var_name << ": " << storage_name << '\n';
+	}
 
 	auto program = inst_stream.entry_point<int(int, int, int, int, int, int, int, int, int)>();
 

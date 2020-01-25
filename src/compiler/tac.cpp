@@ -51,7 +51,7 @@ void tac::add_live_range(int id, int from, int to)
 		from = 0;
 		cerr << "Warning: varid" << id << " is being used uninitialized.\n";
 	}
-	cout << "Life time of t" << id << ": " << from << ".." << to << '\n';
+	cout << "Life time of t" << get_var_name(id) << ": " << from << ".." << to << '\n';
 
 	for (int i = from; i < to + 1; i++)
 		entries[i].live_vars[id] = true;
