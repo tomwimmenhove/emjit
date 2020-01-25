@@ -165,117 +165,59 @@ const tac2x64::var tac2x64::var_from_tac_var(const tac_var& tv)
 
 void tac2x64::op_assign(const tac_entry& entry)
 {
-//	if (entry.b.type != tac_var_type::constant)
-//		throw invalid_argument("Assignments of non-constants not yet supported");
-
-	//auto reg = gr.reg_for_var(entry.a.id, entry);
-	//auto reg = x64_reg32(reg_avail[color_map[entry.a.id]]);
-
-	//inst_stream << x64_mov(reg, entry.b.value);
 	src_dest<x64_mov>(var_from_tac_var(entry.a), var_from_tac_var(entry.b));
 }
 
 void tac2x64::op_add(const tac_entry& entry)
 {
-//	auto rega = x64_reg32(reg_avail[color_map[entry.a.id]]);
-//	auto regb = x64_reg32(reg_avail[color_map[entry.b.id]]);
-//	auto regc = x64_reg32(reg_avail[color_map[entry.c.id]]);
-//
-//	if (rega.value != regb.value)
-//		inst_stream << x64_mov(rega, regb);
-//	inst_stream << x64_add(rega, regc);
-
-	inst_stream << x64_nop1();
-
 	auto tva = var_from_tac_var(entry.a);
 	auto tvb = var_from_tac_var(entry.b);
 	auto tvc = var_from_tac_var(entry.c);
 
-	if (var_color(entry.a) != var_color(entry.b))
-		src_dest<x64_mov>(tva, tvb);
+	if (var_color(entry.a) == var_color(entry.b))
+	{
+		src_dest<x64_add>(tva, tvc);
+		return;
+	}
 
+	if (var_color(entry.a) == var_color(entry.c))
+	{
+		src_dest<x64_add>(tva, tvb);
+		return;
+	}
+
+	src_dest<x64_mov>(tva, tvb);
 	src_dest<x64_add>(tva, tvc);
-
-	inst_stream << x64_nop1();
-
-//
-//	auto regb = gr.reg_for_var(entry.b.id, entry);
-//	auto regc = gr.reg_for_var(entry.c.id, entry);
-//
-//	/* TODO:
-//	 *  Always just do: x64_add(regb, regc);
-//	 *  AFTER calling some "we're storing this this in register x", that
-//	 *  function can then decide wether to move the old storage place to
-//	 *  some new register, or memory
-//	 *
-//	 *  ALSO:
-//	 *  reg_for_var() should be able to get spilled registers back into registers
-//	 *
-//	 *  ^^ Fuck all that. Implement: https://www.youtube.com/watch?v=4eHdo8GaICY&list=PLEUhcCFlouiXsqOfvZlQ6ORkQZ7GwAab9&index=16&t=0s
-//	 */
-//
-//	/* Can we use b to store the result? */
-//	if (!entry.live_vars[entry.b.id])
-//	{
-//		inst_stream << x64_add(regb, regc);
-//		gr.store_var_in(entry.a.id, regb); /* Result (a) is now in regb */
-//		return;
-//	}
-//
-//	/* Can we use c to store the result? */
-//	if (!entry.live_vars[entry.c.id])
-//	{
-//		inst_stream << x64_add(regc, regb);
-//		gr.store_var_in(entry.a.id, regc); /* Result (a) is now in regc */
-//		return;
-//	}
-//
-//	auto rega = gr.reg_for_var(entry.a.id, entry);
-//	inst_stream << x64_mov(rega, regb) << x64_add(rega, regc);
 }
 
 void tac2x64::op_sub(const tac_entry& entry)
 {
-//	auto rega = x64_reg32(reg_avail[color_map[entry.a.id]]);
-//	auto regb = x64_reg32(reg_avail[color_map[entry.b.id]]);
-//	auto regc = x64_reg32(reg_avail[color_map[entry.c.id]]);
-//
-//	if (rega.value != regb.value)
-//		inst_stream << x64_mov(rega, regb);
-//
-//	inst_stream << x64_sub(rega, regc);
-
 	auto tva = var_from_tac_var(entry.a);
 	auto tvb = var_from_tac_var(entry.b);
 	auto tvc = var_from_tac_var(entry.c);
 
-	if (var_color(entry.a) != var_color(entry.b))
-		src_dest<x64_mov>(tva, tvb);
+	if (var_color(entry.a) == var_color(entry.b))
+	{
+		src_dest<x64_sub>(tva, tvc);
+		return;
+	}
 
+	if (var_color(entry.a) == var_color(entry.c))
+	{
+		src_dest<x64_sub>(tva, tvb);
+		return;
+	}
+
+	src_dest<x64_mov>(tva, tvb);
 	src_dest<x64_sub>(tva, tvc);
-
-//	auto regb = gr.reg_for_var(entry.b.id, entry);
-//	auto regc = gr.reg_for_var(entry.c.id, entry);
-//
-//	if (!entry.live_vars[entry.b.id])
-//	{
-//		inst_stream << x64_sub(regb, regc);
-//		gr.store_var_in(entry.a.id, regb); /* Result (a) is now in regb */
-//		return;
-//	}
-//
-//	auto rega = gr.reg_for_var(entry.a.id, entry);
-//	inst_stream << x64_mov(rega, regb) << x64_sub(rega, regc);
 }
 
 void tac2x64::op_mul(const tac_entry& entry)
 {
-//	auto tva = var_from_tac_var(entry.a);
-//	auto tvc = var_from_tac_var(entry.c);
-
-	inst_stream << x64_nop1();
 	if (entry.c.type == tac_var_type::constant)
 		throw invalid_argument("Multiplying by constants not yet implemented");
+
+	// XXX: Fucking shit-show!
 
 	int a_idx;
 	int a_color = var_color(entry.a);
@@ -310,26 +252,12 @@ void tac2x64::op_mul(const tac_entry& entry)
 		src_dest<x64_mov>(var_from_tac_var(entry.a), temp_reg);
 
 	inst_stream << x64_nop1();
-
-//	auto regb = gr.reg_for_var(entry.b.id, entry);
-//	auto regc = gr.reg_for_var(entry.c.id, entry);
-//
-//	if (!entry.live_vars[entry.b.id])
-//	{
-//		inst_stream << x64_imul(regb, regc);
-//		gr.store_var_in(entry.a.id, regb); /* Result (a) is now in regb */
-//		return;
-//	}
-//
-//	auto rega = gr.reg_for_var(entry.a.id, entry);
-//	inst_stream << x64_mov(rega, regb) << x64_imul(rega, regc);
 }
 
 void tac2x64::op_div(const tac_entry& entry)
 {
 	auto tva = var_from_tac_var(entry.a);
 	auto tvb = var_from_tac_var(entry.b);
-	//auto tvc = var_from_tac_var(entry.c);
 
 	src_dest<x64_mov>(var(x64_regs::eax), tvb);
 
@@ -342,39 +270,18 @@ void tac2x64::op_div(const tac_entry& entry)
 		inst_stream << x64_idivl(x64_address(x64_regs::rbp, get_stack_pos(c_color)));
 
 	src_dest<x64_mov>(tva, var(x64_regs::eax));
-
-//	auto rega = x64_reg32(reg_avail[color_map[entry.a.id]]);
-//	auto regb = x64_reg32(reg_avail[color_map[entry.b.id]]);
-//	auto regc = x64_reg32(reg_avail[color_map[entry.c.id]]);
-//
-//	inst_stream << x64_mov(x64_regs::eax, regb) << x64_xor(x64_regs::edx, x64_regs::edx)
-//			<< x64_idiv(regc) << x64_mov(rega, x64_regs::eax);
-
-//	auto rega = gr.reg_for_var(entry.a.id, entry);
-//	auto regb = gr.reg_for_var(entry.b.id, entry);
-//	auto regc = gr.reg_for_var(entry.c.id, entry);
-//
-//	inst_stream << x64_mov(x64_regs::eax, regb) << x64_xor(x64_regs::edx, x64_regs::edx)
-//			<< x64_idiv(regc) << x64_mov(rega, x64_regs::eax);
 }
 
 void tac2x64::op_ret(const tac_entry& entry)
 {
 	if (entry.b.id != -1)
 	{
-		auto result_reg = x64_reg32(reg_avail[color_map[entry.b.id]]);
-		if (result_reg.value != x64_regs::eax.value)
-			inst_stream << x64_mov(x64_regs::eax, result_reg);
+		auto eax_var = var(x64_regs::eax);
+		auto result_var = var_from_tac_var(entry.b);
+		if (eax_var != result_var)
+			src_dest<x64_mov>(eax_var, result_var);
 	}
 	epilogue();
-
-//	if (entry.b.id != -1)
-//	{
-//		auto result_reg = gr.reg_for_var(entry.b.id, entry);
-//		if (result_reg.value != x64_regs::eax.value)
-//			inst_stream << x64_mov(x64_regs::eax, result_reg);
-//	}
-//	epilogue();
 }
 
 void tac2x64::compile_expression(const tac& t)
@@ -383,14 +290,15 @@ void tac2x64::compile_expression(const tac& t)
 	rig.generate(t.get_entries());
 	rig.debug_print();
 
-	color_map = rig.color(reg_avail.size());
+	//color_map = rig.color(reg_avail.size());
+	color_map = rig.color(1); // XXX: PRESSURRREEEE MOTHERFUCKERS!
 
 	for(auto it = color_map.begin(); it != color_map.end(); ++it)
 	{
 		string var_name = t.get_var_name(it->first);
 		string storage_name = it->second >= 0 ?							/* Where? */
 				x64_reg32::names[reg_avail[it->second]] :				/* Register : */
-				("[rbp" + to_string(get_stack_pos(it->second)) + ']');		/* Stack */
+				("[rbp" + to_string(get_stack_pos(it->second)) + ']');	/* Stack */
 
 		cout << "Mapping: " << var_name << ": " << storage_name << '\n';
 	}
