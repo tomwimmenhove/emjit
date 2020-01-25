@@ -130,47 +130,6 @@ public:
 	virtual ~tac2x64();
 
 private:
-	interf_graph rig;
-	std::map<int, int> color_map;
-	inline int var_color(const tac_var& var) { return color_map[var.id]; }
-	inline int32_t get_stack_pos(int color) { return color * sizeof(int32_t); } // First stack color is -1
-
-	std::vector<int> reg_avail {
-			//x64_regs::eax.value,	/* Reserved for certain ALU instructions */
-			x64_regs::ecx.value,
-			//x64_regs::edx.value,	/* Reserved for idiv, until we can mark edx as live for these instructions */
-			x64_regs::ebx.value,
-			//x64_regs::esp.value,	/* Stack pointer */
-			//x64_regs::ebp.value,	/* Frame pointer */
-			x64_regs::esi.value,
-			x64_regs::edi.value,
-			x64_regs::r8d.value,
-			x64_regs::r9d.value,
-			x64_regs::r10d.value,
-			//x64_regs::r11d.value,	/* Load/store temp register */
-			x64_regs::r12d.value,
-			x64_regs::r13d.value,
-			x64_regs::r14d.value,
-			x64_regs::r15d.value,
-			x64_regs::r11d.value,	/* Load/store temp register. ALWAYS at the end. Might be popped-off */
-	};
-	//const x64_reg32 temp_reg = x64_regs::r11d;
-	int tmp_reg_idx = -1;
-
-	void add_tac_var(const tac_var& var);
-
-	struct sigaction saved_action;
-	static void handler(int sig, siginfo_t *si, void *context);
-	static registers_dump* expected_registers;
-
-	locked_registers<x64_reg32> lr{ x64_reg32::n, { x64_regs::esp, x64_regs::ebp }};
-	used_registers<x64_reg32> dr{ x64_reg32::n, lr};
-
-	instruction_stream& inst_stream;
-
-	void prologue(int32_t stack_size);
-	void epilogue();
-
 	enum variable_type
 	{
 		reg,
@@ -199,6 +158,48 @@ private:
 	};
 
 	const var var_from_tac_var(const tac_var& tv);
+
+	interf_graph rig;
+	std::map<int, int> color_map;
+	inline int var_color(const tac_var& var) { return color_map[var.id]; }
+	inline int32_t get_stack_pos(int color) { return color * sizeof(int32_t); } // First stack color is -1
+
+	std::vector<int> reg_avail {
+			//x64_regs::eax.value,	/* Reserved for certain ALU instructions */
+			x64_regs::ecx.value,
+			//x64_regs::edx.value,	/* Reserved for idiv, until we can mark edx as live for these instructions */
+			x64_regs::ebx.value,
+			//x64_regs::esp.value,	/* Stack pointer */
+			//x64_regs::ebp.value,	/* Frame pointer */
+//			x64_regs::esi.value,
+//			x64_regs::edi.value,
+//			x64_regs::r8d.value,
+//			x64_regs::r9d.value,
+//			x64_regs::r10d.value,
+			//x64_regs::r11d.value,	/* Load/store temp register */
+//			x64_regs::r12d.value,
+//			x64_regs::r13d.value,
+			x64_regs::r14d.value,
+			x64_regs::r15d.value,
+			x64_regs::r11d.value,	/* Load/store temp register. ALWAYS at the end. Might be popped-off */
+	};
+	//const x64_reg32 temp_reg = x64_regs::r11d;
+	int temp_reg_idx = -1;
+	var temp_var;
+
+	void add_tac_var(const tac_var& var);
+
+	struct sigaction saved_action;
+	static void handler(int sig, siginfo_t *si, void *context);
+	static registers_dump* expected_registers;
+
+	locked_registers<x64_reg32> lr{ x64_reg32::n, { x64_regs::esp, x64_regs::ebp }};
+	used_registers<x64_reg32> dr{ x64_reg32::n, lr};
+
+	instruction_stream& inst_stream;
+
+	void prologue(int32_t stack_size);
+	void epilogue();
 
 	void op_assign(const tac_entry& entry);
 	void op_add(const tac_entry& entry);
@@ -283,8 +284,8 @@ private:
 				//x64_tmp_reg<x64_reg32> tmp(inst_stream, dr, lr);
 				//stack_to_reg<x64_mov>(tmp.take(), src.i);
 				//reg_to_stack<T>(dst.i, tmp.reg());
-				stack_to_reg<x64_mov>(temp_reg, src.i);
-				reg_to_stack<T>(dst.i, temp_reg);
+				stack_to_reg<x64_mov>(x64_reg32(temp_reg_idx), src.i);
+				reg_to_stack<T>(dst.i, x64_reg32(temp_reg_idx));
 				break;
 			}
 
@@ -294,8 +295,8 @@ private:
 				//x64_tmp_reg<x64_reg32> tmp(inst_stream, dr, lr);
 				//inst_stream << x64_mov(tmp.take(), static_cast<uint32_t>(src.i));
 				//reg_to_stack<T>(dst.i, tmp.reg());
-				inst_stream << x64_mov(temp_reg, static_cast<uint32_t>(src.i));
-				reg_to_stack<T>(dst.i, temp_reg);
+				inst_stream << x64_mov(x64_reg32(temp_reg_idx), static_cast<uint32_t>(src.i));
+				reg_to_stack<T>(dst.i, x64_reg32(temp_reg_idx));
 				break;
 			}
 			}

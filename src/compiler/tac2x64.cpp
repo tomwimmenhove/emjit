@@ -206,7 +206,7 @@ void tac2x64::op_mul(const tac_entry& entry)
 	int a_idx;
 	int a_color = var_color(entry.a);
 	if (a_color < 0)
-		a_idx = temp_reg.value;
+		a_idx = temp_reg_idx;
 	else
 		a_idx = reg_avail[a_color];
 
@@ -214,8 +214,8 @@ void tac2x64::op_mul(const tac_entry& entry)
 	int b_color = var_color(entry.b);
 	if (b_color < 0)
 	{
-		b_idx = temp_reg.value;
-		src_dest<x64_mov>(temp_reg, var_from_tac_var(entry.b));
+		b_idx = temp_reg_idx;
+		src_dest<x64_mov>(var(x64_reg32(temp_reg_idx)), var_from_tac_var(entry.b));
 	}
 	else
 		b_idx = reg_avail[b_color];
@@ -233,7 +233,7 @@ void tac2x64::op_mul(const tac_entry& entry)
 		inst_stream << x64_imul(rega, x64_address(x64_regs::rbp, get_stack_pos(c_color)));
 
 	if (a_color < 0)
-		src_dest<x64_mov>(var_from_tac_var(entry.a), temp_reg);
+		src_dest<x64_mov>(var_from_tac_var(entry.a), var(x64_reg32(temp_reg_idx)));
 
 	inst_stream << x64_nop1();
 }
@@ -272,10 +272,24 @@ void tac2x64::compile_expression(const tac& t)
 {
 	rig.set_n_vars(t.get_num_vars());
 	rig.generate(t.get_entries());
-	rig.debug_print();
 
-	//color_map = rig.color(reg_avail.size());
-	color_map = rig.color(1); // XXX: PRESSURRREEEE MOTHERFUCKERS!
+	color_map = rig.color(reg_avail.size());
+
+	/* If we couldn't do it without spilling, we're going to need
+	 * a temporary register to use for loading and storing.
+	 */
+	if (rig.get_n_spills() != 0)
+	{
+		cout << "Awww... Couldn't do it without spilling. Re-coloring while reserving a load/store register.\n";
+		temp_reg_idx = reg_avail.back();
+		temp_var = var(x64_reg32(temp_reg_idx));
+		reg_avail.pop_back();
+
+		/* Re-color it */
+		color_map = rig.color(reg_avail.size());
+	}
+
+	rig.debug_print();
 
 	for(auto it = color_map.begin(); it != color_map.end(); ++it)
 	{
@@ -325,6 +339,8 @@ void tac2x64::compile_expression(const tac& t)
 		break;
 		}
 	}
+
+	/* Implicit return */
 	if (!last_was_ret)
 		epilogue();
 
