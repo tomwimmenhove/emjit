@@ -105,34 +105,18 @@ void tac2x64::prologue(int32_t stack_size)
 {
 	inst_stream << x64_push(x64_regs::rbp) << x64_mov(x64_regs::rbp, x64_regs::rsp);
 	if (stack_size)
-		inst_stream << x64_sub(x64_regs::rsp, static_cast<uint32_t>(stack_size));
+	{
+		if (stack_size < 256)
+			inst_stream << x64_sub(x64_regs::rsp, static_cast<uint8_t>(stack_size));
+		else
+			inst_stream << x64_sub(x64_regs::rsp, static_cast<uint32_t>(stack_size));
+	}
 }
 
 void tac2x64::epilogue()
 {
 	inst_stream << x64_leave() << x64_ret();
 }
-
-//void tac2x64::add_tac_var(const tac_var& tv)
-//{
-//	if (tv.id == -1)
-//		return;
-//
-//	if (var_map.find(tv.id) != var_map.end())
-//		return;
-//
-//	auto reg = dr.get();
-//	if (reg.value != -1)
-//	{
-//		var_map[tv.id] = var(variable_type::reg, reg.value);
-//	}
-//	else
-//	{
-//		var_map[tv.id] = var(variable_type::stack, stack_pos);
-//
-//		stack_pos += 8;
-//	}
-//}
 
 extern "C" void breakout_and_die()
 {
