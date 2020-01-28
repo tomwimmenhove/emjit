@@ -28,6 +28,7 @@
 %define api.token.prefix {TOK_}
 %token
   END  0    "end of file"
+  COMMA		","
   ASSIGN    "="
   MINUS     "-"
   PLUS      "+"
@@ -35,6 +36,8 @@
   SLASH     "/"
   LPAREN    "("
   RPAREN    ")"
+  LBRACKET	"{"
+  RBRACKET	"}"
   SEMICOLON ";"
   RETURN	"return"
 ;
@@ -47,7 +50,20 @@
 %printer { yyoutput << $$; } <int>;
 
 %%
-%start statements;
+%start functions;
+
+functions	:
+			| functions function
+			;
+
+function   : IDENTIFIER "(" parameters ")" "{" statements "}"
+
+parameter	: IDENTIFIER
+
+parameters	:
+			| parameter
+			| parameters "," parameter
+			;
 
 statements : statement
            | statements statement
