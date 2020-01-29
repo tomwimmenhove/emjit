@@ -73,17 +73,17 @@ statement : declaration				{ drv.statements.push_back(statement($1)); }
           | "return" exp ";"		{ drv.statements.push_back(statement($2)); }
           ;
           
-declaration : IDENTIFIER "=" exp ";" { $$ = declaration{drv.decl_var_id($1), $3}; drv.expression_result = $3; std::cout << "Got an expression\n"; }
+declaration : IDENTIFIER "=" exp ";" { $$ = declaration{drv.decl_var_id($1), $3}; drv.expression_result = $3; }
             ;
 
 %left "+" "-";
 %left "*" "/";
-exp	: exp "+" exp   { /*std::cout << "add\n";*/ $$ = expression(expr_type::add, $1, $3); }
-   	| exp "-" exp   { /*std::cout << "sub\n";*/ $$ = expression(expr_type::sub, $1, $3); }
-   	| exp "*" exp   { /*std::cout << "mul\n";*/ $$ = expression(expr_type::mul, $1, $3); }
-   	| exp "/" exp   { /*std::cout << "div\n";*/ $$ = expression(expr_type::div, $1, $3); }
+exp	: exp "+" exp   { $$ = expression(expr_type::add, $1, $3); }
+   	| exp "-" exp   { $$ = expression(expr_type::sub, $1, $3); }
+   	| exp "*" exp   { $$ = expression(expr_type::mul, $1, $3); }
+   	| exp "/" exp   { $$ = expression(expr_type::div, $1, $3); }
 	| "(" exp ")"   { $$ = $2; }
-   	| "number"      { /*std::cout << "number " << $1 << '\n';*/ $$ = expression(expr_type::num, $1); }
+   	| "number"      { $$ = expression(expr_type::num, $1); }
    	| "identifier"	{ $$ = expression(expr_type::var, drv.get_var_id($1)); }
    	;
 
