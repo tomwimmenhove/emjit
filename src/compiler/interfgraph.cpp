@@ -176,7 +176,6 @@ map<int, int> interf_graph::color(int k)
 
 	/* Optimistically try to assign existing color to possibly spilled variables,
 	 * otherwise assign a spill (negative) value. */
-	//int used_colors = color;
 	color = 0;
 	for(auto id: spills)
 	{

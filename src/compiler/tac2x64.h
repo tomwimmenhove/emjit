@@ -161,8 +161,11 @@ private:
 
 	interf_graph rig;
 	std::map<int, int> color_map;
+	bool try_swap_colors(int id, int color);
 	inline int var_color(const tac_var& var) { return color_map[var.id]; }
 	inline int32_t get_stack_pos(int color) { return color * sizeof(int32_t); } // First stack color is -1
+
+	void debug_print_mapping(const tac& t);
 
 	/* Reserved registers:
 	 * eax: Certain ALU instructions. XXX: Could use optimizing!

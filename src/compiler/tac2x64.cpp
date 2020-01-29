@@ -268,11 +268,50 @@ void tac2x64::op_ret(const tac_entry& entry)
 	epilogue();
 }
 
+void tac2x64::debug_print_mapping(const tac& t)
+{
+	for(auto it = color_map.begin(); it != color_map.end(); ++it)
+	{
+		string var_name = t.get_var_name(it->first);
+		string storage_name = it->second >= 0 ?							/* Where? */
+				x64_reg32::names[reg_avail[it->second]] :				/* Register : */
+				("[rbp" + to_string(get_stack_pos(it->second)) + ']');	/* Stack */
+
+		cout << "Mapping: " << var_name << ": " << storage_name << '\n';
+	}
+}
+
+/* XXX: This is terrible. There's probably a better way to just re-build the whole color map in 1 go */
+bool tac2x64::try_swap_colors(int id, int new_color)
+{
+	int old_color = color_map[id];
+	if (old_color < 0)
+		return false;
+
+	vector<int> restores;
+	restores.reserve(color_map.size());
+
+	for(auto it = color_map.begin(); it != color_map.end(); ++it)
+	{
+		if (it->second == old_color)
+			restores.push_back(it->first);
+
+		if (it->second == new_color)
+			color_map[it->first] = old_color;
+	}
+
+	for(auto i: restores)
+		color_map[i] = new_color;
+	
+	return true;
+}
+
 void tac2x64::compile_expression(const tac& t)
 {
 	rig.set_n_vars(t.get_num_vars());
 	rig.generate(t.get_entries());
 
+	//color_map = rig.color(reg_avail.size());
 	color_map = rig.color(reg_avail.size());
 
 	/* If we couldn't do it without spilling, we're going to need
@@ -291,15 +330,16 @@ void tac2x64::compile_expression(const tac& t)
 
 	rig.debug_print();
 
-	for(auto it = color_map.begin(); it != color_map.end(); ++it)
-	{
-		string var_name = t.get_var_name(it->first);
-		string storage_name = it->second >= 0 ?							/* Where? */
-				x64_reg32::names[reg_avail[it->second]] :				/* Register : */
-				("[rbp" + to_string(get_stack_pos(it->second)) + ']');	/* Stack */
+	debug_print_mapping(t);
 
-		cout << "Mapping: " << var_name << ": " << storage_name << '\n';
-	}
+	cout << "Yankee swap\n";
+
+	/* Experiment: Try to give var id 3 color 0 (ecx) */
+	try_swap_colors(3, 0);
+
+	rig.debug_print();
+
+	debug_print_mapping(t);
 
 	auto program = inst_stream.entry_point<int(int, int, int, int, int, int, int, int, int)>();
 
