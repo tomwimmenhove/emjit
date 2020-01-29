@@ -54,7 +54,7 @@ enum class statement_type
 
 struct statement
 {
-	//statement() { }
+	statement() : type(statement_type::decl) { }
 	statement(const declaration& decl) : type(statement_type::decl), decl(decl) { }
 	statement(const expression& ret_exp) : type(statement_type::ret), ret_exp(ret_exp) { }
 

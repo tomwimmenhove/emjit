@@ -42,10 +42,15 @@
   RETURN	"return"
 ;
 
-%token <std::string> IDENTIFIER "identifier"
-%token <int> NUMBER "number"
-%type  <expression> exp
-%type  <declaration> declaration
+%token <std::string>	IDENTIFIER	"identifier"
+%token <int>			NUMBER		"number"
+
+%type  <int>						parameter
+%type  <std::vector<int>>			parameters
+%type  <expression>					exp
+%type  <declaration>				declaration
+%type  <statement>					statement
+%type  <std::vector<statement>>		statements
 
 %printer { yyoutput << $$; } <int>;
 
@@ -56,24 +61,31 @@ functions	:
 			| functions function
 			;
 
-function   : IDENTIFIER "(" parameters ")" "{" statements "}"
+function   : "identifier"
+             "(" parameters ")"
+             "{" statements "}"			{
+             								std::cout << "function: " << $3.size() << " parameters: ";
+             								for(int id: $3)
+             									std::cout << "\"" << drv.get_var_name(id) << "\", ";
+             								std::cout << "-- " << $6.size() << " statements\n";
+             							};
 
-parameter	: IDENTIFIER
+parameter	: "identifier"				{ $$ = drv.decl_var_id($1); }
 
-parameters	:
-			| parameter
-			| parameters "," parameter
+parameters	:							{ }
+			| parameter					{ $$.push_back($1); }
+			| parameters "," parameter	{ $1.push_back($3); $$ = $1; }
 			;
 
-statements : statement
-           | statements statement
+statements : statement					{ $$.push_back($1); }
+           | statements statement		{ $1.push_back($2); $$ = $1; }
            ;
 
-statement : declaration				{ drv.statements.push_back(statement($1)); }
-          | "return" exp ";"		{ drv.statements.push_back(statement($2)); }
+statement : declaration					{ drv.statements.push_back(statement($1)); }
+          | "return" exp ";"			{ drv.statements.push_back(statement($2)); }
           ;
           
-declaration : IDENTIFIER "=" exp ";" { $$ = declaration{drv.decl_var_id($1), $3}; drv.expression_result = $3; }
+declaration : "identifier" "=" exp ";"	{ $$ = declaration{drv.decl_var_id($1), $3}; drv.expression_result = $3; }
             ;
 
 %left "+" "-";
