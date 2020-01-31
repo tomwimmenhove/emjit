@@ -51,14 +51,16 @@
 %type  <declaration>				declaration
 %type  <statement>					statement
 %type  <std::vector<statement>>		statements
+%type  <function>					function
+%type  <std::vector<function>>		functions
 
 %printer { yyoutput << $$; } <int>;
 
 %%
 %start functions;
 
-functions	:
-			| functions function
+functions	:							{ }
+			| functions function		{ drv.functions.push_back($2); /*$1.push_back($2); $$ = $1; */ }
 			;
 
 function   : "identifier"
@@ -68,9 +70,12 @@ function   : "identifier"
              								for(int id: $3)
              									std::cout << "\"" << drv.get_var_name(id) << "\", ";
              								std::cout << "-- " << $6.size() << " statements\n";
-             							};
+             								$$ = function{$1, $3, $6};
+             							}
+           ;
 
 parameter	: "identifier"				{ $$ = drv.decl_var_id($1); }
+            ;
 
 parameters	:							{ }
 			| parameter					{ $$.push_back($1); }
@@ -81,11 +86,11 @@ statements : statement					{ $$.push_back($1); }
            | statements statement		{ $1.push_back($2); $$ = $1; }
            ;
 
-statement : declaration					{ drv.statements.push_back(statement($1)); }
-          | "return" exp ";"			{ drv.statements.push_back(statement($2)); }
+statement : declaration					{ $$ = statement($1); }
+          | "return" exp ";"			{ $$ = statement($2); }
           ;
           
-declaration : "identifier" "=" exp ";"	{ $$ = declaration{drv.decl_var_id($1), $3}; drv.expression_result = $3; }
+declaration : "identifier" "=" exp ";"	{ $$ = declaration{drv.decl_var_id($1), $3}; }
             ;
 
 %left "+" "-";

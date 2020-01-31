@@ -17,3 +17,24 @@ main(one, two, three)
 
 	return 12 * c;	
 }
+
+
+main2(one, two, three)
+{
+	a = 21;
+	b = 31;
+	c = 13;
+	d = 14;
+	e = 15;
+	f = 16;
+	g = 17;
+	g = g + 8;
+	f = g / e;
+	f = f * b;
+	f = f + c;
+	f = f - d;
+	f = f + c;
+	c = (a * b) + 13 + f;
+
+	return 120 * c;	
+}

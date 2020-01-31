@@ -67,5 +67,12 @@ struct statement
 	//};
 };
 
+struct function
+{
+	std::string name;
+	std::vector<int> parameters;
+	std::vector<statement> statements;
+};
+
 
 #endif /* EXPRESSION_H */

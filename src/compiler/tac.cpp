@@ -22,7 +22,17 @@ tac::tac(const driver& drv)
 #if 1
 	next_varid = drv.get_var_id();
 
-	for(auto& stmt: drv.statements)
+	function main;
+
+	for(auto& function: drv.functions)
+	{
+		if (function.name == "main2")
+		{
+			main = function;
+		}
+	}
+
+	for(auto& stmt: main.statements)
 	{
 		switch(stmt.type)
 		{
