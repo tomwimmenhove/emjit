@@ -29,9 +29,6 @@ int driver::get_var_id(std::string identifier) const
 		return it->second;
 
 	throw yy::parser::syntax_error(location, "Undeclared identifier: " + identifier);
-//	cerr << location << ": Undeclared identifier '" << identifier << "'\n";
-//	exit(1);
-//	return -1;
 }
 
 string driver::get_var_name(int id) const
@@ -40,14 +37,15 @@ string driver::get_var_name(int id) const
 	if (it != rev_var_map.end())
 		return it->second;
 
-	throw invalid_argument("Internal error: Unknown variable name");
+	throw invalid_argument("Internal error: Unknown variable id");
 }
 
 int driver::decl_var_id(std::string identifier)
 {
 	auto it = var_map.find(identifier);
 	if (it != var_map.end())
-		return it->second;
+		throw yy::parser::syntax_error(location, "Identifier: " + identifier + " already declared");
+		//return it->second;
 
 	int id = var_id++;
 

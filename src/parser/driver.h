@@ -18,7 +18,6 @@ class driver
 public:
 	driver ();
 
-	//std::vector<statement> statements;
 	std::vector<function> functions;
 
 	inline int get_var_id() const { return var_id; }
@@ -27,8 +26,6 @@ public:
 
 	int get_var_id(std::string identifier) const;
 	std::string get_var_name(int id) const;
-
-	//expression expression_result;
 
 	// Run the parser on file F.  Return 0 on success.
 	int parse (const std::string& f);

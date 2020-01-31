@@ -27,23 +27,23 @@
 
 %define api.token.prefix {TOK_}
 %token
-  END  0    "end of file"
-  COMMA		","
-  ASSIGN    "="
-  MINUS     "-"
-  PLUS      "+"
-  STAR      "*"
-  SLASH     "/"
-  LPAREN    "("
-  RPAREN    ")"
-  LBRACKET	"{"
-  RBRACKET	"}"
-  SEMICOLON ";"
-  RETURN	"return"
+	END				0			"end of file"
+	COMMA						","
+	ASSIGN  					"="
+	MINUS   					"-"
+	PLUS    					"+"
+	STAR    					"*"
+	SLASH   					"/"
+	LPAREN  					"("
+	RPAREN   					")"
+	LBRACKET					"{"
+	RBRACKET					"}"
+	SEMICOLON 					";"
+	VAR							"var"
+	RETURN						"return"
+	<std::string>	IDENTIFIER	"identifier"
+	<int>			NUMBER		"number"
 ;
-
-%token <std::string>	IDENTIFIER	"identifier"
-%token <int>			NUMBER		"number"
 
 %type  <int>						parameter
 %type  <std::vector<int>>			parameters
@@ -54,56 +54,49 @@
 %type  <function>					function
 %type  <std::vector<function>>		functions
 
-%printer { yyoutput << $$; } <int>;
-
 %%
 %start functions;
 
-functions	:							{ }
-			| functions function		{ drv.functions.push_back($2); /*$1.push_back($2); $$ = $1; */ }
+functions	:									{ }
+			| functions function				{ drv.functions.push_back($2); /*$1.push_back($2); $$ = $1; */ }
 			;
 
-function   : "identifier"
-             "(" parameters ")"
-             "{" statements "}"			{
-             								std::cout << "function: " << $3.size() << " parameters: ";
-             								for(int id: $3)
-             									std::cout << "\"" << drv.get_var_name(id) << "\", ";
-             								std::cout << "-- " << $6.size() << " statements\n";
-             								$$ = function{$1, $3, $6};
-             							}
-           ;
-
-parameter	: "identifier"				{ $$ = drv.decl_var_id($1); }
-            ;
-
-parameters	:							{ }
-			| parameter					{ $$.push_back($1); }
-			| parameters "," parameter	{ $1.push_back($3); $$ = $1; }
+function 	: "identifier"
+			  "(" parameters ")"
+			  "{" statements "}"				{ $$ = function{$1, $3, $6}; }
 			;
 
-statements : statement					{ $$.push_back($1); }
-           | statements statement		{ $1.push_back($2); $$ = $1; }
-           ;
+parameter	: "identifier"						{ $$ = drv.decl_var_id($1); }
+			;
 
-statement : declaration					{ $$ = statement($1); }
-          | "return" exp ";"			{ $$ = statement($2); }
-          ;
+parameters	:									{ }
+			| parameter							{ $$.push_back($1); }
+			| parameters "," parameter			{ $1.push_back($3); $$ = $1; }
+			;
+
+statements	: statement							{ $$.push_back($1); }
+			| statements statement				{ $1.push_back($2); $$ = $1; }
+			;
+
+statement	: declaration						{ $$ = statement($1); }
+			| "return" exp ";"					{ $$ = statement($2); }
+			;
           
-declaration : "identifier" "=" exp ";"	{ $$ = declaration{drv.decl_var_id($1), $3}; }
-            ;
+declaration	: "identifier" "=" exp ";"			{ $$ = declaration{drv.get_var_id($1), $3}; }
+			| "var" "identifier" ";"			{ $$ = declaration{drv.decl_var_id($2), expression(expr_type::num, 0)}; }
+			| "var" "identifier" "=" exp ";"	{ $$ = declaration{drv.decl_var_id($2), $4}; }
+			;
 
 %left "+" "-";
 %left "*" "/";
-exp	: exp "+" exp   { $$ = expression(expr_type::add, $1, $3); }
-   	| exp "-" exp   { $$ = expression(expr_type::sub, $1, $3); }
-   	| exp "*" exp   { $$ = expression(expr_type::mul, $1, $3); }
-   	| exp "/" exp   { $$ = expression(expr_type::div, $1, $3); }
-	| "(" exp ")"   { $$ = $2; }
-   	| "number"      { $$ = expression(expr_type::num, $1); }
-   	| "identifier"	{ $$ = expression(expr_type::var, drv.get_var_id($1)); }
-   	;
-
+exp			: exp "+" exp						{ $$ = expression(expr_type::add, $1, $3); }
+			| exp "-" exp						{ $$ = expression(expr_type::sub, $1, $3); }
+			| exp "*" exp						{ $$ = expression(expr_type::mul, $1, $3); }
+			| exp "/" exp						{ $$ = expression(expr_type::div, $1, $3); }
+			| "(" exp ")"						{ $$ = $2; }
+			| "number"							{ $$ = expression(expr_type::num, $1); }
+			| "identifier"						{ $$ = expression(expr_type::var, drv.get_var_id($1)); }
+			;
 %%
 
 void

@@ -1,12 +1,13 @@
 main(one, two, three)
 {
+	var a;
 	a = 21;
-	b = 31;
-	c = 13;
-	d = 14;
-	e = 15;
-	f = 16;
-	g = 17;
+	var b = 31;
+	var c = 13;
+	var d = 14;
+	var e = 15;
+	var f = 16;
+	var g = 17;
 	g = g + 8;
 	f = g / e;
 	f = f * b;
@@ -18,23 +19,7 @@ main(one, two, three)
 	return 12 * c;	
 }
 
-
-main2(one, two, three)
+main2()
 {
-	a = 21;
-	b = 31;
-	c = 13;
-	d = 14;
-	e = 15;
-	f = 16;
-	g = 17;
-	g = g + 8;
-	f = g / e;
-	f = f * b;
-	f = f + c;
-	f = f - d;
-	f = f + c;
-	c = (a * b) + 13 + f;
-
-	return 120 * c;	
+	return 12;
 }

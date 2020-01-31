@@ -51,6 +51,7 @@ blank [ \t]
 "}"      return yy::parser::make_RBRACKET  (loc);
 "="      return yy::parser::make_ASSIGN    (loc);
 ";"      return yy::parser::make_SEMICOLON (loc);
+"var"    return yy::parser::make_VAR       (loc);
 "return" return yy::parser::make_RETURN    (loc);
 
 {int}	{

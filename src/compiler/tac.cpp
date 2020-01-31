@@ -26,7 +26,7 @@ tac::tac(const driver& drv)
 
 	for(auto& function: drv.functions)
 	{
-		if (function.name == "main2")
+		if (function.name == "main")
 		{
 			main = function;
 		}
