@@ -45,25 +45,25 @@
 	<int>			NUMBER		"number"
 ;
 
-%type  <int>						parameter
-%type  <std::vector<int>>			parameters
-%type  <expression>					exp
-%type  <declaration>				declaration
-%type  <statement>					statement
-%type  <std::vector<statement>>		statements
-%type  <function>					function
-%type  <std::vector<function>>		functions
+%type  <int>							parameter
+%type  <std::vector<int>>				parameters
+%type  <expression>						exp
+%type  <declaration>					declaration
+%type  <statement>						statement
+%type  <std::vector<statement>>			statements
+%type  <emjit_function>					function
+%type  <std::vector<emjit_function>>	functions
 
 %%
 %start functions;
 
 functions	:									{ }
-			| functions function				{ drv.functions.push_back($2); /*$1.push_back($2); $$ = $1; */ }
+			| functions function				{ drv.add_function($2); }
 			;
 
-function 	: "identifier"
+function 	: "identifier"						{ drv.new_var_scope(); }
 			  "(" parameters ")"
-			  "{" statements "}"				{ $$ = function{$1, $3, $6}; }
+			  "{" statements "}"				{ $$ = emjit_function{$1, $4, $7, drv.var_scope}; drv.destroy_var_scope(); }
 			;
 
 parameter	: "identifier"						{ $$ = drv.decl_var_id($1); }
@@ -81,7 +81,7 @@ statements	: statement							{ $$.push_back($1); }
 statement	: declaration						{ $$ = statement($1); }
 			| "return" exp ";"					{ $$ = statement($2); }
 			;
-          
+
 declaration	: "identifier" "=" exp ";"			{ $$ = declaration{drv.get_var_id($1), $3}; }
 			| "var" "identifier" ";"			{ $$ = declaration{drv.decl_var_id($2), expression(expr_type::num, 0)}; }
 			| "var" "identifier" "=" exp ";"	{ $$ = declaration{drv.decl_var_id($2), $4}; }
@@ -99,8 +99,7 @@ exp			: exp "+" exp						{ $$ = expression(expr_type::add, $1, $3); }
 			;
 %%
 
-void
-yy::parser::error (const location_type& l, const std::string& m)
+void yy::parser::error (const location_type& l, const std::string& m)
 {
   std::cerr << l << ": " << m << '\n';
 }

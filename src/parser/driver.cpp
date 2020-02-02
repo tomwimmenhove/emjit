@@ -8,6 +8,7 @@ using namespace std;
 driver::driver ()
   : trace_parsing (false), trace_scanning (false)
 {
+	var_scope = std::shared_ptr<var_defs>(new var_defs());
 }
 
 int driver::parse (const std::string &f)
@@ -22,35 +23,49 @@ int driver::parse (const std::string &f)
   return res;
 }
 
-int driver::get_var_id(std::string identifier) const
+void driver::add_function(emjit_function function)
 {
-	auto it = var_map.find(identifier);
-	if (it != var_map.end())
-		return it->second;
+	auto it = functions.find(function.name);
+	if (it != functions.end())
+	{
+		throw yy::parser::syntax_error(location, "function " + function.name + " has already been declared");
+	}
 
-	throw yy::parser::syntax_error(location, "Undeclared identifier: " + identifier);
+	functions[function.name] = function;
 }
 
-string driver::get_var_name(int id) const
+emjit_function driver::get_function(std::string name)
 {
-	auto it = rev_var_map.find(id);
-	if (it != rev_var_map.end())
-		return it->second;
+	auto it = functions.find(name);
+	if (it == functions.end())
+	{
+		throw invalid_argument("Can not find function " + name);
+	}
 
-	throw invalid_argument("Internal error: Unknown variable id");
+	return functions[name];
 }
 
-int driver::decl_var_id(std::string identifier)
+int driver::decl_var_id(string identifier)
 {
-	auto it = var_map.find(identifier);
-	if (it != var_map.end())
-		throw yy::parser::syntax_error(location, "Identifier: " + identifier + " already declared");
-		//return it->second;
-
-	int id = var_id++;
-
-	var_map[identifier] = id;
-	rev_var_map[id] = identifier;
-
-	return id;
+	try
+	{
+		return var_scope->decl_var_id(identifier);
+	}
+	catch (const invalid_argument& e)
+	{
+		throw yy::parser::syntax_error(location, e.what());
+	}
 }
+
+int driver::get_var_id(string identifier) const
+{
+	try
+	{
+		return var_scope->get_var_id(identifier);
+	}
+	catch (const invalid_argument& e)
+	{
+		throw yy::parser::syntax_error(location, e.what());
+	}
+}
+

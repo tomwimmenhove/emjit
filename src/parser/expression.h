@@ -4,6 +4,8 @@
 #include <vector>
 #include <string>
 
+#include "vardefs.h"
+
 enum class expr_type
 {   
 	invalid = -1,
@@ -67,11 +69,13 @@ struct statement
 	//};
 };
 
-struct function
+struct emjit_function
 {
 	std::string name;
 	std::vector<int> parameters;
 	std::vector<statement> statements;
+
+	std::shared_ptr<var_defs> var_scope;
 };
 
 

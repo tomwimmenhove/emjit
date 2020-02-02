@@ -12,7 +12,6 @@
 #include <string>
 
 #include "../parser/expression.h"
-#include "../parser/driver.h"
 
 enum class tac_var_type
 {
@@ -81,15 +80,15 @@ struct tac_entry
 class tac
 {
 public:
-	tac(const driver& drv);
+	tac(const emjit_function& func);
 
 	const std::vector<tac_entry>& get_entries() const { return entries; }
 
 	std::string var_to_string(const tac_var& var) const;
 
-	inline int get_num_user_vars() const { return drv.get_var_id(); }
+	inline int get_num_user_vars() const { return func.var_scope->get_var_id(); }
 	inline int get_num_vars() const { return next_varid; }
-	inline std::string get_var_name(int id) const { return id < drv.get_var_id() ? drv.get_var_name(id) : "t" + std::to_string(id); }
+	inline std::string get_var_name(int id) const { return id < func.var_scope->get_var_id() ? func.var_scope->get_var_name(id) : "t" + std::to_string(id); }
 
 	void calculate_life_times();
 
@@ -99,7 +98,7 @@ public:
 	virtual ~tac();
 
 private:
-	const driver& drv;
+	const emjit_function& func;
 
 	tac_var add_from_exp(const tac_var& result, const expression& exp);
 	void add_live_range(int id, int from, int to);

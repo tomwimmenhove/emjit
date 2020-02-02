@@ -21,5 +21,7 @@ main(one, two, three)
 
 main2()
 {
+	var a;
+
 	return 12;
 }

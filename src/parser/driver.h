@@ -1,10 +1,13 @@
 #ifndef DRIVER_HH
 #define DRIVER_HH
+
+#include "parser.h"
+#include "vardefs.h"
+
 #include <string>
 #include <map>
-#include "parser.h"
 #include <iostream>
-#include <map>
+#include <memory>
 
 // Tell Flex the lexer's prototype ...
 # define YY_DECL \
@@ -12,22 +15,23 @@
 // ... and declare it for the parser's sake.
 YY_DECL;
 
-// Conducting the whole scanning and parsing of Calc++.
 class driver
 {
 public:
 	driver ();
 
-	std::vector<function> functions;
+	std::shared_ptr<var_defs> var_scope;
 
-	inline int get_var_id() const { return var_id; }
+	void add_function(emjit_function function);
+	emjit_function get_function(std::string name);
+
+	void new_var_scope() { var_scope = std::shared_ptr<var_defs>(new var_defs(var_scope)); }
+	void destroy_var_scope() { var_scope->get_parent_scope(); }
 
 	int decl_var_id(std::string identifier);
-
 	int get_var_id(std::string identifier) const;
-	std::string get_var_name(int id) const;
 
-	// Run the parser on file F.  Return 0 on success.
+	// Run the parser on file f.  Return 0 on success.
 	int parse (const std::string& f);
 	// The name of the file being parsed.
 	std::string file;
@@ -35,16 +39,15 @@ public:
 	bool trace_parsing;
 
 	// Handling the scanner.
-	void scan_begin ();
-	void scan_end ();
+	void scan_begin();
+	void scan_end();
 	// Whether to generate scanner debug traces.
 	bool trace_scanning;
 	// The token's location used by the scanner.
 	yy::location location;
 
 private:
+	std::map<std::string, emjit_function> functions;
 	int var_id = 0;
-	std::map<std::string, int> var_map;
-	std::map<int, std::string> rev_var_map;
 };
 #endif // ! DRIVER_HH

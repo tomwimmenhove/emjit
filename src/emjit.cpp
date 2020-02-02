@@ -19,9 +19,9 @@
 #include "parser/driver.h"
 #include "compiler/tac.h"
 #include "compiler/tac2x64.h"
+#include "parser/expression.h"
 
 using namespace std;
-
 
 int main()
 {
@@ -43,8 +43,21 @@ int main()
 	/* Get the entry point */
 	//auto program = s.entry_point<int(int, int)>();
 
+	/* Find the 'main' function */
+	emjit_function main;
+
+	try
+	{
+		main = drv.get_function("main");
+	}
+	catch (const invalid_argument& e)
+	{
+		cerr << e.what() << '\n';
+		return 1;
+	}
+
 	/* Convert the expression into TAC */
-	tac t(drv);
+	tac t(main);
 
 	/* Compile TAC to machine code */
 	tac2x64 t2e(s);
