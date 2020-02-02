@@ -22,8 +22,8 @@ public:
 
 	std::shared_ptr<var_defs> var_scope;
 
-	void add_function(emjit_function function);
-	emjit_function get_function(std::string name);
+	void add_function(std::shared_ptr<emjit_function>& function);
+	const std::shared_ptr<emjit_function> get_function(std::string name);
 
 	void new_var_scope() { var_scope = std::shared_ptr<var_defs>(new var_defs(var_scope)); }
 	void destroy_var_scope() { var_scope->get_parent_scope(); }
@@ -47,7 +47,7 @@ public:
 	yy::location location;
 
 private:
-	std::map<std::string, emjit_function> functions;
+	std::map<std::string, std::shared_ptr<emjit_function>> functions;
 	int var_id = 0;
 };
 #endif // ! DRIVER_HH

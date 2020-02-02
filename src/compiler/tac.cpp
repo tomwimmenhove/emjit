@@ -16,13 +16,13 @@
 
 using namespace std;
 
-tac::tac(const emjit_function& func)
+tac::tac(const std::shared_ptr<emjit_function>& func)
  :func(func)
 {
 #if 1
-	next_varid = func.var_scope->get_var_id();
+	next_varid = func->var_scope->get_var_id();
 
-	for(auto& stmt: func.statements)
+	for(auto& stmt: func->statements)
 	{
 		switch(stmt.type)
 		{
@@ -88,7 +88,7 @@ string tac::var_to_string(const tac_var& var) const
 	switch(var.type)
 	{
 	case tac_var_type::constant: return to_string(var.value);
-	case tac_var_type::local: return func.var_scope->get_var_name(var.id);// + '(' + to_string(var.id) + ')';
+	case tac_var_type::local: return func->var_scope->get_var_name(var.id);// + '(' + to_string(var.id) + ')';
 	case tac_var_type::param: s = "p"; break;
 	case tac_var_type::temp: s = "t"; break;
 	case tac_var_type::unused: return "unused";

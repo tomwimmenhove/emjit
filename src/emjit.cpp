@@ -40,19 +40,11 @@ int main()
 	if (drv.parse ("src/parser/parseme.txt") != 0)
 		return 1;
 
-	/* Get the entry point */
-	//auto program = s.entry_point<int(int, int)>();
-
 	/* Find the 'main' function */
-	emjit_function main;
-
-	try
+	auto main = drv.get_function("main");
+	if (!main)
 	{
-		main = drv.get_function("main");
-	}
-	catch (const invalid_argument& e)
-	{
-		cerr << e.what() << '\n';
+		cerr << "Can't find main() function.\n";
 		return 1;
 	}
 

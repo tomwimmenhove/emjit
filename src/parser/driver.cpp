@@ -23,23 +23,23 @@ int driver::parse (const std::string &f)
   return res;
 }
 
-void driver::add_function(emjit_function function)
+void driver::add_function(std::shared_ptr<emjit_function>& function)
 {
-	auto it = functions.find(function.name);
+	auto it = functions.find(function->name);
 	if (it != functions.end())
 	{
-		throw yy::parser::syntax_error(location, "function " + function.name + " has already been declared");
+		throw yy::parser::syntax_error(location, "function " + function->name + " has already been declared");
 	}
 
-	functions[function.name] = function;
+	functions[function->name] = function;
 }
 
-emjit_function driver::get_function(std::string name)
+const std::shared_ptr<emjit_function> driver::get_function(std::string name)
 {
 	auto it = functions.find(name);
 	if (it == functions.end())
 	{
-		throw invalid_argument("Can not find function " + name);
+		return nullptr;
 	}
 
 	return functions[name];

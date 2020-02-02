@@ -80,15 +80,15 @@ struct tac_entry
 class tac
 {
 public:
-	tac(const emjit_function& func);
+	tac(const std::shared_ptr<emjit_function>& func);
 
 	const std::vector<tac_entry>& get_entries() const { return entries; }
 
 	std::string var_to_string(const tac_var& var) const;
 
-	inline int get_num_user_vars() const { return func.var_scope->get_var_id(); }
+	inline int get_num_user_vars() const { return func->var_scope->get_var_id(); }
 	inline int get_num_vars() const { return next_varid; }
-	inline std::string get_var_name(int id) const { return id < func.var_scope->get_var_id() ? func.var_scope->get_var_name(id) : "t" + std::to_string(id); }
+	inline std::string get_var_name(int id) const { return id < func->var_scope->get_var_id() ? func->var_scope->get_var_name(id) : "t" + std::to_string(id); }
 
 	void calculate_life_times();
 
@@ -98,7 +98,7 @@ public:
 	virtual ~tac();
 
 private:
-	const emjit_function& func;
+	const std::shared_ptr<emjit_function> func;
 
 	tac_var add_from_exp(const tac_var& result, const expression& exp);
 	void add_live_range(int id, int from, int to);

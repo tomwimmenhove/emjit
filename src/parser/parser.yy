@@ -9,6 +9,7 @@
 %code requires {
   #include <string>
   #include <iostream>
+  #include <memory>
   #include "expression.h"
   class driver;
 }
@@ -45,14 +46,14 @@
 	<int>			NUMBER		"number"
 ;
 
-%type  <int>							parameter
-%type  <std::vector<int>>				parameters
-%type  <expression>						exp
-%type  <declaration>					declaration
-%type  <statement>						statement
-%type  <std::vector<statement>>			statements
-%type  <emjit_function>					function
-%type  <std::vector<emjit_function>>	functions
+%type  <int>								parameter
+%type  <std::vector<int>>					parameters
+%type  <expression>							exp
+%type  <declaration>						declaration
+%type  <statement>							statement
+%type  <std::vector<statement>>				statements
+%type  <std::shared_ptr<emjit_function>>	function
+%type  <std::vector<emjit_function>>		functions
 
 %%
 %start functions;
@@ -63,7 +64,11 @@ functions	:									{ }
 
 function 	: "identifier"						{ drv.new_var_scope(); }
 			  "(" parameters ")"
-			  "{" statements "}"				{ $$ = emjit_function{$1, $4, $7, drv.var_scope}; drv.destroy_var_scope(); }
+			  "{" statements "}"				{
+			  										$$ = std::shared_ptr<emjit_function>(
+			  											new emjit_function{$1, $4, $7, drv.var_scope} );
+			  										drv.destroy_var_scope();
+			  									}
 			;
 
 parameter	: "identifier"						{ $$ = drv.decl_var_id($1); }
