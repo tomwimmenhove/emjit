@@ -17,8 +17,6 @@
 #include "../parser/expression.h"
 #include "../arch/x64/x64instruction.h"
 #include "tac.h"
-#include "usedregister.h"
-#include "x64tmpreg.h"
 #include "stackvariable.h"
 #include "interfgraph.h"
 
@@ -56,67 +54,6 @@ struct registers_dump
 
 private:
 	uint64_t* arr = &rax;
-};
-
-
-template<typename T>
-class get_reg
-{
-public:
-	get_reg(used_registers<T>& ur, tac_var_type type)
-	 : ur(ur), type(type)
-	{
-
-	}
-
-	void store_var_in(int id, const T& reg)
-	{
-		auto it = regs.find(id);
-		if (it != regs.end())
-			regs.erase(it);
-
-		regs[id] = reg.value;
-	}
-
-	T reg_for_var(int id, const tac_entry& entry)
-	{
-		/* If it's already in the map, return that */
-		auto it = regs.find(id);
-		if (it != regs.end())
-			return T(regs[id]);
-
-		/* Otherwise, check if there's anything free */
-		auto reg = ur.get();
-		if (reg.value != -1)
-		{
-			regs[id] = reg.value;
-			return reg;
-		}
-
-		/* Still nothing? Let's see if there's anything in the map that we can re-use */
-		for(auto it = regs.begin(); it != regs.end(); ++it)
-		{
-			if (!entry.live_vars[it->first])
-			{
-				/* This guy won't be used. We'll steal it's register */
-				int red_idx = it->second;
-				regs.erase(it);
-
-				regs[id] = red_idx;
-
-				return T(red_idx);
-			}
-		}
-
-		/* For now, give up. We should request a temporary register here */
-		throw std::exception();
-	}
-
-private:
-	used_registers<T>& ur;
-	tac_var_type type;
-
-	std::map<int, int> regs; /* <var_id, reg_idx> */
 };
 
 /* Actual class */
@@ -200,9 +137,6 @@ private:
 	struct sigaction saved_action;
 	static void handler(int sig, siginfo_t *si, void *context);
 	static registers_dump* expected_registers;
-
-	locked_registers<x64_reg32> lr{ x64_reg32::n, { x64_regs::esp, x64_regs::ebp }};
-	used_registers<x64_reg32> dr{ x64_reg32::n, lr};
 
 	instruction_stream& inst_stream;
 
