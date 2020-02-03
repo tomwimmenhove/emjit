@@ -57,6 +57,8 @@ enum class tac_type
 {
 	assign,
 
+	param,
+
 	add,
 	sub,
 	mul,
@@ -85,6 +87,8 @@ public:
 	const std::vector<tac_entry>& get_entries() const { return entries; }
 
 	std::string var_to_string(const tac_var& var) const;
+
+	const std::shared_ptr<emjit_function>& get_func() const { return func; }
 
 	inline int get_num_user_vars() const { return func->var_scope->get_var_id(); }
 	inline int get_num_vars() const { return next_varid; }

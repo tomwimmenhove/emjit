@@ -1,7 +1,7 @@
 main(one, two, three)
 {
 	var a;
-	a = 21;
+	a = 21 * one;
 	var b = 31;
 	var c = 13;
 	var d = 14;
@@ -16,7 +16,7 @@ main(one, two, three)
 	f = f + c;
 	c = (a * b) + 13 + f;
 
-	return 12 * c;	
+	return 12 * c * two * three;
 }
 
 main2()

@@ -306,6 +306,21 @@ bool tac2x64::try_swap_colors(int id, int new_color)
 	return true;
 }
 
+bool tac2x64::is_reg_live(const tac_entry& entry, int reg_idx)
+{
+	for (size_t i = 0; i < entry.live_vars.size(); i++)
+	{
+		auto color = color_map[i];
+		if (color < 0)
+			continue;
+
+		if (reg_idx == reg_avail[color])
+			return true;
+	}
+
+	return false;
+}
+
 void tac2x64::compile_expression(const tac& t)
 {
 	rig.set_n_vars(t.get_num_vars());
@@ -351,6 +366,24 @@ void tac2x64::compile_expression(const tac& t)
 
 	prologue(rig.get_n_spills() * sizeof(int32_t));
 
+	auto func = t.get_func();
+
+	for (size_t i = 0; i < func->parameters.size(); i++)
+	{
+		if (i < reg_args.size())
+		{
+			int param_id = func->parameters[i];
+
+//			int color = color_map[param_id];
+//
+//			cout << "moving color " << color << " into " << x64_reg32::names[reg_args[i]] << '\n';
+
+			src_dest<x64_mov>(
+					var_from_tac_var(tac_var(tac_var_type::param, param_id)),
+					var(x64_reg32(reg_args[i])));
+		}
+	}
+
 	bool last_was_ret;
 	for(auto& entry: entries)
 	{
@@ -386,7 +419,7 @@ void tac2x64::compile_expression(const tac& t)
 
 	cout << x64_disassembler::disassemble(inst_stream, "intel", true);
 
-	auto res = program(42, 42, 42, 42, 42, 42, 0, 0, 0);
+	auto res = program(1, 1, 10, 42, 42, 42, 0, 0, 0);
 	cout << "Result: " << dec << res << '\n';
 
 	cout << "Made it out alive\n";

@@ -22,6 +22,14 @@ tac::tac(const std::shared_ptr<emjit_function>& func)
 #if 1
 	next_varid = func->var_scope->get_var_id();
 
+	for(size_t i = 0; i < func->parameters.size(); i++)
+	{
+		int param = func->parameters[i];
+
+		entries.push_back(tac_entry(tac_type::param,
+				tac_var(tac_var_type::param, param), tac_var(tac_var_type::constant, i)));
+	}
+
 	for(auto& stmt: func->statements)
 	{
 		switch(stmt.type)
@@ -88,8 +96,10 @@ string tac::var_to_string(const tac_var& var) const
 	switch(var.type)
 	{
 	case tac_var_type::constant: return to_string(var.value);
-	case tac_var_type::local: return func->var_scope->get_var_name(var.id);// + '(' + to_string(var.id) + ')';
-	case tac_var_type::param: s = "p"; break;
+//	case tac_var_type::local: return func->var_scope->get_var_name(var.id);// + '(' + to_string(var.id) + ')';
+//	case tac_var_type::param: s = "p"; break;
+	case tac_var_type::local:
+	case tac_var_type::param: return func->var_scope->get_var_name(var.id);
 	case tac_var_type::temp: s = "t"; break;
 	case tac_var_type::unused: return "unused";
 	}
@@ -112,6 +122,9 @@ void tac::debug_print()
 		{
 		case tac_type::assign:
 			cout << var_to_string(entry.a) << " = " << var_to_string(entry.b) << '\n';
+			break;
+		case tac_type::param:
+			cout << var_to_string(entry.a) << " = param(" << var_to_string(entry.b) << ")\n";
 			break;
 		case tac_type::add:
 			cout << var_to_string(entry.a) << " = " << var_to_string(entry.b) << " + " << var_to_string(entry.c) << '\n';

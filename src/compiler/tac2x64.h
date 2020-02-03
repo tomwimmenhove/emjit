@@ -162,6 +162,7 @@ private:
 	interf_graph rig;
 	std::map<int, int> color_map;
 	bool try_swap_colors(int id, int color);
+	bool is_reg_live(const tac_entry& entry, int reg_idx);
 	inline int var_color(const tac_var& var) { return color_map[var.id]; }
 	inline int32_t get_stack_pos(int color) { return color * sizeof(int32_t); } // First stack color is -1
 
@@ -174,8 +175,8 @@ private:
 	 * r11: Removed from the list in case of spilling
 	 */
 	std::vector<int> reg_avail {
-			x64_regs::ecx.value,
 			x64_regs::ebx.value,
+			x64_regs::ecx.value,
 			x64_regs::esi.value,
 			x64_regs::edi.value,
 //			x64_regs::r8d.value,
@@ -190,6 +191,16 @@ private:
 	};
 	int temp_reg_idx = -1;
 	var temp_var;
+
+	std::vector<int> reg_args {
+		x64_regs::edi.value,
+		x64_regs::rsi.value,
+		x64_regs::rdx.value,
+		x64_regs::rcx.value,
+		x64_regs::r8.value,
+		x64_regs::r9.value,
+	};
+
 
 	void add_tac_var(const tac_var& var);
 
