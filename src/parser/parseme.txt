@@ -1,4 +1,4 @@
-main(one, two, three)
+main(one, two, three, four, five, six, seven, eight)
 {
 	var a;
 	a = 21 * one;
@@ -16,7 +16,7 @@ main(one, two, three)
 	f = f + c;
 	c = (a * b) + 13 + f;
 
-	return 12 * c * two * three;
+	return 12 * c * two * three * eight;
 }
 
 main2()

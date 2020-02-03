@@ -164,7 +164,8 @@ private:
 	bool try_swap_colors(int id, int color);
 	bool is_reg_live(const tac_entry& entry, int reg_idx);
 	inline int var_color(const tac_var& var) { return color_map[var.id]; }
-	inline int32_t get_stack_pos(int color) { return color * sizeof(int32_t); } // First stack color is -1
+	inline int32_t get_stack_var_pos(int color) { return color * sizeof(int32_t); } // First stack color is -1
+	inline int32_t get_stack_param_pos(int arg_num) { return (arg_num - 4) * sizeof(int64_t); } // -6 parameters in registers + return pointer + pushed rbp
 
 	void debug_print_mapping(const tac& t);
 
@@ -192,15 +193,7 @@ private:
 	int temp_reg_idx = -1;
 	var temp_var;
 
-	std::vector<int> reg_args {
-		x64_regs::edi.value,
-		x64_regs::rsi.value,
-		x64_regs::rdx.value,
-		x64_regs::rcx.value,
-		x64_regs::r8.value,
-		x64_regs::r9.value,
-	};
-
+	static std::vector<int> reg_args;
 
 	void add_tac_var(const tac_var& var);
 
@@ -217,6 +210,7 @@ private:
 	void epilogue();
 
 	void op_assign(const tac_entry& entry);
+	void op_param(const tac_entry& entry);
 	void op_add(const tac_entry& entry);
 	void op_sub(const tac_entry& entry);
 	void op_mul(const tac_entry& entry);

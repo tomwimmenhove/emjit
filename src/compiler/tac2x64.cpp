@@ -16,6 +16,15 @@ using namespace std;
 
 registers_dump* tac2x64::expected_registers = nullptr;
 
+vector<int> tac2x64::reg_args {
+	x64_regs::edi.value,
+	x64_regs::rsi.value,
+	x64_regs::rdx.value,
+	x64_regs::rcx.value,
+	x64_regs::r8.value,
+	x64_regs::r9.value,
+};
+
 tac2x64::tac2x64(instruction_stream& s) : inst_stream(s)
 {
 	struct sigaction sa;
@@ -141,7 +150,7 @@ const tac2x64::var tac2x64::var_from_tac_var(const tac_var& tv)
 		if (color >= 0)
 			return var(x64_reg32(reg_avail[color]));
 		else
-			return var(variable_type::stack, get_stack_pos(color));
+			return var(variable_type::stack, get_stack_var_pos(color));
 	}
 
 	throw invalid_argument("Internal error: var_from_tac_var(): invalid type");
@@ -150,6 +159,16 @@ const tac2x64::var tac2x64::var_from_tac_var(const tac_var& tv)
 void tac2x64::op_assign(const tac_entry& entry)
 {
 	src_dest<x64_mov>(var_from_tac_var(entry.a), var_from_tac_var(entry.b));
+}
+
+void tac2x64::op_param(const tac_entry& entry)
+{
+	int arg_num = entry.b.value;
+
+	if (arg_num < (int) reg_args.size())
+		src_dest<x64_mov>(var_from_tac_var(entry.a), var(x64_reg32(reg_args[arg_num])));
+	else
+		src_dest<x64_mov>(var_from_tac_var(entry.a), var(variable_type::stack, get_stack_param_pos(arg_num)));
 }
 
 void tac2x64::op_add(const tac_entry& entry)
@@ -230,7 +249,7 @@ void tac2x64::op_mul(const tac_entry& entry)
 	if (c_color >= 0)
 		inst_stream << x64_imul(rega, x64_reg32(reg_avail[c_color]));
 	else
-		inst_stream << x64_imul(rega, x64_address(x64_regs::rbp, get_stack_pos(c_color)));
+		inst_stream << x64_imul(rega, x64_address(x64_regs::rbp, get_stack_var_pos(c_color)));
 
 	if (a_color < 0)
 		src_dest<x64_mov>(var_from_tac_var(entry.a), var(x64_reg32(temp_reg_idx)));
@@ -251,7 +270,7 @@ void tac2x64::op_div(const tac_entry& entry)
 	if (c_color >= 0)
 		inst_stream << x64_idiv(x64_reg32(reg_avail[c_color]));
 	else
-		inst_stream << x64_idivl(x64_address(x64_regs::rbp, get_stack_pos(c_color)));
+		inst_stream << x64_idivl(x64_address(x64_regs::rbp, get_stack_var_pos(c_color)));
 
 	src_dest<x64_mov>(tva, var(x64_regs::eax));
 }
@@ -275,7 +294,7 @@ void tac2x64::debug_print_mapping(const tac& t)
 		string var_name = t.get_var_name(it->first);
 		string storage_name = it->second >= 0 ?							/* Where? */
 				x64_reg32::names[reg_avail[it->second]] :				/* Register : */
-				("[rbp" + to_string(get_stack_pos(it->second)) + ']');	/* Stack */
+				("[rbp" + to_string(get_stack_var_pos(it->second)) + ']');	/* Stack */
 
 		cout << "Mapping: " << var_name << ": " << storage_name << '\n';
 	}
@@ -366,24 +385,6 @@ void tac2x64::compile_expression(const tac& t)
 
 	prologue(rig.get_n_spills() * sizeof(int32_t));
 
-	auto func = t.get_func();
-
-	for (size_t i = 0; i < func->parameters.size(); i++)
-	{
-		if (i < reg_args.size())
-		{
-			int param_id = func->parameters[i];
-
-//			int color = color_map[param_id];
-//
-//			cout << "moving color " << color << " into " << x64_reg32::names[reg_args[i]] << '\n';
-
-			src_dest<x64_mov>(
-					var_from_tac_var(tac_var(tac_var_type::param, param_id)),
-					var(x64_reg32(reg_args[i])));
-		}
-	}
-
 	bool last_was_ret;
 	for(auto& entry: entries)
 	{
@@ -393,6 +394,9 @@ void tac2x64::compile_expression(const tac& t)
 		{
 		case tac_type::assign:
 			op_assign(entry);
+			break;
+		case tac_type::param:
+			op_param(entry);
 			break;
 		case tac_type::add:
 			op_add(entry);
@@ -419,7 +423,7 @@ void tac2x64::compile_expression(const tac& t)
 
 	cout << x64_disassembler::disassemble(inst_stream, "intel", true);
 
-	auto res = program(1, 1, 10, 42, 42, 42, 0, 0, 0);
+	auto res = program(1, 1, 1, 1, 1, 1, 1, 10, 1);
 	cout << "Result: " << dec << res << '\n';
 
 	cout << "Made it out alive\n";
