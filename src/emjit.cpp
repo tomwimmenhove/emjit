@@ -54,7 +54,13 @@ int main()
 	/* Compile TAC to machine code */
 	tac2x64 t2e(s);
 
+	auto main_fn = s.entry_point<int(int, int, int, int, int, int, int, int, int)>();
 	t2e.compile_expression(t);
+
+	auto res = main_fn(1, 1, 1, 1, 1, 1, 1, 10, 1);
+	cout << "Result: " << dec << res << '\n';
+
+	cout << "Made it out alive\n";
 
 	return 0;
 }

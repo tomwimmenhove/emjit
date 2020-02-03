@@ -375,12 +375,6 @@ void tac2x64::compile_expression(const tac& t)
 
 	debug_print_mapping(t);
 
-	auto program = inst_stream.entry_point<int(int, int, int, int, int, int, int, int, int)>();
-
-	/* For now, to make mul/div simple */
-//	lr.lock(x64_regs::eax);
-//	lr.lock(x64_regs::edx);
-
 	auto& entries = t.get_entries();
 
 	prologue(rig.get_n_spills() * sizeof(int32_t));
@@ -422,11 +416,6 @@ void tac2x64::compile_expression(const tac& t)
 		epilogue();
 
 	cout << x64_disassembler::disassemble(inst_stream, "intel", true);
-
-	auto res = program(1, 1, 1, 1, 1, 1, 1, 10, 1);
-	cout << "Result: " << dec << res << '\n';
-
-	cout << "Made it out alive\n";
 }
 
 
